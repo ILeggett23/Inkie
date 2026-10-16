@@ -35,7 +35,8 @@ cmake -S reader -B .tablet-build-gui "${common[@]}" -DCMAKE_BUILD_TYPE=Release -
 cmake --build .tablet-build-gui --parallel 2 --target inkbound-direct-handwriting-spike3
 python3 reader/tools/source-fingerprint.py "$root/reader" > "$out/SOURCE-after.json"
 cmp "$out/SOURCE-before.json" "$out/SOURCE-after.json"
-git rev-parse HEAD > "$out/SOURCE-COMMIT"
+[[ "${GITHUB_SHA:-}" =~ ^[0-9a-f]{40}$ ]]
+printf '%s\n' "$GITHUB_SHA" > "$out/SOURCE-COMMIT"
 for binary in .tablet-build-gui/inkbound-direct-handwriting-spike3 .tablet-build-release/reader-experience1-prepare; do
  readelf -h "$binary" | grep -q 'Machine:.*AArch64'
  ! readelf -d "$binary" | grep -Eq 'RPATH|RUNPATH'
