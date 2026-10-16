@@ -59,7 +59,7 @@ int main(){try{
  const spike::Rect large{112,112,1510,1000};
  check(display.ui(large)==spike::Submit::Accepted&&same(calls.requests.back().effective,large),"large UI remains regional");
  const auto prior=calls.requests.size();check(display.submit(large)==spike::Submit::Failed&&calls.requests.size()==prior,"live area guard changed");
- check(ux::applyRefresh(display,local,ux::RefreshIntent::PageTransition)==spike::Submit::Accepted,"page transition");
+ check(ux::applyRefresh(display,local,ux::RefreshIntent::PageTransition,ux::FullRefreshReason::DocumentBinding)==spike::Submit::Accepted,"page transition");
  const auto& page=calls.requests.back();check(same(page.effective,{0,0,1620,2160})&&page.mode==3&&page.flags==1,"intentional full page changed");
  // Color and grayscale must retain the same local scope and source RGB.
  const spike::Rect aligned{101,801,105,803};

@@ -1,5 +1,6 @@
 #pragma once
 #include "device_status.h"
+#include "refresh_policy.h"
 #include "reader.h"
 #include <algorithm>
 #include <utility>
@@ -47,7 +48,7 @@ enum MenuId:int {MenuNotes=500,MenuTom,MenuLayers,MenuSettings,MenuPages,MenuLib
 // cleanup: where content was removed (erase, undo/redo, snap, highlight or layer changes). It was redrawn with the fast
 // update; the display gives it one quality refresh once ink is settled and the pen is up, so no colour or grey ghost
 // stays. Additions (new strokes) never request it, so writing never flashes.
-struct Change {bool full{};unsigned regions{};std::array<spike::Rect,8> extra{};unsigned extraCount{};spike::Rect cleanup{};std::array<spike::Rect,16> uiCleanup{};unsigned uiCleanupCount{};bool content{},preview{},pageTurn{};};
+struct Change {bool full{};unsigned regions{};std::array<spike::Rect,8> extra{};unsigned extraCount{};spike::Rect cleanup{};std::array<spike::Rect,16> uiCleanup{};unsigned uiCleanupCount{};bool content{},preview{},pageTurn{};FullRefreshReason fullReason{FullRefreshReason::None};void complete(FullRefreshReason reason)noexcept{full=true;fullReason=reason;}};
 class Shell final:public spike::OperationSink {
  friend struct StatusTestAccess;friend struct QolTestAccess;
  clockprefs::Setting timeSetting_;TimezoneView timezoneView_;void timezonePaint();bool timezoneFinger(int,int);

@@ -35,6 +35,23 @@ int main(){try{
  const auto previous=count;ux::accumulateDamage(regions,count,inputs.front());check(count==previous);
  std::array<spike::Rect,1> one{};unsigned used=0;
  ux::accumulateDamage(one,used,{10,20,40,50});ux::accumulateDamage(one,used,{80,100,90,110});check(used==1&&covers(one[0],{10,20,90,110}));
+ {
+  constexpr int W=197,H=137,S=208;
+  std::vector<std::uint32_t> displayed(S*H,0xff000000u),canonical=displayed;
+  for(int y=0;y<H;++y)for(int x=W;x<S;++x)displayed[y*S+x]=canonical[y*S+x]=0xff12ab34u;
+  canonical[10*S+10]=0xffff0000u;canonical[80*S+180]=0xff808080u;canonical[(H-1)*S+W-1]=0xffffffffu;
+  std::array<std::uint32_t,W*64> scratch;std::array<spike::Rect,8> diff{};unsigned changed{},compositions{};
+  auto compose=[&](spike::Rect r){++compositions;for(int y=r.y0;y<r.y1;++y)std::copy_n(canonical.data()+y*S+r.x0,r.x1-r.x0,displayed.data()+y*S+r.x0);};
+  check(ux::recomposeDamage({displayed,W,H,S},scratch,compose,diff,changed)&&changed==3&&compositions==3&&displayed==canonical);
+  for(auto point:{std::pair{10,10},std::pair{180,80},std::pair{W-1,H-1}}){bool found=false;for(unsigned i=0;i<changed;++i)found|=diff[i].contains(point.first,point.second);check(found);}
+  std::uint64_t area{};for(unsigned i=0;i<changed;++i)area+=std::uint64_t(diff[i].x1-diff[i].x0)*(diff[i].y1-diff[i].y0);check(area<1000);
+  check(ux::recomposeDamage({displayed,W,H,S},scratch,compose,diff,changed)&&changed==0);
+  // A full scene change is still only a bounded damage result.
+  for(int y=0;y<H;++y)for(int x=0;x<W;++x)canonical[y*S+x]^=0x00ffffffu;
+  check(ux::recomposeDamage({displayed,W,H,S},scratch,compose,diff,changed)&&changed<=diff.size()&&displayed==canonical);
+  for(int y=0;y<H;++y)for(int x=0;x<W;++x){bool found=false;for(unsigned i=0;i<changed;++i)found|=diff[i].contains(x,y);check(found);}
+  const auto valid=displayed;check(!ux::recomposeDamage({displayed,W,H,S},std::span<std::uint32_t>(scratch).first(1),compose,diff,changed)&&displayed==valid&&changed==0);
+ }
 #ifndef INKBOUND_DAMAGE_ONLY
  Lease lease;Calls calls;spike::VendorDisplay display(calls);check(display.initialize(lease));
  const spike::Rect panel{50,200,1570,1400}; // larger than the live-ink area cap

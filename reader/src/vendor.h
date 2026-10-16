@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 #pragma once
 #include "session.h"
+#include "refresh_policy.h"
 #include <span>
 #include <algorithm>
 // Pinned converter footprint; update geometry remains unchanged.
@@ -34,7 +35,7 @@ struct VendorCalls {
 // Owns no vendor memory; normal return authorizes serial SOURCE reuse only.
 class VendorDisplay final:public SessionDisplay {
  VendorCalls& calls_;RecoveryLease const* lease_{};Pixels pixels_{};bool active_{},retired_{},inside_{};
- std::uint32_t submissions_{};std::uint64_t area_{};std::vector<std::uint32_t> beforeErase_;std::vector<unsigned char> eraseMask_;Rect eraseSnapshot_{};
+ std::array<std::uint64_t,unsigned(ux::FullRefreshReason::Recovery)> completeReasons_{};std::uint32_t submissions_{};std::uint64_t area_{};std::vector<std::uint32_t> beforeErase_;std::vector<unsigned char> eraseMask_;Rect eraseSnapshot_{};
  // Paper Pro (libqsgepaper acep2) swapBuffers(QRect, EPContentType, EPScreenMode, UpdateFlags), read from the
  // library's own tables: content Mono=0 Grayscale=1 Color=3; screen mode Pen=0 Mono=1 Animation=2 UI=3 Content=4.
  // UpdateFlags 1 = full (flashing) update. Until D2 every update was sent as Mono content.
@@ -51,7 +52,7 @@ class VendorDisplay final:public SessionDisplay {
  enum Mode:int {ModePen=0,ModeMono=1,ModeAnimation=2,ModeUi=3,ModeContent=4};
  bool ready(Rect)const noexcept;
  int qualityContent(Rect)const noexcept;
- bool submitChecked(Rect,int content,int mode,int flags)noexcept;
+ bool submitChecked(Rect,int content,int mode,int flags,ux::FullRefreshReason reason=ux::FullRefreshReason::None)noexcept;
 public:
  static constexpr std::uint32_t MaxSubmissions=512;
  static constexpr std::uint64_t MaxArea=8ULL*1620*2160;
@@ -60,7 +61,7 @@ public:
  Surface surface()const noexcept override;
  bool initialPage()noexcept override;
  bool initialPreparedPage(std::span<const std::uint32_t>)noexcept;
- bool readerPage()noexcept;
+ bool readerPage(ux::FullRefreshReason)noexcept;
  Submit submit(Rect)noexcept override;
  // Pinned Pen bit1 selects lower conversion14, also observed for stock erase.
  // This is a verified behavioral flag, not a recovered vendor enum name.
@@ -75,6 +76,7 @@ public:
  void pump()noexcept override;
  void shutdown()noexcept override;
  std::uint32_t submissions()const noexcept{return submissions_;}
+ std::uint64_t completeRequests(ux::FullRefreshReason reason)const noexcept{return ux::completeRefreshAllowed(reason)?completeReasons_[unsigned(reason)-1]:0;}
 };
 VendorCalls& realVendorCalls()noexcept;
 }
