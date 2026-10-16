@@ -142,7 +142,7 @@ bool Shell::railAction(int id){if(!styled_||!document_||document_->contact())ret
  ++toolsRevision_;if(toolsView_.active())toolsView_.update(toolsSnapshot());toolsPaint();return true;}
 // The first failure names its call site in the device journal (reader:shell-fail value=<code>); later ones would only
 // repeat the outcome. Codes are listed in docs/hardware-validation.md.
-void Shell::fail(unsigned reason)noexcept{if(!failed_)recovery::v2::e2::mark("reader:shell-fail",reason);failed_=true;state_=State::Failed;}
+void Shell::fail(unsigned reason)noexcept{if(!failed_){recovery::v2::e2::mark("reader:shell-fail",reason);std::fprintf(stderr,"READER_SHELL_FAILURE reason=%u\n",reason);}failed_=true;state_=State::Failed;}
 void Shell::notice(QString message){notice_=std::move(message);markNotice(notice_);
  if(libraryMode_&&!document_){setLibraryNotice(notice_);notice_.clear();libraryPaint();damage(ib::library::NoticeRect);return;}
  if(document_){paintChrome();change_.regions|=4;}}
@@ -233,7 +233,7 @@ void Shell::sourceTick(){
 // panel before allocating a new one, so Notes and Tom do not accumulate both
 // sets of buffers. Never destroy an active owner or any unsaved work.
 bool Shell::trimInactivePanel(bool targetTom){
- if(notes_&&!notes_->active()&&(targetTom||notesRetiring_)){if(notes_->unsaved())return false;notesRetiring_=true;if(!notes_->retire())return false;notes_.reset();notesRetiring_=false;}
+ if(notes_&&!notes_->active()&&(targetTom||notesRetiring_)){if(notes_->unsaved())return false;notesRetiring_=true;if(!notes_->retire(10))return false;notes_.reset();notesRetiring_=false;}
  if(tom_&&!tom_->active()&&(!targetTom||tomRetiring_)){if(tom_->unsaved())return false;tomRetiring_=true;if(!tom_->retire(10))return false;tom_.reset();tomRetiring_=false;}
  return true;
 }
@@ -681,7 +681,7 @@ bool Shell::reserve()noexcept{if(lock_!=Lock::None||!writable())return false;
 bool Shell::append(const spike::Point& original)noexcept{auto p=original;if(epubZoomActive()&&!statusContact_&&p.y<2060){auto at=contentPoint(p.x,p.y);p.x=at.first;p.y=at.second;}if(stop_)return false;if(statusContact_){statusLast_=p;if(p.phase==spike::Phase::Up){statusContact_=false;statusTapPending_=!p.eraser&&std::abs(p.x-statusFirst_.x)<=25&&std::abs(p.y-statusFirst_.y)<=25;}return true;}if(p.phase==spike::Phase::Down&&libraryMode_&&document_&&!(tom_&&tom_->active())&&!(notes_&&notes_->active())&&statusBarRect_.contains(p.x,p.y)){if(penSelect_.active)penSelect_={};else if(styled_){styled_->cancel();document_->endExternalContact();}statusFirst_=statusLast_=p;statusContact_=true;return true;}
  // reserve() cannot know which end of the Marker will touch. Switch a hardware
  // eraser contact to the ordinary ink owner before collecting selection points.
- if(penSelect_.active&&p.phase==spike::Phase::Down&&p.eraser){penSelect_={};if(!styled_->reserve())return false;if(!document_->beginExternalContact()){styled_->cancel();return false;}}
+ if(penSelect_.active&&p.phase==spike::Phase::Down&&p.eraser){if(quietEffectsEnabled()||!reveal_.quiescent())cancelRevealForContact();penSelect_={};if(!styled_->reserve())return false;if(!document_->beginExternalContact()){styled_->cancel();return false;}}
  if(penSelect_.active){if(p.phase==spike::Phase::Down){penSelect_.first=p;penSelect_.screenFirst=original;
   // An explicit Selection-tool contact may tap the existing selection UI.
   // Capture intent only; dictionary, storage and panel work run after pen-up.

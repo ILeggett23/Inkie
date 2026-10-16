@@ -15,7 +15,7 @@ class Runtime final {
  QJsonObject perform(product::Services&,const QJsonObject&);void work()noexcept;void update(const std::function<void(View&)>&);void publish(bool changed,bool rerender=true);
 public:
  // Exact product::featureDirectory path; no catalogue or global store ownership.
- Runtime(std::filesystem::path featureDirectory,Canvas&,std::shared_ptr<tomink::IllustrationProvider> illustration={});~Runtime();bool request(QJsonObject);void cancelGeneration()noexcept{generationStop_=true;}View view()const;unsigned unsaved()const noexcept{return canvas_.unsaved()+(commandState_.load(std::memory_order_acquire)!=0);}bool failed()const noexcept{return failed_||canvas_.failed();}bool finish(unsigned ms=100)noexcept;bool retire()noexcept;bool drained()const noexcept{return !worker_.joinable();}
+ Runtime(std::filesystem::path featureDirectory,Canvas&,std::shared_ptr<tomink::IllustrationProvider> illustration={});~Runtime();bool request(QJsonObject);void cancelGeneration()noexcept{generationStop_=true;}View view()const;unsigned unsaved()const noexcept{return canvas_.unsaved()+(commandState_.load(std::memory_order_acquire)!=0);}bool failed()const noexcept{return failed_||canvas_.failed();}bool finish(unsigned ms=100)noexcept;bool retire(unsigned ms=0)noexcept;bool drained()const noexcept{return !worker_.joinable();}
 };
 QJsonObject selectedAnchor(const QJsonObject& page,const QJsonObject& selection);
 }

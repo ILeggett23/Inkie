@@ -1,5 +1,6 @@
 #pragma once
 #include "ux_shell.h"
+#include "panel_damage.h"
 #include "touch.h"
 #include "refresh_plan.h"
 #include "refresh_scheduler.h"

@@ -19,29 +19,34 @@ int Scheduler::waitMs(Ns now,bool dirty)const noexcept {
 bool consumeEvents(std::span<const input_event> events,FrameAssembler& a,Engine&e,Scheduler&s,SessionStats& stats,Ns now,RecoveryLease* lease,OperationSink* sink,InputGate* gate,SessionDisplay* observer)noexcept{
  const SustainedPolicy policy=lease?lease->sustained():SustainedPolicy{};const bool sustained=policy.enabled();
  for(const auto& raw:events){
-  if(lease&&(!lease->valid()||lease->stopRequested()||monotonic()>=lease->deadline())){stats.failed=stats.cancelled=true;e.inputFailed();return false;}
+  if(lease&&(!lease->valid()||lease->stopRequested()||monotonic()>=lease->deadline())){stats.failed=stats.cancelled=true;stats.failure="lease-or-input-policy";e.inputFailed();return false;}
   Sample sample;auto result=a.feed(raw.type,raw.code,raw.value,now,sample);
-  if(result==FrameResult::Fault){stats.failed=stats.cancelled=true;e.inputFailed();return false;}
+  if(result==FrameResult::Fault){stats.failed=stats.cancelled=true;stats.failure="input-frame";e.inputFailed();return false;}
   if(result!=FrameResult::Ready)continue;
-  if(gate){Ns eventTime=raw.time.tv_sec>=0&&raw.time.tv_usec>=0&&raw.time.tv_usec<1000000?Ns(raw.time.tv_sec)*1000000000ULL+Ns(raw.time.tv_usec)*1000:0;
+  if(gate){
+   // A saver or UI state can close admission after a release earlier in this
+   // same read batch. Recheck before the next reservation; consume a refused
+   // contact through Up instead of treating temporary pressure as a fatal save.
+   if(gate->open&&!gate->blocked&&sample.phase==Phase::Down&&observer&&!observer->admissionOpen())gate->open=false;
+   Ns eventTime=raw.time.tv_sec>=0&&raw.time.tv_usec>=0&&raw.time.tv_usec<1000000?Ns(raw.time.tv_sec)*1000000000ULL+Ns(raw.time.tv_usec)*1000:0;
    if(!gate->open&&!gate->blocked&&sample.phase==Phase::Down&&eventTime>=gate->notBefore&&observer)observer->wakeInput(sample);
    if(gate->blocked||!gate->open||(sample.phase==Phase::Down&&eventTime<gate->notBefore)){gate->blocked=sample.phase!=Phase::Up;++gate->rejected;continue;}}
   if(sustained){
    // Fixed windows: a new window starts once the previous one has fully elapsed.
    if(!stats.windowStart||now<stats.windowStart||now-stats.windowStart>=policy.window){stats.windowStart=now;stats.windowSamples=stats.windowContacts=0;}
-   if(stats.windowSamples>=policy.samples){stats.failed=stats.cancelled=true;e.inputFailed();return false;}
-   if(sample.phase==Phase::Down&&stats.windowContacts>=policy.contacts){stats.failed=stats.cancelled=true;e.inputFailed();return false;}
+   if(stats.windowSamples>=policy.samples){stats.failed=stats.cancelled=true;stats.failure="lease-or-input-policy";e.inputFailed();return false;}
+   if(sample.phase==Phase::Down&&stats.windowContacts>=policy.contacts){stats.failed=stats.cancelled=true;stats.failure="lease-or-input-policy";e.inputFailed();return false;}
   }else{
-  if(stats.samples>=16384){stats.failed=stats.cancelled=true;e.inputFailed();return false;}
-  if(sample.phase==Phase::Down&&stats.contacts>=5){stats.failed=stats.cancelled=true;e.inputFailed();return false;}
+  if(stats.samples>=16384){stats.failed=stats.cancelled=true;stats.failure="lease-or-input-policy";e.inputFailed();return false;}
+  if(sample.phase==Phase::Down&&stats.contacts>=5){stats.failed=stats.cancelled=true;stats.failure="lease-or-input-policy";e.inputFailed();return false;}
   }
-  if(sink&&sample.phase==Phase::Down&&!sink->reserve()){std::fputs("UNDERLAY_ADMISSION_REJECTED persistence_unavailable_or_capacity\n",stderr);stats.failed=stats.cancelled=true;e.inputFailed();return false;}
-  if(!e.accept(sample)){if(sink)sink->cancel();stats.failed=true;return false;}
-  if(sink&&!sink->append(e.points().back())){stats.failed=true;return false;}
+  if(sink&&sample.phase==Phase::Down&&!sink->reserve()){std::fputs("UNDERLAY_ADMISSION_REJECTED persistence_unavailable_or_capacity\n",stderr);stats.failure="reservation";stats.failed=stats.cancelled=true;stats.failure="lease-or-input-policy";e.inputFailed();return false;}
+  if(!e.accept(sample)){if(sink)sink->cancel();stats.failed=true;stats.failure="sample-state";return false;}
+  if(sink&&!sink->append(e.points().back())){stats.failed=true;stats.failure="append";return false;}
   ++stats.samples;if(sustained){++stats.windowSamples;if(sample.phase==Phase::Down)++stats.windowContacts;}if(sample.phase==Phase::Down){++stats.contacts;if(sample.eraser)++stats.eraserContacts;else ++stats.penContacts;}if(sample.phase==Phase::Up)++stats.released;
   s.observe(sample.phase);
   // Contact edges cannot be hidden by subsequent frames in this input batch.
-  if(s.due(now,!e.dirty().empty())){if(e.flush()!=Submit::Accepted){stats.failed=true;return false;}++stats.submits;s.submitted(now);}
+  if(s.due(now,!e.dirty().empty())){if(e.flush()!=Submit::Accepted){stats.failed=true;stats.failure="submit";return false;}++stats.submits;s.submitted(now);}
  }
  return true;
 }
@@ -76,29 +81,30 @@ int runDirectSession(RecoveryLease& lease,SessionDisplay& display)noexcept{
   if(sustained)end=lease.deadline();
   Ns now=monotonic();if(!now||now>=end||!lease.valid())break;
   pollfd fd{marker.fd,POLLIN,0};int ready=poll(&fd,1,schedule.waitMs(now,!engine->dirty().empty()));
-  if(ready<0){if(errno==EINTR)continue;stats.failed=true;break;}
-  if(fd.revents&(POLLERR|POLLHUP|POLLNVAL)){stats.failed=true;break;}
+  if(ready<0){if(errno==EINTR)continue;stats.failed=true;stats.failure="input-poll";break;}
+  if(fd.revents&(POLLERR|POLLHUP|POLLNVAL)){stats.failed=true;stats.failure="input-descriptor";break;}
   if(fd.revents&POLLIN){
    ssize_t n=read(marker.fd,buffer.data(),sizeof(buffer));
-   if(n<0){if(errno!=EAGAIN&&errno!=EINTR){stats.failed=true;break;}}
-   else if(!validEventBytes(std::size_t(n))){stats.failed=stats.cancelled=true;engine->inputFailed();break;}
+   if(n<0){if(errno!=EAGAIN&&errno!=EINTR){stats.failed=true;stats.failure="input-read";break;}}
+   else if(!validEventBytes(std::size_t(n))){stats.failed=stats.cancelled=true;stats.failure="input-bytes";engine->inputFailed();break;}
    else {gate.open=display.admissionOpen();if(!consumeEvents({buffer.data(),std::size_t(n)/sizeof(input_event)},assembly,*engine,schedule,stats,monotonic(),&lease,display.operationSink(),pageVersion?&gate:nullptr,pageVersion?&display:nullptr))break;}
   }
   // Fifth release does not dismiss the page. User requests owner stop; a sixth
   // contact still fails closed in consumeEvents, preserving the contact budget.
   if(sustained)end=lease.deadline();
   now=monotonic();if(!lease.valid()||!now||now>=end)break;
-  if(schedule.due(now,!engine->dirty().empty())){if(engine->flush()!=Submit::Accepted){stats.failed=true;break;}++stats.submits;schedule.submitted(now);}
+  if(schedule.due(now,!engine->dirty().empty())){if(engine->flush()!=Submit::Accepted){stats.failed=true;stats.failure="submit";break;}++stats.submits;schedule.submitted(now);}
   // V2 sustained only: aggregate, then retire fully submitted points (fixed memory).
   if(sustained&&engine->retirable()){collect();engine->retireSubmitted();}
   display.pump();
   pollfd pending{marker.fd,POLLIN,0};
-  if(!assembly.contactActive()&&poll(&pending,1,0)==0){if(!display.readerBoundary())break;if(display.pageVersion()!=pageVersion){collect();surface=display.surface();auto next=std::unique_ptr<Engine>(new(std::nothrow)Engine(transform,surface,display));if(!next){stats.failed=true;break;}engine=std::move(next);pageVersion=display.pageVersion();gate.notBefore=monotonic();display.pageInstalled();}}
+  if(!assembly.contactActive()&&poll(&pending,1,0)==0){if(!display.readerBoundary())break;if(display.pageVersion()!=pageVersion){collect();surface=display.surface();auto next=std::unique_ptr<Engine>(new(std::nothrow)Engine(transform,surface,display));if(!next){stats.failed=true;stats.failure="engine-allocation";break;}engine=std::move(next);pageVersion=display.pageVersion();gate.notBefore=monotonic();display.pageInstalled();}}
  }
  // Stop admission first. No last submit after lease loss/deadline; pending damage
  // is explicitly incomplete rather than invented as displayed.
  marker.close();if(display.operationSink())display.operationSink()->cancel();stats.pressure=assembly.evidence();bool pending=!engine->dirty().empty();display.shutdown();
  std::printf("DIRECT_SUMMARY samples=%llu contacts=%llu releases=%llu pen_contacts=%llu eraser_contacts=%llu submits=%llu pressure_frames=%llu pressure_min=%d pressure_max=%d rubber_frames=%llu dropped=%llu failed=%d cancelled=%d pending=%d optical_latency=NOT_MEASURED\n",(unsigned long long)stats.samples,(unsigned long long)stats.contacts,(unsigned long long)stats.released,(unsigned long long)stats.penContacts,(unsigned long long)stats.eraserContacts,(unsigned long long)stats.submits,(unsigned long long)stats.pressure.pressureFrames,stats.pressure.min,stats.pressure.max,(unsigned long long)stats.pressure.rubberFrames,(unsigned long long)stats.pressure.drops,stats.failed,stats.cancelled,pending);
+ std::fflush(stdout);if(stats.failed)std::fprintf(stderr,"DIRECT_FAILURE reason=%s samples=%llu contacts=%llu releases=%llu\n",stats.failure?stats.failure:"unclassified",(unsigned long long)stats.samples,(unsigned long long)stats.contacts,(unsigned long long)stats.released);
  collect();std::fprintf(stderr,"READER_INPUT_GATE unadmitted_samples=%llu\n",(unsigned long long)gate.rejected);
  for(int metric=0;metric<3;++metric){
   Ns minimum=~Ns(0),maximum=0,total=0;std::size_t count=0;

@@ -16,6 +16,9 @@ jobs:
       matrix:
         sanitizer: ['', 'address,undefined']
     env:
+      CCACHE_DIR: ${{ github.workspace }}/.ci-ccache
+      CCACHE_MAXSIZE: 512M
+      CCACHE_COMPILERCHECK: content
       QT_QPA_PLATFORM: offscreen
       ASAN_OPTIONS: detect_leaks=0:abort_on_error=1
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
@@ -24,7 +27,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Linux build dependencies
-        run: sudo apt-get update && sudo apt-get install -y ninja-build libsystemd-dev libssl-dev libgl1-mesa-dev libxkbcommon-dev
+        run: sudo apt-get update && sudo apt-get install -y ccache ninja-build libsystemd-dev libssl-dev libgl1-mesa-dev libxkbcommon-dev
       - name: Exact Qt version for host tests
         uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125 # v4
         with:
@@ -53,12 +56,26 @@ jobs:
         with:
           path: .ci-deps/mupdf-host
           key: ${{ steps.mupdf-cache.outputs.cache-primary-key }}
+      - name: Restore compiler cache
+        id: compiler-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .ci-ccache
+          key: reader-qt682-mupdf1283-ubuntu2404-${{ runner.arch }}-${{ matrix.sanitizer }}-${{ github.sha }}
+          restore-keys: |
+            reader-qt682-mupdf1283-ubuntu2404-${{ runner.arch }}-${{ matrix.sanitizer }}-
       - name: Build changed production paths and regression executables
         env:
           SANITIZER: ${{ matrix.sanitizer }}
         run: |
-          cmake -S reader -B .ci-build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_VENDOR_RUNTIME=ON -DSPIKE_SANITIZER="$SANITIZER" -DMUPDF_INCLUDE="$PWD/.ci-deps/mupdf-host/source/include" -DMUPDF_ARCHIVES="$PWD/.ci-deps/mupdf-host/lib/libmupdf.a;$PWD/.ci-deps/mupdf-host/lib/libmupdf-third.a"
-          cmake --build .ci-build --parallel 2 --target ui-damage-tests eink-refresh-tests styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests reader-experience1-prepare
+          ci_cmake_args=()
+          if [ -n "$SANITIZER" ]; then ci_cmake_args+=('-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O1 -g1 -DNDEBUG'); fi
+          cmake -S reader -B .ci-build -G Ninja -DCMAKE_CXX_COMPILER_LAUNCHER=ccache "${ci_cmake_args[@]}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_VENDOR_RUNTIME=ON -DSPIKE_SANITIZER="$SANITIZER" -DMUPDF_INCLUDE="$PWD/.ci-deps/mupdf-host/source/include" -DMUPDF_ARCHIVES="$PWD/.ci-deps/mupdf-host/lib/libmupdf.a;$PWD/.ci-deps/mupdf-host/lib/libmupdf-third.a"
+          cmake --build .ci-build --parallel 2 --target sustained-session-tests ui-damage-tests eink-refresh-tests
+          .ci-build/sustained-session-tests
+          .ci-build/ui-damage-tests
+          .ci-build/eink-refresh-tests
+          cmake --build .ci-build --parallel 2 --target styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests reader-experience1-prepare
       - name: Native Linux fixture loader
         run: |
           mkdir -p .ci-sysroot/usr/lib
@@ -74,6 +91,7 @@ jobs:
       - name: Run production-path tests with simulated input and vendor boundaries
         run: |
           set -euo pipefail
+          .ci-build/sustained-session-tests
           .ci-build/ui-damage-tests
           .ci-build/eink-refresh-tests
           .ci-build/styled-integration-tests
@@ -84,3 +102,9 @@ jobs:
           .ci-build/selection-route-tests "$PWD/reader" "$PWD/.ci-test-data/selection" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           .ci-build/ux-behavior-tests "$PWD/reader" "$PWD/.ci-test-data/ux" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           echo 'Linux host regressions only; tablet ABI, optical behavior and live providers are not qualified.'
+      - name: Preserve compiler cache after success or failure
+        if: always() && !cancelled()
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .ci-ccache
+          key: ${{ steps.compiler-cache.outputs.cache-primary-key }}

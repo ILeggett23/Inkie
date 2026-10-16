@@ -14,6 +14,7 @@ Base: Inkie `85a4451357f478ad04c7d02d667eebb0110a42ca`; isolated branch `fix/ui-
 | Cleanup color retention | UI retirement/replacement could classify only newly white pixels, losing the removed pigment class. | Sample the previously displayed footprint before composition and retain its class through the existing local cleanup queue. No new waveform constants or full-update flags. |
 | Notes state | A settled asynchronous removal left Note mode pointing at an empty selected record. | Return that state to Hub, disable its ink owner, and retire selection/keyboard/playback controls. Busy/error snapshots do not trigger this transition. Refused delete commands retain the current view. |
 | Tom color | The reply color flag inspected only the current 640-pixel viewport. | Classify retained stroke styles across the reply, including color below the visible area. |
+| Tom drawing presentation | Artificial playback delay contributed to time before the drawing was fully shown. | Use the existing Quick playback speed for visual replies. Retain identical geometry, frame/point work limits, image quality, provider settings and review policy. Handwriting keeps its existing cadence. |
 | Tom scrolling | Viewport-only jobs rebuilt and compared the whole playback plan. | Reuse the immutable plan and retain the existing playback cursor. A completed reply must not animate again when scrolled. |
 | Tom streamed handwriting | A newer prefix canceled an in-flight prefix even when request/style were identical. | Allow a valid immutable prefix to finish and appear while later text waits. Changed requests, style changes and visual jobs still cancel. Final completion still requires the current job identity. |
 | Raster replacement | Every replacement compared individual pixels across the entire canvas. | Skip identical rows, find changed row spans and copy only those spans. |
@@ -36,6 +37,10 @@ Base: Inkie `85a4451357f478ad04c7d02d667eebb0110a42ca`; isolated branch `fix/ui-
 
 ## Overload hardening
 
+`consumeEvents` sampled admission once per 64-event read. A completed stroke could make the saver temporarily busy before another Down in that same batch, so the next reservation failure ended the session. Recheck admission before each fresh Down and drain a blocked contact through Up using the existing input gate. Existing lease, frame-integrity and sustained-rate limits retain their terminal safeguards. A new production-input regression verifies temporary pressure does not cancel saved work and the next contact succeeds after capacity returns.
+
+Reader exits now emit a stable failure category and flush their summary before fatal teardown. The shell logs its numeric failure reason once; no ink coordinates, text, credentials or per-point logging are added.
+
 Closed Notes and Tom panels retain several full-frame buffers and worker caches. Before opening the other panel, drain and retire the inactive owner, then release its buffers. Active owners and unsaved ink are never evicted. Tom retirement has an explicit short polling budget; an unfinished retirement asks for another moment instead of ending the reader. Notes allocation failure is reported locally. Large asynchronous ink-result damage also stays regional rather than escalating to a complete update. Recovery, durability checks, watchdogs and unsaved-input refusal remain enabled. These source-backed repairs do not establish that every reported random crash had the same cause; OOM and device failure logs still require physical qualification.
 
 ## Validation and limits
@@ -47,3 +52,7 @@ Production-path regressions cover settings opening/closing, Selection plus the h
 The GitHub workflow uses Qt 6.8.2 and the original pinned MuPDF 1.28.3 source, in release and ASan/UBSan configurations. Its loader alias supports native Linux test fixtures only; it is not a tablet SDK or deployable app. No recovery key, real books, tablet credentials or provider keys are supplied to CI. Workflow results must be recorded before declaring these repairs validated.
 
 Tom changes reduce avoidable local preparation/rendering work. They do not establish faster provider reasoning or image generation. No model, reasoning budget, illustration quality, consent, cost cap or review policy is downgraded. No live provider request, production deployment or tablet installation has been performed.
+
+## Read-only tablet diagnostic evidence
+
+The user authorized read-only crash diagnostics. Four retained direct-reader failures were inspected: three exited78 with unsaved/interrupted input and a non-durable final report; one was killed by signal9. Recovery restored stock in each retained owner record. The checked kernel window shows OOM-enable/disable messages but no OOM kill or segmentation fault. Failed fuse-unit signal9 records also occur during normal cleanup and must not be labeled app crashes. The latest retained session ended normally on the power button:62 contacts,7398 submissions, failed0, pending0, unsaved0, durable report1. Older failures are not proof that the current installed candidate has an OOM defect; exact input failure causes were not present in those summaries. Local raw diagnostic captures remain outside Git. The new admission regression establishes a source defect independently; deployment/physical validation is still required.

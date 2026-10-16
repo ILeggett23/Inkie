@@ -153,6 +153,6 @@ void Panel::composite(spike::Surface out,spike::Rect r)const noexcept{if(mode_==
  /* Preserve redesign8: opaque popovers are above the note's saved and live ink. */
  auto above=[&](spike::Rect panel){for(int y=std::max(r.y0,panel.y0);y<std::min(r.y1,panel.y1);++y)for(int x=std::max(r.x0,panel.x0);x<std::min(r.x1,panel.x1);++x)out.pixels[std::size_t(y)*out.stridePixels+x]=paper_[std::size_t(y)*1632+x];};
  if(inkActions_&&mode_==Mode::Note&&!textView_)above({780,ib::notes::NoteArea.y1-300,1550,ib::notes::NoteArea.y1-12});if(picker_&&mode_==Mode::Note&&!textView_)above(ib::notes::notePicker(view_.note["expanded"].toBool()));if(keyboard_.active())above(ux::TextInput::Panel);}
-bool Panel::retire()noexcept{if(contact()||unsaved()||!runtime_.retire())return false;open_=close_=false;canvas_.enable(false);return true;}
+bool Panel::retire(unsigned ms)noexcept{if(contact()||unsaved()||!runtime_.retire(ms))return false;open_=close_=false;canvas_.enable(false);return true;}
 bool Panel::finish(unsigned ms)noexcept{inkGesture_={};playback_.suspend(canvas_);playback_.clear();finishingPlayback_=false;return runtime_.finish(ms);}
 }

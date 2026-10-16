@@ -43,7 +43,7 @@ struct Scheduler {
  void submitted(Ns now)noexcept{last=now;force=false;}
  int waitMs(Ns now,bool dirty)const noexcept;
 };
-struct SessionStats {std::uint64_t samples{},submits{},contacts{},released{},penContacts{},eraserContacts{};bool failed{},cancelled{};PressureEvidence pressure{};Ns windowStart{};std::uint64_t windowSamples{},windowContacts{};};
+struct SessionStats {std::uint64_t samples{},submits{},contacts{},released{},penContacts{},eraserContacts{};bool failed{},cancelled{};PressureEvidence pressure{};Ns windowStart{};std::uint64_t windowSamples{},windowContacts{};const char* failure{};};
 struct OperationSink {
  virtual bool reserve()noexcept=0;
  virtual bool append(const Point&)noexcept=0;
