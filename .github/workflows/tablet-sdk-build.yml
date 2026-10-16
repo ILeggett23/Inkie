@@ -1,0 +1,64 @@
+name: Verified Ferrari tablet build
+on:
+  push:
+    branches: [fix/ui-input-refresh]
+    paths: ['reader/tools/ci-tablet-build.sh', 'reader/tools/package-tablet-update.py', '.github/workflows/tablet-sdk-build.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tablet-sdk:
+    runs-on: ubuntu-24.04-arm
+    container: ubuntu:22.04
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Exact original SDK host environment
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential ninja-build python3 python3-pip file pkg-config binutils xz-utils gh git
+          pip3 install cmake==3.31.6
+          python3 - <<'PY'
+          import shutil
+          free=shutil.disk_usage('.').free
+          print('BUILD_FREE_BYTES',free)
+          assert free>=12*1024**3, 'Insufficient fresh build capacity'
+          PY
+      - name: Verify original recovered dependencies and install isolated SDK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .tablet-deps .tablet-output
+          gh release download tablet-sdk-dependencies-20261016 --repo "$GITHUB_REPOSITORY" --pattern tablet-sdk-dependencies.tar.gz --dir .tablet-deps
+          echo 'bd0e759a6f0941ff7588a4236f92243f572fc15b5504d4b2846016064595ac96  .tablet-deps/tablet-sdk-dependencies.tar.gz' | sha256sum -c -
+          tar -xzf .tablet-deps/tablet-sdk-dependencies.tar.gz -C .tablet-deps
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('.tablet-deps')
+          for x in json.loads((root/'DEPENDENCIES.json').read_text()):
+              p=root/x['path']; assert p.stat().st_size==x['bytes'] and hashlib.sha256(p.read_bytes()).hexdigest()==x['sha256'],x['path']
+          PY
+          mv .tablet-deps/sdk-installer.sh .tablet-deps/remarkable-production-image-5.7.119-ferrari-public-aarch64-toolchain.sh
+          bash .tablet-deps/remarkable-production-image-5.7.119-ferrari-public-aarch64-toolchain.sh -y -d "$PWD/.tablet-sdk"
+          tar -xzf .tablet-deps/mupdf-source.tar.gz -C .tablet-deps
+          chmod +x .tablet-deps/guard/scripts/*.sh
+      - name: Origin guard, target regressions and candidate build
+        run: |
+          set -euo pipefail
+          export RM_SDK_ROOT="$PWD/.tablet-sdk"
+          export RM_SDK_INSTALLER="$PWD/.tablet-deps/remarkable-production-image-5.7.119-ferrari-public-aarch64-toolchain.sh"
+          export INKBOUND_DEVICE_OS_VERSION=3.27.3.0 INKBOUND_SDK_SOFTWARE_RELEASE=3.27.0.97 INKBOUND_SDK_IMAGE_VERSION=5.7.119
+          .tablet-deps/guard/scripts/configure-ferrari-sdk.sh -- bash reader/tools/ci-tablet-build.sh 2>&1 | tee .tablet-output/build.log
+      - name: Preserve candidate and verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: verified-tablet-candidate
+          path: .tablet-output/
+          retention-days: 7
+          if-no-files-found: error
