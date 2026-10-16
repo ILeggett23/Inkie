@@ -1,0 +1,73 @@
+name: Reader UI and refresh regressions
+on:
+  push:
+    branches: [fix/ui-input-refresh]
+  pull_request:
+    paths: ['reader/**', '.github/workflows/reader-ui-tests.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux-host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: ['', 'address,undefined']
+    env:
+      QT_QPA_PLATFORM: offscreen
+      ASAN_OPTIONS: detect_leaks=0:abort_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Linux build dependencies
+        run: sudo apt-get update && sudo apt-get install -y ninja-build libsystemd-dev libssl-dev libgl1-mesa-dev libxkbcommon-dev
+      - name: Exact Qt version for host tests
+        uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125 # v4
+        with:
+          version: '6.8.2'
+          arch: linux_gcc_64
+          cache: true
+      - name: Recover pinned dependency source without a VM or recovery key
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .ci-deps
+          gh release download linux-ci-dependency-source-20261016 --repo "$GITHUB_REPOSITORY" --pattern mupdf-1.28.3-source.tar.gz --dir .ci-deps
+          echo '37c3209dc0e06fa4f3781ed44839ad933a9e6143eb4731f99e069204715bcef2  .ci-deps/mupdf-1.28.3-source.tar.gz' | sha256sum -c -
+          tar -xzf .ci-deps/mupdf-1.28.3-source.tar.gz -C .ci-deps
+          bash reader/tools/build-reader-mupdf.sh "$PWD/.ci-deps/mupdf-1.28.3-source" "$PWD/.ci-deps/mupdf-host" host
+      - name: Build changed production paths and regression executables
+        env:
+          SANITIZER: ${{ matrix.sanitizer }}
+        run: |
+          cmake -S reader -B .ci-build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_VENDOR_RUNTIME=ON -DSPIKE_SANITIZER="$SANITIZER" -DMUPDF_INCLUDE="$PWD/.ci-deps/mupdf-host/source/include" -DMUPDF_ARCHIVES="$PWD/.ci-deps/mupdf-host/lib/libmupdf.a;$PWD/.ci-deps/mupdf-host/lib/libmupdf-third.a"
+          cmake --build .ci-build --parallel 2 --target ui-damage-tests eink-refresh-tests styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests reader-experience1-prepare
+      - name: Native Linux fixture loader
+        run: |
+          mkdir -p .ci-sysroot/usr/lib
+          ln -s /lib64/ld-linux-x86-64.so.2 .ci-sysroot/usr/lib/ld-linux-aarch64.so.1
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          lib = Path(os.environ['QT_ROOT_DIR']) / 'lib'
+          dest = Path('.ci-sysroot/usr/lib')
+          for p in lib.glob('*.so*'):
+              (dest / p.name).symlink_to(p.resolve())
+          PY
+      - name: Run production-path tests with simulated input and vendor boundaries
+        run: |
+          set -euo pipefail
+          .ci-build/ui-damage-tests
+          .ci-build/eink-refresh-tests
+          .ci-build/styled-integration-tests
+          .ci-build/styled-publication-tests
+          .ci-build/tom-reply-ink-tests
+          .ci-build/tom-panel-tests
+          .ci-build/notes-foundation-tests "$PWD/reader" "$PWD/.ci-sysroot"
+          .ci-build/selection-route-tests "$PWD/reader" "$PWD/.ci-test-data/selection" "$PWD/.ci-build" "$PWD/.ci-sysroot"
+          .ci-build/ux-behavior-tests "$PWD/reader" "$PWD/.ci-test-data/ux" "$PWD/.ci-build" "$PWD/.ci-sysroot"
+          echo 'Linux host regressions only; tablet ABI, optical behavior and live providers are not qualified.'

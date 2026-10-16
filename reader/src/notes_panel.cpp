@@ -114,7 +114,7 @@ bool Panel::finger(int x,int y){if(!open_||x<0||x>=1620||y<0||y>=2160||contact()
   case NoteUndo:send({{"op","undo"}});break;case NoteRedo:send({{"op","redo"}});break;
   case NoteSource:requestSource(note["anchor"].toObject());break;
   case NoteDone:case NoteSave:closeAfterSave_=send({{"op","note.minimized"},{"value",true}});break; /* everything is saved as it is written; Save just closes */
-  case NoteDelete:if(confirmDelete_){QJsonObject del{{"op","note.delete"},{"confirmed",true}};if(!note["highlight"].toString().isEmpty())del["withHighlight"]=true; /* its highlight goes with it */send(del);mode_=Mode::Hub;confirmDelete_=false;}else confirmDelete_=true;break;
+  case NoteDelete:if(confirmDelete_){QJsonObject del{{"op","note.delete"},{"confirmed",true}};if(!note["highlight"].toString().isEmpty())del["withHighlight"]=true; /* its highlight goes with it */if(send(del)){mode_=Mode::Hub;confirmDelete_=false;}}else confirmDelete_=true;break;
   case NoteFavorite:if(favorites_&&!note.isEmpty()&&!favorites_->toggle(note["id"].toString()))notice_="The star could not be saved";break;
   case NoteSourceColor:if(note["highlight"].toString().isEmpty())notice_="This note has no linked highlight";else sourceColor_=!sourceColor_;break;
   default:if(picker_&&id>=ib::reader::PenBase&&id<ib::reader::PenBase+8){style_.tool=styled::Tool(unsigned(id-ib::reader::PenBase));selectInk_=inkActions_=eraser_=false;canvas_.setEraser(false);canvas_.setStyle(style_);break;} /* the highlighter (8) has no place on a note */
@@ -135,6 +135,11 @@ bool Panel::tick(){if(!open_||contact()||bindingRejected_)return false;retiredPl
  if(fresh.revision==view_.revision&&fresh.busy==view_.busy&&fresh.saved==view_.saved){
   if(!followUps_.empty()&&!finishingPlayback_&&!playback_.active()&&!view_.busy&&!pendingCommand_&&view_.error.isEmpty()&&view_.ready){auto next=followUps_.front();followUps_.pop_front();send(next);paint();mark();return true;}if(advanceClose()){paint();mark();return true;}return played;}
  if(fresh.exports!=view_.exports)notice_="Ink SVG saved on this tablet.";if(fresh.selectedBounds!=view_.selectedBounds||fresh.selectedInk!=view_.selectedInk){auto add=[&](const View& v){if(v.selectedInk.isEmpty())return;auto b=v.selectedBounds;spike::Rect rect{int(std::floor(b.left()))+v.window.area.x0-8,int(std::floor(b.top()))+v.window.area.y0-v.window.scroll-8,int(std::ceil(b.right()))+v.window.area.x0+10,int(std::ceil(b.bottom()))+v.window.area.y0-v.window.scroll+10};rect=ib::intersect(rect,v.window.area);if(!rect.empty()){if(damageCount_<damage_.size())damage_[damageCount_++]=rect;else damage_[damage_.size()-1].include(rect);}};add(view_);add(fresh);}
+ // A completed refresh can remove the selected note asynchronously. A missing
+ // note is the Hub state, never an empty writable Note sheet. Busy snapshots
+ // and rejected commands retain the existing view.
+ const bool removed=mode_==Mode::Note&&!view_.selected.isEmpty()&&!view_.note.isEmpty()&&fresh.ready&&!fresh.busy&&fresh.error.isEmpty()&&fresh.selected.isEmpty()&&fresh.note.isEmpty();
+ if(removed){mode_=Mode::Hub;textView_=picker_=selectInk_=inkActions_=eraser_=false;confirmDelete_=false;keyboard_.cancel();keyboard_.acknowledge();playback_.suspend(canvas_);playback_.clear();canvas_.enable(false);++revealSceneEpoch_;}
  view_=std::move(fresh);if(!view_.busy)pendingCommand_=false;if(view_.contentRevision!=contentRevision_){contentRevision_=view_.contentRevision;documentChanged_=true;}
  if(!view_.error.isEmpty()){followUps_.clear();if(finishingPlayback_&&finishCommandSent_){finishingPlayback_=false;finishCommandSent_=false;notice_="Tom’s reply is saved. Reopen the note to see it.";}}
  if(mode_==Mode::Note&&view_.ready&&!view_.busy&&!view_.note.isEmpty()){const auto area=ib::notes::noteArea(view_.note["expanded"].toBool());if(view_.window.area.x0!=area.x0||view_.window.area.x1!=area.x1||view_.window.area.y0!=area.y0||view_.window.area.y1!=area.y1){send({{"op","native.window"},{"area",QJsonArray{area.x0,area.y0,area.x1,area.y1}}});}}

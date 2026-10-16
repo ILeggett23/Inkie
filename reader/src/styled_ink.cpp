@@ -87,6 +87,10 @@ bool Raster::line(Coordinate from,Coordinate to)noexcept{
  if(!eraser_&&style_.tool==Tool::Ballpoint)radius*=0.80+0.20*std::abs(std::cos(angle*2));
  double scale=matrix_.scale(),expansion=(!eraser_&&(style_.tool==Tool::Paintbrush||style_.tool==Tool::Calligraphy))?1.8:1.0,extent=std::max(1.0,radius*stretch_*expansion+1),step=std::max(0.25,radius*0.4);int steps=std::max(1,int(std::ceil(len/step)));
  if(steps>10000||double(steps+1)*(extent*2+2)*(extent*2+2)>4000000)return false;
+ // A transformed segment is linear, so expanded endpoint bounds contain every
+ // brush stamp. Skip offscreen work without changing contact or point history.
+ {const auto& m=matrix_.value;const double ax=m[0]*from.x+m[2]*from.y+m[4],ay=m[1]*from.x+m[3]*from.y+m[5],bx=m[0]*to.x+m[2]*to.y+m[4],by=m[1]*to.x+m[3]*to.y+m[5];if(std::max(ax,bx)+extent<0||std::min(ax,bx)-extent>width_||std::max(ay,by)+extent<0||std::min(ay,by)-extent>height_)return true;}
+
  double cosine=std::cos(angle),sine=std::sin(angle);auto [ia,ib,ic,id,ie,iff]=inverse_;auto [ma,mb,mc,md,me,mf]=matrix_.value;
  for(int k=0;k<=steps;++k){double t=double(k)/steps,cx=from.x+dx*t,cy=from.y+dy*t,vx=ma*cx+mc*cy+me,vy=mb*cx+md*cy+mf;
   auto bounds=clip({int(std::floor(vx-extent)),int(std::floor(vy-extent)),int(std::ceil(vx+extent))+1,int(std::ceil(vy+extent))+1},width_,height_);
@@ -105,7 +109,7 @@ bool Raster::line(Coordinate from,Coordinate to)noexcept{
  }return true;
 }
 void Raster::cancel()noexcept{if(!active_)return;for(int y=activeDamage_.y0;y<activeDamage_.y1;++y)for(int x=activeDamage_.x0;x<activeDamage_.x1;++x){auto at=std::size_t(y)*stride_+x;if(stamps_[at]==serial_)pixels_[at]=under_[at];}pending_.include(activeDamage_);active_=false;}
-void Raster::replace(std::span<const std::uint32_t> next){product::require(!active_&&next.size()==pixels_.size(),"styled-replace-invalid");spike::Rect changed{};for(int y=0;y<height_;++y)for(int x=0;x<width_;++x){auto i=std::size_t(y)*stride_+x;if(next[i]!=pixels_[i]){pixels_[i]=next[i];changed.include({x,y,x+1,y+1});}}pending_.include(changed);}
+void Raster::replace(std::span<const std::uint32_t> next){product::require(!active_&&next.size()==pixels_.size(),"styled-replace-invalid");spike::Rect changed{};for(int y=0;y<height_;++y){const auto at=std::size_t(y)*stride_;const auto* source=next.data()+at;auto* target=pixels_.data()+at;if(std::memcmp(source,target,std::size_t(width_)*sizeof(std::uint32_t))==0)continue;int left=0,right=width_;while(left<right&&source[left]==target[left])++left;while(right>left&&source[right-1]==target[right-1])--right;std::copy_n(source+left,right-left,target+left);changed.include({left,y,right,y+1});}pending_.include(changed);}
 void Raster::beginHighlights(){product::require(!active_&&serial_!=std::numeric_limits<std::uint32_t>::max(),"styled-highlight-epoch");++serial_;}
 void Raster::highlight(const QJsonArray& quads,Matrix matrix,unsigned color,std::optional<semantic::SourceClip> crop,bool sameLayer){product::require((!crop||crop->valid())&&!active_&&matrix.valid()&&color>0&&color<8&&quads.size()<=8192&&serial_!=std::numeric_limits<std::uint32_t>::max(),"styled-highlight-invalid");if(!sameLayer)++serial_;std::uint64_t work=0;
  // Text highlights are blocks, as in a native reader: one rectangle per text line (words and the spaces between
