@@ -1,0 +1,24 @@
+{
+  "repository": "ILeggett23/Inkie",
+  "private_verified": true,
+  "vm": "inkbound-builder",
+  "machine_id": "622e1d96c4974ce09dc3c5aca09f88e2",
+  "retire_only_after_verified_backup": true,
+  "dedicated_project_only": true,
+  "host_mounts": [],
+  "other_guest_home_is_alias": true,
+  "project_file_count": 382673,
+  "logical_bytes": 130942186129,
+  "deduplicated_bytes": 67124312776,
+  "original_vm_modified_or_deleted": false,
+  "credentials": "SSH identity directories excluded; historical project captures encrypted; recovery key stays on Mac",
+  "retirement_excludes": [
+    "inkbound-sd255",
+    "Mac source checkouts",
+    "tablet app and live data",
+    "shared Lima identities"
+  ],
+  "backup_parts": 126,
+  "source_commit_verified": "47a42fd23f365a675391e1e7dea7b8f3ad7b609e",
+  "vm_still_intact": true
+}
