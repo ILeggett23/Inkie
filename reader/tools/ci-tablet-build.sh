@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Native ARM64 cloud runner, original Ferrari SDK. Never starts the GUI or vendor runtime.
 set -euo pipefail
+umask 0077
 test "${INKBOUND_FERRARI_SDK_VERIFIED:-}" = 1
 root=$(pwd -P)
 deps="$root/.tablet-deps"
