@@ -65,7 +65,19 @@ if not testpack.exists():
             item=tarfile.TarInfo('chunks/'+digest);item.size=p.stat().st_size;item.mode=0o600
             with p.open('rb') as source:archive.addfile(item,source)
 spec=importlib.util.spec_from_file_location('inkie_restore',R/'restore_snapshot.py');module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-result=module.restore(R/'recovery/remote-vm-manifest.jsonl',packs,R/'recovery/restore-tool-test',prefix)
+result_path=R/'restore-tool-result.json'
+if result_path.exists():
+    result=json.loads(result_path.read_text())
+    with manifest.open() as source:
+        for line in source:
+            e=json.loads(line)
+            if e['type']=='entry' and e['kind']=='file' and e['path'].startswith(prefix+'/'):
+                recovered=Path(result['destination']).joinpath(*PurePosixPath(e['path']).parts)
+                assert recovered.stat().st_size==e['size'] and sha(recovered)==e['sha256']
+else:
+    destination=R/'recovery/restore-tool-test'
+    assert not destination.exists(), 'Incomplete restore sample retained for diagnosis'
+    result=module.restore(R/'recovery/remote-vm-manifest.jsonl',packs,destination,prefix)
 expected_source_count=sum(line.split('  ',1)[1].startswith('src/') for line in (R.parent/'release21b/SOURCE-release-r11.sha256').read_text().splitlines())
 assert result['restored_regular_files']==source_count==expected_source_count and source_count>0
 (R/'restore-tool-result.json').write_text(json.dumps(result,indent=2)+'\n')
