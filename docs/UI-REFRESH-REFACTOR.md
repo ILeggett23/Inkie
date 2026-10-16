@@ -37,6 +37,8 @@ Base: Inkie `85a4451357f478ad04c7d02d667eebb0110a42ca`; isolated branch `fix/ui-
 
 ## Overload hardening
 
+The native sanitizer build also exposed a MuPDF local error-state variable missing its `fz_var` guard. Protect that flag across MuPDF exception jumps and verify an invalid page extraction returns unavailable, drops the cached document, and a subsequent valid extraction succeeds. This follows [MuPDF’s exception-handling contract](https://mupdf.readthedocs.io/en/1.28.0/_static/generated/c/html/context_8h.html).
+
 `consumeEvents` sampled admission once per 64-event read. A completed stroke could make the saver temporarily busy before another Down in that same batch, so the next reservation failure ended the session. Recheck admission before each fresh Down and drain a blocked contact through Up using the existing input gate. Existing lease, frame-integrity and sustained-rate limits retain their terminal safeguards. A new production-input regression verifies temporary pressure does not cancel saved work and the next contact succeeds after capacity returns.
 
 Reader exits now emit a stable failure category and flush their summary before fatal teardown. The shell logs its numeric failure reason once; no ink coordinates, text, credentials or per-point logging are added.

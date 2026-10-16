@@ -81,7 +81,7 @@ jobs:
           .ci-build/sustained-session-tests
           .ci-build/ui-damage-tests
           .ci-build/eink-refresh-tests
-          cmake --build .ci-build --parallel 2 --target styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests reader-experience1-prepare
+          cmake --build .ci-build --parallel 2 --target styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests semantic-tests reader-experience1-prepare
       - name: Native Linux fixture loader
         run: |
           mkdir -p .ci-sysroot/usr/lib
@@ -105,6 +105,7 @@ jobs:
           .ci-build/tom-reply-ink-tests
           .ci-build/tom-panel-tests
           .ci-build/notes-foundation-tests "$PWD/reader" "$PWD/.ci-sysroot"
+          .ci-build/semantic-tests "$PWD/reader" "$PWD/.ci-test-data/semantic" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           .ci-build/selection-route-tests "$PWD/reader" "$PWD/.ci-test-data/selection" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           .ci-build/ux-behavior-tests "$PWD/reader" "$PWD/.ci-test-data/ux" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           echo 'Linux host regressions only; tablet ABI, optical behavior and live providers are not qualified.'
