@@ -1,0 +1,27 @@
+{
+  "completed_at": "2026-10-16T11:11:15.598775+00:00",
+  "repository": "https://github.com/ILeggett23/Inkie",
+  "release": "https://github.com/ILeggett23/Inkie/releases/tag/inkbound-builder-backup-2026-10-15",
+  "backup_verified": true,
+  "backup_commit": "768499d9f787bdac8a7bcab009e75fcd0b7d5f76",
+  "snapshot_index_sha256": "fa6f984f2b35742f26c9983ae2be2c12e9572544b0c6e3495ac489650e7f52e9",
+  "regular_files_backed_up": 382673,
+  "encrypted_packs_verified": 126,
+  "target_vm_path": "/Users/zayway/Documents/Codex/inkbound-lima/inkbound-builder",
+  "vm_deleted": true,
+  "target_directory_absent": true,
+  "target_absent_from_lima_inventory": true,
+  "other_vms_preserved": [
+    "inkbound-sd255"
+  ],
+  "shared_lima_config_preserved": true,
+  "ssh_recovery_identity_preserved": true,
+  "mac_source_originals_untouched": true,
+  "tablet_app_and_live_data_untouched": true,
+  "mac_free_bytes_before": 14461018112,
+  "mac_free_bytes_after": 191089262592,
+  "mac_available_bytes_increase": 176628244480,
+  "vm_allocated_bytes_removed": 136313655296,
+  "measurement_note": "Available filesystem bytes measured with os.statvfs on the same Mac volume; concurrent OS activity can affect the difference.",
+  "shutdown_note": "Normal shutdown timed out. Lima force stop completed; two verified leftover target-only processes were terminated before Lima deletion."
+}

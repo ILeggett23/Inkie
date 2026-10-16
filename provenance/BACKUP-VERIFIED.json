@@ -11,6 +11,7 @@
   "source_unchanged": true,
   "critical_remote_restore_files": 875,
   "restore_utility_source_files": 257,
-  "vm_deleted": false,
-  "source_tree_originals_modified": false
+  "vm_deleted": true,
+  "source_tree_originals_modified": false,
+  "retirement_receipt": "VM-RETIREMENT-RECEIPT.json"
 }
