@@ -1,0 +1,473 @@
+{
+  "prompt": "Draw a detailed cross-section of the human eye and label its major structures.",
+  "scene": {
+    "version": 2,
+    "category": "scientific",
+    "strategy": "image_native",
+    "title": "Draw a detailed cross-section of the human eye and label its major structures.",
+    "canvas": [
+      1200,
+      800
+    ],
+    "palette": [],
+    "objects": [
+      {
+        "id": "composition",
+        "parent": "",
+        "kind": "image",
+        "bounds": [
+          240,
+          140,
+          720,
+          480
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "cornea",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          276.0,
+          288.8,
+          129.6,
+          172.79999999999998
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "cornea-label",
+        "parent": "cornea",
+        "kind": "label",
+        "bounds": [
+          20,
+          35,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "cornea",
+          "size": 26
+        }
+      },
+      {
+        "id": "iris",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          384.0,
+          274.4,
+          57.6,
+          211.2
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "iris-label",
+        "parent": "iris",
+        "kind": "label",
+        "bounds": [
+          980,
+          35,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "iris",
+          "size": 26
+        }
+      },
+      {
+        "id": "pupil",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          391.2,
+          351.2,
+          50.400000000000006,
+          57.599999999999994
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "pupil-label",
+        "parent": "pupil",
+        "kind": "label",
+        "bounds": [
+          20,
+          103,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "pupil",
+          "size": 26
+        }
+      },
+      {
+        "id": "lens",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          456.0,
+          303.20000000000005,
+          93.60000000000001,
+          153.6
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "lens-label",
+        "parent": "lens",
+        "kind": "label",
+        "bounds": [
+          980,
+          103,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "lens",
+          "size": 26
+        }
+      },
+      {
+        "id": "retina",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          744.0,
+          236.0,
+          86.39999999999999,
+          288.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "retina-label",
+        "parent": "retina",
+        "kind": "label",
+        "bounds": [
+          20,
+          171,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "retina",
+          "size": 26
+        }
+      },
+      {
+        "id": "sclera",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          412.79999999999995,
+          178.4,
+          432.0,
+          403.2
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "sclera-label",
+        "parent": "sclera",
+        "kind": "label",
+        "bounds": [
+          980,
+          171,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "sclera",
+          "size": 26
+        }
+      },
+      {
+        "id": "vitreous-body",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          556.8,
+          226.39999999999998,
+          223.2,
+          307.2
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "vitreous-body-label",
+        "parent": "vitreous-body",
+        "kind": "label",
+        "bounds": [
+          20,
+          239,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "vitreous body",
+          "size": 26
+        }
+      },
+      {
+        "id": "optic-nerve",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          830.4,
+          341.6,
+          115.2,
+          86.39999999999999
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "optic-nerve-label",
+        "parent": "optic-nerve",
+        "kind": "label",
+        "bounds": [
+          980,
+          239,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "optic nerve",
+          "size": 26
+        }
+      }
+    ],
+    "relations": [],
+    "datasets": [],
+    "required": [
+      "cornea",
+      "iris",
+      "pupil",
+      "lens",
+      "retina",
+      "sclera",
+      "vitreous-body",
+      "optic-nerve"
+    ],
+    "image": {
+      "prompt": "Draw a detailed cross-section of the human eye and label its major structures. Plan actual organic contours, internal details, perspective and shading before rendering. No substitute primitive diagram.",
+      "detail": "detailed",
+      "tool": "fineliner",
+      "size": "1536x1024"
+    },
+    "plan": {
+      "subject": "Draw a detailed cross-section of the human eye and label its major structures.",
+      "detail": "detailed",
+      "style": "educational cross-section with organic geometry and restrained filled color",
+      "components": [
+        {
+          "id": "cornea",
+          "name": "cornea",
+          "features": [
+            "curved transparent anterior boundary at the front of the eye"
+          ],
+          "layer": 0,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "iris",
+          "name": "iris",
+          "features": [
+            "thin radial diaphragm anterior to the lens"
+          ],
+          "layer": 1,
+          "depth": "detail",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "pupil",
+          "name": "pupil",
+          "features": [
+            "opening in the iris on the optical axis"
+          ],
+          "layer": 2,
+          "depth": "detail",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "lens",
+          "name": "lens",
+          "features": [
+            "biconvex transparent lens behind the iris"
+          ],
+          "layer": 3,
+          "depth": "detail",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "retina",
+          "name": "retina",
+          "features": [
+            "thin inner lining of the posterior globe"
+          ],
+          "layer": 4,
+          "depth": "detail",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "sclera",
+          "name": "sclera",
+          "features": [
+            "outer protective coat surrounding the globe"
+          ],
+          "layer": 5,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "vitreous-body",
+          "name": "vitreous body",
+          "features": [
+            "large vitreous chamber behind the lens"
+          ],
+          "layer": 6,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "optic-nerve",
+          "name": "optic nerve",
+          "features": [
+            "nerve exiting the posterior globe"
+          ],
+          "layer": 7,
+          "depth": "background",
+          "target": null,
+          "colors": [],
+          "role": "background"
+        }
+      ],
+      "spatial": [
+        {
+          "to": "iris",
+          "kind": "right-of",
+          "reason": "The lens is posterior to the iris",
+          "from": "lens"
+        },
+        {
+          "to": "lens",
+          "kind": "right-of",
+          "reason": "The vitreous chamber lies behind the lens",
+          "from": "vitreous-body"
+        }
+      ],
+      "mapKind": null,
+      "context": [],
+      "rubric": [
+        "Recognizable requested subject and every essential feature",
+        "Coherent proportions and meaningful internal geometry",
+        "Purposeful filled color and controlled shading",
+        "Clear spatial relationships and unclipped composition"
+      ]
+    }
+  },
+  "acceptance": "PLANNING_AND_MOCK_TRANSPORT_FIXTURE_ONLY; recognizability requires live generation and human review"
+}

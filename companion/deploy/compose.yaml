@@ -1,0 +1,24 @@
+services:
+  companion:
+    build: ..
+    environment:
+      INKBOUND_DATA: /var/lib/inkbound
+      INKBOUND_ORIGIN: ${INKBOUND_ORIGIN:?Set the exact HTTPS service origin}
+      INKBOUND_TOM_MODELS: ${INKBOUND_TOM_MODELS:-gpt-5.4-mini}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - private-data:/var/lib/inkbound
+    ports:
+      - "127.0.0.1:8765:8765"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1g
+    pids_limit: 64
+volumes:
+  private-data:

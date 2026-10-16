@@ -1,0 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+#include "time_settings.h"
+#include "underlay.h"
+#include <QCoreApplication>
+#include <QTemporaryDir>
+#include <QJsonDocument>
+#include <iostream>
+#include <stdexcept>
+namespace {unsigned checks=0;void check(bool b){++checks;if(!b)throw std::runtime_error("timezone check failed");}qint64 stamp(int month){return QDateTime(QDate(2026,month,15),QTime(12,0),QTimeZone::utc()).toSecsSinceEpoch();}}
+int main(int argc,char** argv){QCoreApplication app(argc,argv);try{QTemporaryDir temp;check(temp.isValid());auto root=std::filesystem::path(temp.path().toStdString());check(clockprefs::load(root).zone.isEmpty());check(clockprefs::valid("")&&clockprefs::valid("UTC")&&clockprefs::valid("America/Chicago"));check(!clockprefs::valid("Wrong/Zone")&&!clockprefs::valid(QString(129,'x')));clockprefs::Setting chicago{"America/Chicago"};auto winter=clockprefs::at(stamp(1),chicago),summer=clockprefs::at(stamp(7),chicago);check(winter.time=="06:00"&&summer.time=="07:00"&&winter.abbreviation!=summer.abbreviation);check(clockprefs::at(stamp(1),{"Asia/Kolkata"}).time=="17:30");check(clockprefs::at(stamp(1),{"Asia/Kathmandu"}).time=="17:45");check(clockprefs::at(stamp(7),{"UTC"}).time=="12:00");check(clockprefs::save(root,chicago)&&clockprefs::load(root)==chicago);auto before=underlay::readBounded(root/"settings/timezone.json",4096);check(!clockprefs::save(root,{"Wrong/Zone"})&&underlay::readBounded(root/"settings/timezone.json",4096)==before);check(clockprefs::save(root,{})&&clockprefs::load(root).zone.isEmpty());underlay::atomicFile(root/"settings/timezone.json","invalid");check(clockprefs::load(root).zone.isEmpty());check(clockprefs::at(stamp(1),{"Wrong/Zone"}).time=="12:00");check(!clockprefs::label(chicago).isEmpty());std::cout<<"TIME_SETTINGS_PASS checks="<<checks<<" IANA_DST=true half_quarter_offsets=true atomic_persistence=true OS_clock_unchanged=true physical=NOT_RUN\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

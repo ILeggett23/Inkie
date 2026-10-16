@@ -1,0 +1,6 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createHash,randomBytes} from 'node:crypto';
+import {Sha256,hashBlob} from '../../web/sha256-stream.js';
+test('streaming SHA matches independent OpenSSL for block/padding boundaries',()=>{for(const size of [0,1,55,56,63,64,65,127,128,129,1000,65537]){const bytes=randomBytes(size);for(const piece of [1,7,64,255,4096]){const hash=new Sha256();for(let n=0;n<size;n+=piece)hash.update(bytes.subarray(n,n+piece));assert.equal(hash.hex(),createHash('sha256').update(bytes).digest('hex'));assert.throws(()=>hash.update(bytes));assert.throws(()=>hash.hex());}}});
+test('book above 64 MiB hashes in bounded slices and supports cancellation',async()=>{const block=randomBytes(1024*1024),parts=Array(65).fill(block),blob=new Blob(parts),expected=createHash('sha256');for(const part of parts)expected.update(part);let previous=0,calls=0;const observed=await hashBlob(blob,bytes=>{assert.ok(bytes>previous&&bytes-previous<=1024*1024);previous=bytes;++calls;});assert.equal(observed,expected.digest('hex'));assert.equal(previous,blob.size);assert.equal(calls,65);const stop=new AbortController();await assert.rejects(hashBlob(blob,()=>stop.abort(),stop.signal),{name:'AbortError'});});

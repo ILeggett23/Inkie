@@ -1,0 +1,293 @@
+{
+  "version": 4,
+  "category": "map",
+  "strategy": "image_native",
+  "title": "small town map",
+  "canvas": [
+    1400,
+    1000
+  ],
+  "palette": [],
+  "objects": [
+    {
+      "id": "whole",
+      "parent": "",
+      "kind": "image",
+      "bounds": [
+        280,
+        220,
+        840,
+        560
+      ],
+      "style": {
+        "tool": "fineliner",
+        "width": "medium",
+        "color": "black"
+      },
+      "content": null
+    }
+  ],
+  "relations": [],
+  "datasets": [],
+  "required": [
+    "whole"
+  ],
+  "image": {
+    "prompt": "small town map",
+    "detail": "standard",
+    "size": "1536x1024",
+    "tool": "fineliner"
+  },
+  "plan": {
+    "subject": "small town map",
+    "detail": "standard",
+    "style": "illustrative",
+    "components": [
+      {
+        "id": "whole",
+        "name": "small town map",
+        "role": "subject",
+        "features": [
+          "top-down illustrative town layout",
+          "river crossing the town",
+          "two bridges over the river",
+          "school building",
+          "park area",
+          "roads and blocks suggesting a small town"
+        ],
+        "layer": 0,
+        "depth": "background",
+        "target": null,
+        "colors": [
+          "blue",
+          "green",
+          "white"
+        ]
+      }
+    ],
+    "spatial": [],
+    "mapKind": "illustrative",
+    "context": [],
+    "rubric": [
+      "Coherent requested whole subject"
+    ],
+    "picture": {
+      "spec": {
+        "version": 4,
+        "kind": "picture",
+        "category": "map",
+        "subject": "small town map",
+        "view": "top-down",
+        "style": "illustrative",
+        "detail": "standard",
+        "aspect": "landscape",
+        "tool": "fineliner",
+        "orientation": {
+          "horizontal": "town spread left to right",
+          "vertical": "river runs north to south"
+        },
+        "components": [
+          {
+            "id": "whole",
+            "parent": null,
+            "name": "small town map",
+            "semanticClass": "map",
+            "role": "whole",
+            "features": [
+              "top-down illustrative town layout",
+              "river crossing the town",
+              "two bridges over the river",
+              "school building",
+              "park area",
+              "roads and blocks suggesting a small town"
+            ],
+            "layer": 0,
+            "depth": "background",
+            "colors": [
+              "blue",
+              "green",
+              "white"
+            ],
+            "colorRole": "overall scene",
+            "label": null
+          },
+          {
+            "id": "river",
+            "parent": "whole",
+            "name": "river",
+            "semanticClass": "waterway",
+            "role": "region",
+            "features": [
+              "winding blue water",
+              "flows through the center of town",
+              "separates town areas"
+            ],
+            "layer": 1,
+            "depth": "background",
+            "colors": [
+              "blue"
+            ],
+            "colorRole": "water",
+            "label": null
+          },
+          {
+            "id": "bridge1",
+            "parent": "whole",
+            "name": "bridge",
+            "semanticClass": "bridge",
+            "role": "part",
+            "features": [
+              "bridge spanning the river in the upper town area",
+              "connects roads across the water"
+            ],
+            "layer": 2,
+            "depth": "foreground",
+            "colors": [
+              "orange",
+              "yellow"
+            ],
+            "colorRole": "bridge structure",
+            "label": null
+          },
+          {
+            "id": "bridge2",
+            "parent": "whole",
+            "name": "bridge",
+            "semanticClass": "bridge",
+            "role": "part",
+            "features": [
+              "second bridge spanning the river in the lower town area",
+              "connects roads across the water"
+            ],
+            "layer": 2,
+            "depth": "foreground",
+            "colors": [
+              "orange",
+              "yellow"
+            ],
+            "colorRole": "bridge structure",
+            "label": null
+          },
+          {
+            "id": "school",
+            "parent": "whole",
+            "name": "school",
+            "semanticClass": "building",
+            "role": "part",
+            "features": [
+              "small institutional building",
+              "near a road",
+              "clearly distinct from park and river"
+            ],
+            "layer": 2,
+            "depth": "foreground",
+            "colors": [
+              "red",
+              "white"
+            ],
+            "colorRole": "school building",
+            "label": "School"
+          },
+          {
+            "id": "park",
+            "parent": "whole",
+            "name": "park",
+            "semanticClass": "green-space",
+            "role": "part",
+            "features": [
+              "open green area",
+              "trees and grassy space",
+              "set beside town streets"
+            ],
+            "layer": 2,
+            "depth": "midground",
+            "colors": [
+              "green",
+              "yellow"
+            ],
+            "colorRole": "park greenery",
+            "label": "Park"
+          },
+          {
+            "id": "roads",
+            "parent": "whole",
+            "name": "roads",
+            "semanticClass": "road-network",
+            "role": "part",
+            "features": [
+              "simple town roads linking school park and bridges",
+              "small connected street grid"
+            ],
+            "layer": 1,
+            "depth": "midground",
+            "colors": [
+              "black",
+              "white"
+            ],
+            "colorRole": "street network",
+            "label": null
+          },
+          {
+            "id": "buildings",
+            "parent": "whole",
+            "name": "town buildings",
+            "semanticClass": "settlement",
+            "role": "region",
+            "features": [
+              "small clustered houses and blocks",
+              "distributed on both sides of the river"
+            ],
+            "layer": 1,
+            "depth": "midground",
+            "colors": [
+              "white",
+              "red",
+              "orange"
+            ],
+            "colorRole": "town blocks",
+            "label": null
+          }
+        ],
+        "relations": [
+          {
+            "from": "bridge1",
+            "to": "river",
+            "kind": "attached",
+            "reason": "bridge crosses over the river"
+          },
+          {
+            "from": "bridge2",
+            "to": "river",
+            "kind": "attached",
+            "reason": "bridge crosses over the river"
+          },
+          {
+            "from": "school",
+            "to": "roads",
+            "kind": "connected",
+            "reason": "school sits along a road"
+          },
+          {
+            "from": "park",
+            "to": "roads",
+            "kind": "adjacent",
+            "reason": "park borders town streets"
+          },
+          {
+            "from": "buildings",
+            "to": "river",
+            "kind": "adjacent",
+            "reason": "town buildings line both sides of the river"
+          },
+          {
+            "from": "school",
+            "to": "park",
+            "kind": "right-of",
+            "reason": "school and park are placed as separate landmarks in the town"
+          }
+        ]
+      },
+      "grounding": []
+    }
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "version": 3,
+  "kind": "composition",
+  "category": "technical",
+  "subject": "Semantic protocol control, not a model response",
+  "detail": "standard",
+  "style": "Protocol control only",
+  "frame": {
+    "view": "section",
+    "aspect": "landscape",
+    "horizontal": {
+      "meaning": "assembly axis",
+      "positive": "right"
+    },
+    "vertical": {
+      "meaning": "cross axis",
+      "positive": "down"
+    }
+  },
+  "image": {
+    "prompt": "Protocol control only. This fixture is never evidence of actual illustration quality.",
+    "tool": "fineliner"
+  },
+  "components": [
+    {
+      "id": "whole",
+      "parent": null,
+      "name": "whole",
+      "role": "whole",
+      "semanticClass": "mechanism",
+      "features": [
+        "Identity and region are explicit contract data"
+      ],
+      "bounds": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "layer": 0,
+      "colors": [
+        "black"
+      ],
+      "colorRole": "Black outlines identify structure",
+      "label": false,
+      "repeatGroup": null
+    },
+    {
+      "id": "body",
+      "parent": "whole",
+      "name": "body",
+      "role": "major-region",
+      "semanticClass": "body-region",
+      "features": [
+        "Identity and region are explicit contract data"
+      ],
+      "bounds": [
+        0.1,
+        0.1,
+        0.8,
+        0.8
+      ],
+      "layer": 1,
+      "colors": [
+        "black"
+      ],
+      "colorRole": "Black outlines identify structure",
+      "label": false,
+      "repeatGroup": null
+    },
+    {
+      "id": "housing",
+      "parent": "body",
+      "name": "housing",
+      "role": "part",
+      "semanticClass": "housing",
+      "features": [
+        "Identity and region are explicit contract data"
+      ],
+      "bounds": [
+        0.12,
+        0.2,
+        0.35,
+        0.55
+      ],
+      "layer": 2,
+      "colors": [
+        "blue"
+      ],
+      "colorRole": "Color identifies this declared control component",
+      "label": true,
+      "repeatGroup": null
+    },
+    {
+      "id": "actuator",
+      "parent": "body",
+      "name": "actuator",
+      "role": "part",
+      "semanticClass": "actuator",
+      "features": [
+        "Identity and region are explicit contract data"
+      ],
+      "bounds": [
+        0.5,
+        0.3,
+        0.25,
+        0.4
+      ],
+      "layer": 2,
+      "colors": [
+        "orange"
+      ],
+      "colorRole": "Color identifies this declared control component",
+      "label": true,
+      "repeatGroup": null
+    }
+  ],
+  "spatial": [
+    {
+      "from": "body",
+      "to": "whole",
+      "kind": "inside",
+      "reason": "Major region belongs to whole"
+    },
+    {
+      "from": "housing",
+      "to": "body",
+      "kind": "inside",
+      "reason": "Housing belongs to body region"
+    },
+    {
+      "from": "actuator",
+      "to": "body",
+      "kind": "inside",
+      "reason": "Actuator belongs to body region"
+    },
+    {
+      "from": "housing",
+      "to": "actuator",
+      "kind": "adjacent",
+      "reason": "Declared components are adjacent"
+    },
+    {
+      "from": "actuator",
+      "to": "housing",
+      "kind": "attached",
+      "reason": "Declared components are coupled"
+    }
+  ],
+  "topology": {
+    "adjacency": {
+      "applicable": true,
+      "reason": "The declared neighboring components are adjacent"
+    },
+    "attachment": {
+      "applicable": true,
+      "reason": "The declared control components are attached"
+    },
+    "occlusion": {
+      "applicable": false,
+      "reason": "This control has no occluded components"
+    }
+  },
+  "repetitions": [],
+  "context": [],
+  "rubric": [
+    "Semantic identity remains bound",
+    "Relations are checked against geometry"
+  ]
+}

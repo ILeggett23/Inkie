@@ -1,0 +1,46 @@
+name: Optional GitHub Pages interface
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: companion-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - name: Set public service origin without credentials
+        env:
+          INKBOUND_SERVICE_ORIGIN: ${{ vars.INKBOUND_SERVICE_ORIGIN }}
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const origin = process.env.INKBOUND_SERVICE_ORIGIN || '';
+          if (origin) {
+            const u = new URL(origin);
+            if (u.protocol !== 'https:' || u.origin !== origin) throw new Error('Exact HTTPS service origin required');
+          }
+          fs.writeFileSync('web/config.js', 'window.INKBOUND_SERVICE_ORIGIN = ' + JSON.stringify(origin) + ';\n');
+          NODE
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: web
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish static interface only
+        id: deployment
+        uses: actions/deploy-pages@v4

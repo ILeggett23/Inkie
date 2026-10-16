@@ -1,0 +1,124 @@
+{
+  "prompt": "Draw a bar chart using these values: A=-3, B=0, C=7, D=10.",
+  "scene": {
+    "version": 2,
+    "category": "chart",
+    "strategy": "native",
+    "title": "",
+    "canvas": [
+      1200,
+      800
+    ],
+    "objects": [
+      {
+        "id": "chart",
+        "parent": "",
+        "kind": "chart",
+        "bounds": [
+          0,
+          0,
+          1200,
+          800
+        ],
+        "style": {
+          "tool": "fineliner",
+          "color": "blue",
+          "width": "medium"
+        },
+        "content": {
+          "data": "measurements",
+          "type": "bar",
+          "xRange": [
+            0,
+            4
+          ],
+          "yRange": [
+            -5,
+            10
+          ]
+        }
+      }
+    ],
+    "relations": [],
+    "datasets": [
+      {
+        "id": "measurements",
+        "source": "question",
+        "rows": [
+          {
+            "id": "0",
+            "label": "A",
+            "x": 0,
+            "y": -3,
+            "row": null,
+            "column": null,
+            "category": "measured"
+          },
+          {
+            "id": "1",
+            "label": "B",
+            "x": 1,
+            "y": 0,
+            "row": null,
+            "column": null,
+            "category": "measured"
+          },
+          {
+            "id": "2",
+            "label": "C",
+            "x": 2,
+            "y": 7,
+            "row": null,
+            "column": null,
+            "category": "measured"
+          },
+          {
+            "id": "3",
+            "label": "D",
+            "x": 3,
+            "y": 10,
+            "row": null,
+            "column": null,
+            "category": "measured"
+          }
+        ]
+      }
+    ],
+    "required": [
+      "chart"
+    ],
+    "image": null,
+    "palette": [
+      {
+        "category": "measured",
+        "color": "blue"
+      }
+    ],
+    "plan": {
+      "subject": "Draw a bar chart using these values: A=-3, B=0, C=7, D=10.",
+      "detail": "standard",
+      "style": "precise data-driven native ink",
+      "components": [
+        {
+          "id": "chart",
+          "name": "chart",
+          "features": [
+            "Exact requested structure or data without invented decoration"
+          ],
+          "layer": 1,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        }
+      ],
+      "spatial": [],
+      "mapKind": null,
+      "context": [],
+      "rubric": [
+        "Correct complete data and relationships",
+        "Legible unclipped native layout"
+      ]
+    }
+  }
+}

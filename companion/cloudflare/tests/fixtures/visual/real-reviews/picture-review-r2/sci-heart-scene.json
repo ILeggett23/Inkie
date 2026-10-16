@@ -1,0 +1,253 @@
+{
+  "version": 4,
+  "category": "scientific",
+  "strategy": "image_native",
+  "title": "human heart",
+  "canvas": [
+    1200,
+    1500
+  ],
+  "palette": [],
+  "objects": [
+    {
+      "id": "whole",
+      "parent": "",
+      "kind": "image",
+      "bounds": [
+        280,
+        270,
+        640,
+        960
+      ],
+      "style": {
+        "tool": "fineliner",
+        "width": "medium",
+        "color": "black"
+      },
+      "content": null
+    }
+  ],
+  "relations": [],
+  "datasets": [],
+  "required": [
+    "whole"
+  ],
+  "image": {
+    "prompt": "human heart",
+    "detail": "standard",
+    "size": "1024x1536",
+    "tool": "fineliner"
+  },
+  "plan": {
+    "subject": "human heart",
+    "detail": "standard",
+    "style": "medical illustration",
+    "components": [
+      {
+        "id": "whole",
+        "name": "human heart",
+        "role": "subject",
+        "features": [
+          "cross-section view",
+          "internal anatomy shown",
+          "four chambers visible"
+        ],
+        "layer": 0,
+        "depth": "midground",
+        "target": null,
+        "colors": [
+          "red",
+          "pink",
+          "white"
+        ]
+      }
+    ],
+    "spatial": [],
+    "mapKind": null,
+    "context": [],
+    "rubric": [
+      "Coherent requested whole subject"
+    ],
+    "picture": {
+      "spec": {
+        "version": 4,
+        "kind": "picture",
+        "category": "scientific",
+        "subject": "human heart",
+        "view": "cross-section",
+        "style": "medical illustration",
+        "detail": "standard",
+        "aspect": "portrait",
+        "tool": "fineliner",
+        "orientation": {
+          "horizontal": "slightly angled to viewer",
+          "vertical": "upright"
+        },
+        "components": [
+          {
+            "id": "whole",
+            "parent": null,
+            "name": "human heart",
+            "semanticClass": "organ",
+            "role": "whole",
+            "features": [
+              "cross-section view",
+              "internal anatomy shown",
+              "four chambers visible"
+            ],
+            "layer": 0,
+            "depth": "midground",
+            "colors": [
+              "red",
+              "pink",
+              "white"
+            ],
+            "colorRole": "fleshtones and blood-filled chambers",
+            "label": null
+          },
+          {
+            "id": "left_atrium",
+            "parent": "whole",
+            "name": "left atrium",
+            "semanticClass": "heart chamber",
+            "role": "part",
+            "features": [
+              "upper chamber on anatomical left",
+              "thin-walled chamber",
+              "connected to pulmonary veins"
+            ],
+            "layer": 1,
+            "depth": "detail",
+            "colors": [
+              "red",
+              "pink",
+              "white"
+            ],
+            "colorRole": "oxygenated blood chamber",
+            "label": "Left Atrium"
+          },
+          {
+            "id": "right_atrium",
+            "parent": "whole",
+            "name": "right atrium",
+            "semanticClass": "heart chamber",
+            "role": "part",
+            "features": [
+              "upper chamber on anatomical right",
+              "thin-walled chamber",
+              "connected to vena cavae"
+            ],
+            "layer": 1,
+            "depth": "detail",
+            "colors": [
+              "red",
+              "pink",
+              "white"
+            ],
+            "colorRole": "deoxygenated blood chamber",
+            "label": "Right Atrium"
+          },
+          {
+            "id": "left_ventricle",
+            "parent": "whole",
+            "name": "left ventricle",
+            "semanticClass": "heart chamber",
+            "role": "part",
+            "features": [
+              "lower chamber on anatomical left",
+              "thick muscular wall",
+              "apex-forming chamber"
+            ],
+            "layer": 1,
+            "depth": "detail",
+            "colors": [
+              "red",
+              "pink",
+              "white"
+            ],
+            "colorRole": "oxygenated blood pump chamber",
+            "label": "Left Ventricle"
+          },
+          {
+            "id": "right_ventricle",
+            "parent": "whole",
+            "name": "right ventricle",
+            "semanticClass": "heart chamber",
+            "role": "part",
+            "features": [
+              "lower chamber on anatomical right",
+              "thinner wall than left ventricle",
+              "outflow to pulmonary artery"
+            ],
+            "layer": 1,
+            "depth": "detail",
+            "colors": [
+              "red",
+              "pink",
+              "white"
+            ],
+            "colorRole": "deoxygenated blood pump chamber",
+            "label": "Right Ventricle"
+          },
+          {
+            "id": "septum",
+            "parent": "whole",
+            "name": "interventricular septum",
+            "semanticClass": "internal wall",
+            "role": "part",
+            "features": [
+              "muscular dividing wall",
+              "separates left and right ventricles"
+            ],
+            "layer": 1,
+            "depth": "detail",
+            "colors": [
+              "white"
+            ],
+            "colorRole": "divider",
+            "label": "Septum"
+          }
+        ],
+        "relations": [
+          {
+            "from": "left_atrium",
+            "to": "left_ventricle",
+            "kind": "above",
+            "reason": "the left atrium sits above the left ventricle"
+          },
+          {
+            "from": "right_atrium",
+            "to": "right_ventricle",
+            "kind": "above",
+            "reason": "the right atrium sits above the right ventricle"
+          },
+          {
+            "from": "septum",
+            "to": "left_ventricle",
+            "kind": "adjacent",
+            "reason": "the septum forms the medial boundary of the left ventricle"
+          },
+          {
+            "from": "septum",
+            "to": "right_ventricle",
+            "kind": "adjacent",
+            "reason": "the septum forms the medial boundary of the right ventricle"
+          },
+          {
+            "from": "left_atrium",
+            "to": "right_atrium",
+            "kind": "adjacent",
+            "reason": "the atria are neighboring upper chambers"
+          },
+          {
+            "from": "left_ventricle",
+            "to": "right_ventricle",
+            "kind": "adjacent",
+            "reason": "the ventricles are neighboring lower chambers"
+          }
+        ]
+      },
+      "grounding": []
+    }
+  }
+}

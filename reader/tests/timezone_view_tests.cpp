@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+#include "timezone_view.h"
+#include "time_settings.h"
+#include <QCoreApplication>
+#include <cstdio>
+#include <stdexcept>
+#include <source_location>
+#include <vector>
+int main(int argc,char** argv){QCoreApplication app(argc,argv);try{if(argc!=2||!ib::text::load(std::filesystem::path(argv[1])/"assets/fonts"))return 2;unsigned checks=0;auto check=[&](bool ok,std::source_location at=std::source_location::current()){++checks;if(!ok)throw std::runtime_error("timezone picker regression check="+std::to_string(checks)+" line="+std::to_string(at.line()));};std::vector<std::uint32_t> pixels(1632*2160,0xffffffffu);spike::Surface surface{pixels,1620,2160,1632};ux::TimezoneView view;auto paint=[&]{view.paint(surface);};auto tap=[&](int id,bool keyboard=false){const auto target=(keyboard?view.keyboardTargets():view.targets()).rect(id);check(!target.empty());check(view.finger((target.x0+target.x1)/2,(target.y0+target.y1)/2));paint();};using V=ux::TimezoneView;
+ view.open("UTC");paint();check(view.active()&&!view.takeChoice());tap(V::Close);check(!view.active()&&!view.takeChoice());view.open("");paint();tap(V::ZoneBase);auto system=view.takeChoice();check(!view.active()&&system&&system->isEmpty()&&!view.takeChoice());view.open("");paint();tap(V::Next);tap(V::ZoneBase);auto next=view.takeChoice();check(next&&!next->isEmpty()&&clockprefs::valid(*next));view.open("");paint();tap(V::Next);tap(V::Previous);tap(V::ZoneBase);system=view.takeChoice();check(system&&system->isEmpty());
+ view.open("");paint();ux::sharedClipboard()="Chicago";tap(V::Search);tap(ib::KeyPaste,true);tap(ib::KeyDone,true);check(view.active());tap(V::ZoneBase);auto chicago=view.takeChoice();check(chicago&&*chicago=="America/Chicago");view.open("");paint();ux::sharedClipboard()="does not exist time zone";tap(V::Search);tap(ib::KeyPaste,true);tap(ib::KeyDone,true);check(view.targets().rect(V::ZoneBase).empty());tap(V::Close);check(!view.active()&&!view.takeChoice());ux::sharedClipboard().clear();std::printf("TIMEZONE_VIEW_PASS checks=%u search=true pagination=true empty_system_choice=true physical=NOT_RUN\n",checks);return 0;}catch(const std::exception& e){std::fprintf(stderr,"TIMEZONE_VIEW_FAIL %s\n",e.what());return 1;}}

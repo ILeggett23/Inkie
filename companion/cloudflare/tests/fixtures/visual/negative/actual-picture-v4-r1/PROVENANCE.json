@@ -1,0 +1,59 @@
+{
+ "note": "Unmodified real planner responses from the first user-run v4 qualification (2026-10-12). Known negatives: every one violated a rule the v4 instructions did not yet state (root id/label, empty visual response, native v2 bounds/parent/required/dataset rules). Never repaired; kept to prove the validators still reject them.",
+ "responses": [
+  {
+   "file": "sci-heart.txt",
+   "sha256": "e0ac712f9ea833b4e1873f2afbfe2d9291692028bc5cceb0325ea5a3dc672065",
+   "question": "Draw a cross-section of the human heart showing the four chambers, labeled.",
+   "provider_request_id": "req_a4cde58c2145461588527d1b23485a5a",
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:32:08.105Z",
+   "rejected_by": "Picture whole-subject root invalid"
+  },
+  {
+   "file": "sci-eye-section.txt",
+   "sha256": "d3d776829c2a83375a45cfd389880d8d53aeabaa1929316f06f9bd60a51dca21",
+   "question": "Draw a detailed cross-section of the human eye and label its major structures.",
+   "provider_request_id": "req_ae993dd8116b42c19562db2b87c35c5a",
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:32:17.342Z",
+   "rejected_by": "Picture whole-subject root invalid"
+  },
+  {
+   "file": "object-bicycle.txt",
+   "sha256": "37b0bf719107837e8467a5f0a6f8a191490da85c3d553ec89a4b2edad4ed6c42",
+   "question": "Draw a bicycle.",
+   "provider_request_id": "req_c97a70b95a924c45afe8c3b10c04bc27",
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:32:21.979Z",
+   "rejected_by": "Picture whole-subject root invalid"
+  },
+  {
+   "file": "animal-cat.txt",
+   "sha256": "6428dd8e0fd0d6e11f9c342240e5942858f8519a0b66aa39872046c60d3e6cbb",
+   "question": "Draw a cat sitting.",
+   "provider_request_id": "req_1f9c80e862ec44c1826eaa9c0bd3eb03",
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:32:30.218Z",
+   "rejected_by": "Picture whole-subject root invalid"
+  },
+  {
+   "file": "map-illustrative-town.txt",
+   "sha256": "2acfce2512405a85417aa5ed54b563035dc53f5b42373f6df7047af6e9c43fd9",
+   "question": "Draw an illustrative map of a small town with a river, two bridges, a school and a park.",
+   "provider_request_id": "req_86fc04d816fe421c872af3daa0111ffe",
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:32:34.620Z",
+   "rejected_by": "Picture whole-subject root invalid"
+  },
+  {
+   "file": "data-bar.txt",
+   "sha256": "a02ecd828ade8e04f125b1ebf58b587a7904dbd1d1b17f0ea83b57543f5ad892",
+   "question": "Bar chart of monthly rainfall: Jan 78, Feb 61, Mar 70, Apr 55, May 48, Jun 30 (mm).",
+   "provider_request_id": "req_6d4eb3f83a0f4f2ca70c0ea0e0201723",
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:33:01.522Z",
+   "rejected_by": "Visual scene invalid"
+  }
+ ]
+}

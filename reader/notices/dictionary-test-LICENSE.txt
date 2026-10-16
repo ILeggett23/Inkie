@@ -1,0 +1,7 @@
+SPDX-License-Identifier: AGPL-3.0-only
+
+The eight short definitions in fixtures/dictionary-test.json were authored for the
+Inkbound Reader Interaction 3 qualification fixture. No third-party dictionary dataset
+or implementation was copied or downloaded. This is test data,not a full dictionary.
+The project-owned DictionaryProvider interface is reused from the existing Inkbound
+source. The project license is supplied in LICENSE.

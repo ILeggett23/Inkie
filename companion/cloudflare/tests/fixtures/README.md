@@ -1,0 +1,1 @@
+Authored contract/transport controls, not model responses or drawing-quality acceptance. Legacy visual scenes and raw failed planner negatives are copied unchanged from the reader fixtures. Real image fixtures keep their original PROVENANCE.json.

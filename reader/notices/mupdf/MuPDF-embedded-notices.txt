@@ -1,0 +1,550 @@
+Embedded MuPDF source notices (conservative inclusion)
+
+source/fitz/bidi-imp.h
+/*  For use with Bidi Reference Implementation
+    For more information see the associated file bidi-std.c
+
+    Credits:
+    -------
+    Written by: Asmus Freytag
+    Command line interface by: Rick McGowan
+    Verification (v24): Doug Felt
+
+    Disclaimer and legal rights:
+    ---------------------------
+    Copyright (C) 1999-2009, ASMUS, Inc. All Rights Reserved.
+    Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
+
+    THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS.
+    IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE
+    BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES,
+    OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+    WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+    ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE SOFTWARE.
+*/
+
+source/fitz/bidi-std.c
+/*------------------------------------------------------------------------
+	File: Bidi.Cpp
+
+	Description
+	-----------
+
+	Sample Implementation of the Unicode Bidirectional Algorithm as it
+	was revised by Revision 5 of the Unicode Technical Report # 9
+	(1999-8-17)
+
+	Verified for changes to the algorithm up through Unicode 5.2.0 (2009).
+
+	This implementation is organized into several passes, each implemen-
+	ting one or more of the rules of the Unicode Bidi Algorithm. The
+	resolution of Weak Types and of Neutrals each use a state table
+	approach.
+
+	Both a printf based interface and a Windows DlgProc are provided for
+	interactive testing.
+
+	A stress harness comparing this implementation (v24) to a Java based
+	implementation was used by Doug Felt to verify that the two
+	implementations produce identical results for all strings up to six
+	bidi classes and stochastic strings up to length 20.
+
+	Version 26 was verified by the author against the Unicode 5.2.0
+	file BidiTest.txt, which provides an exhaustive text of strings of
+	length 4 or less, but covers some important cases where the language
+	in UAX#9 had been clarified.
+
+	To see this code running in an actual Windows program,
+	download the free Unibook utility from http://unicode.org/unibook
+	The bidi demo is executed from the tools menu. It is build from
+	this source file.
+
+	Build Notes
+	-----------
+
+	To compile the sample implementation please set the #define
+	directives above so the correct headers get included. Not all the
+	files are needed for all purposes. For the commandline version
+	only bidi.h and bidi.cpp are needed.
+
+	The Win32 version is provided as a dialog procedure. To use as a
+	standalone program compile with the lbmain.cpp file. If all you
+	need is the ability to run the code "as is", you can instead download
+	the unibook utility from http://uincode.org/unibook/ which contains
+	the bidi demo compiled from this source file.
+
+	This code uses an extension to C++ that gives variables declared in
+	a for() statement function the same scope as the for() statement.
+	If your compiler does not support this extension, you may need to
+	move the declaration, e.g. int ich = 0; in front of the for statement.
+
+	Implementation Note
+	-------------------
+
+	NOTE: The Unicode Bidirectional Algorithm removes all explicit
+		formatting codes in rule X9, but states that this can be
+		simulated by conformant implementations. This implementation
+		attempts to demonstrate such a simulation
+
+		To demonstrate this, the current implementation does the
+		following:
+
+		in resolveExplicit()
+			- change LRE, LRO, RLE, RLO, PDF to BN
+			- assign nested levels to BN
+
+		in resolveWeak and resolveNeutrals
+			- assign L and R to BN's where they exist in place of
+			  sor and eor by changing the last BN in front of a
+			  level change to a strong type
+			- skip over BN's for the purpose of determining actions
+			- include BN in the count of deferred runs
+				which will resolve some of them to EN, AN and N
+
+		in resolveWhiteSpace
+			- set the level of any surviving BN to the base level,
+				or the level of the preceding character
+			- include LRE,LRO, RLE, RLO, PDF and BN in the count
+			   whitespace to be reset
+
+		This will result in the same order for non-BN characters as
+		if the BN characters had been removed.
+
+		The clean() function can be used to remove boundary marks for
+		verification purposes.
+
+	Notation
+	--------
+	Pointer variables generally start with the letter p
+	Counter variables generally start with the letter c
+	Index variables generally start with the letter i
+	Boolean variables generally start with the letter f
+
+	The enumerated bidirectional types have the same name as in the
+	description for the Unicode Bidirectional Algorithm
+
+	Using this code outside a demo context
+	--------------------------------------
+
+	The way the functions are broken down in this demo code is based
+	on the needs of the demo to show the evolution in internal state
+	as the algorithm proceeds. This obscures how the algorithm would
+	be used in practice. These are the steps:
+
+	1. Allocate a pair of arrays large enough to hold bidi class
+	   and calculated levels (one for each input character)
+
+	2. Provide your own function to assign directional types (bidi
+	   classes) corresponding to each character in the input,
+	   conflating ON, WS, S to N. Unlike the classify function in this
+	   demo, the input would be actual Unicode characters.
+
+	3. Process the first paragraph by calling BidiParagraph. That
+	   function changes B into BN and returns a length including the
+	   paragraph separator. (The iteration over multiple paragraphs
+	   is left as exercise for the reader).
+
+	4. Assign directional types again, but now assign specific types
+	   to whitespace characters.
+
+	5. Instead of reordering the input in place it is often desirable
+	   to calculate an array of offsets indicating the reordering.
+	   To that end, allocate such an array here and use it instead
+	   of the input array in the next step.
+
+	6. Resolve and reorder the lines by calling BidiLines. That
+	   function 'breaks' lines on LS characters. Provide an optional
+	   array of flags indicating the location of other line breaks as
+	   needed.
+
+	Update History
+	--------------
+	Version 24 is the initial published and verified version of this
+	reference implementation. Version 25 and its updates fix various
+	minor issues with the scaffolding used for demonstrating the
+	algorithm using pseudo-alphabets from the command line or dialog
+	box. No changes to the implementation of the actual bidi algorithm
+	are made in any of the minor updates to version 25. Version 26
+	also makes no change to the actual algorithm but was verified
+	against the official BidiTest.txt file for Unicode 5.2.0.
+
+	- updated pseudo-alphabet
+
+	- Last Revised 12-10-99 (25)
+
+	- enable demo mode for release builds - no other changes
+
+	- Last Revised 12-10-00 (25a)
+
+	- fix regression in pseudo alphabet use for Windows UI
+
+	- Last Revised 02-01-01 (25b)
+
+	- fixed a few comments, renamed a variable
+
+	- Last Revised 03-04-01 (25c)
+
+	- make base level settable, enable mirror by default,
+	fix dialog size
+
+	- Last Revised 06-02-01 (25e)
+
+	- fixed some comments
+
+	- Last Revised 09-29-01 (25f)
+
+	- fixed classification for LS,RLM,LRM in pseudo alphabet,
+	focus issues in UI, regression fix to commandline from 25(e)
+	fix DEMO switch
+
+	- Last Revised 11-07-01 (25g)
+
+	- fixed classification for plus/minus in pseudo alphabet
+	to track changes made in Unicode 4.0.1
+
+	- Last Revised 12-03-04 (25h)
+
+	- now compiles as dialog-only program for WINDOWS_UI==1
+	using new bidimain.cpp
+
+	- Last Revised 12-02-07 (25i)
+
+	- cleaned up whitespace and indenting in the source,
+	fixed two comments (table headers)
+
+	- Last Revised 15-03-07 (25j)
+
+	- named enumerations
+
+	- Last Revised 30-05-07 (25k)
+
+	- added usage notes, minor edits to comments, indentation, etc
+	throughout. Added the bidiParagraph function. Checked against
+	changes in the Unicode Bidi Algorithm for Unicode 5.2.0. No
+	changes needed to this implementation to match the values in
+	the BidiTest.txt file in the Unicode Character Database.
+	Minor fixes to dialog/windows proc, updated preprocessor directives.
+
+	- Last Revised 03-08-09 (26)
+
+	Credits:
+	-------
+	Written by: Asmus Freytag
+	Command line interface by: Rick McGowan
+	Verification (v24): Doug Felt
+
+	Disclaimer and legal rights:
+	---------------------------
+	Copyright (C) 1999-2009, ASMUS, Inc. All Rights Reserved.
+	Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
+
+	THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+	OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS.
+	IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE
+	BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES,
+	OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+	WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+	ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE SOFTWARE.
+
+	The file bid.rc is included in the software covered by the above.
+------------------------------------------------------------------------*/
+
+source/fitz/bidi.c
+/*
+ * Bidirectional text processing.
+ *
+ * Processes unicode text by arranging the characters into an order suitable
+ * for display. E.g. Hebrew text will be arranged from right-to-left and
+ * any English within the text will remain in the left-to-right order.
+ * Characters such as parenthesis will be substituted for their mirrored
+ * equivalents if they are part of text which must be reversed.
+ *
+ * This is an implementation of the unicode Bidirectional Algorithm which
+ * can be found here: http://www.unicode.org/reports/tr9/ and is based
+ * on the reference implementation of the algorithm found on that page.
+ *
+ * For a nice overview of how it works, read this...
+ * http://www.w3.org/TR/REC-html40/struct/dirlang.html
+ *
+ * Extracted from the SmartOffice code, where it was modified by Ian
+ * Beveridge.
+ *
+ * Copyright (C) Picsel, 2004. All Rights Reserved.
+ */
+
+source/fitz/bidi.c
+/*
+ * Original copyright notice from unicode reference implementation.
+ * ----------------------------------------------------------------
+ * Written by: Asmus Freytag
+ *	C++ and Windows dependencies removed, and
+ *	command line interface added by: Rick McGowan
+ *
+ *	Copyright (C) 1999, ASMUS, Inc. All Rights Reserved
+ */
+
+source/fitz/crypt-aes.c
+/*
+ *	FIPS-197 compliant AES implementation
+ *
+ *	Copyright (C) 2006-2007 Christophe Devine
+ *
+ *	Redistribution and use in source and binary forms, with or without
+ *	modification, are permitted provided that the following conditions
+ *	are met:
+ *
+ *	* Redistributions of source code _must_ retain the above copyright
+ *		notice, this list of conditions and the following disclaimer.
+ *	* Redistributions in binary form may or may not reproduce the above
+ *		copyright notice, this list of conditions and the following
+ *		disclaimer in the documentation and/or other materials provided
+ *		with the distribution.
+ *	* Neither the name of XySSL nor the names of its contributors may be
+ *		used to endorse or promote products derived from this software
+ *		without specific prior written permission.
+ *
+ *	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *	FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ *	OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *	SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+ *	TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ *	PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ *	LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ *	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+source/fitz/crypt-arc4.c
+/* This code illustrates a sample implementation
+ * of the Arcfour algorithm
+ * Copyright (c) April 29, 1997 Kalle Kaukonen.
+ * All Rights Reserved.
+ *
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that this copyright
+ * notice and disclaimer are retained.
+ *
+ * THIS SOFTWARE IS PROVIDED BY KALLE KAUKONEN AND CONTRIBUTORS ``AS
+ * IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL KALLE
+ * KAUKONEN OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+source/fitz/crypt-md5.c
+/*
+ * This is an implementation of the RSA Data Security, Inc. * MD5
+ * Message-Digest Algorithm (RFC 1321).
+ *
+ * Homepage:
+ * http://openwall.info/wiki/people/solar/software/public-domain-source-code/md5
+ *
+ * Author:
+ * Alexander Peslyak, better known as Solar Designer <solar at openwall.com>
+ *
+ * This software was written by Alexander Peslyak in 2001. No copyright is
+ * claimed, and the software is hereby placed in the public domain.
+ * In case this attempt to disclaim copyright and place the software in the
+ * public domain is deemed null and void, then the software is
+ * Copyright (c) 2001 Alexander Peslyak and it is hereby released to the
+ * general public under the following terms:
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted.
+ *
+ * There's ABSOLUTELY NO WARRANTY, express or implied.
+ *
+ * (This is a heavily cut-down "BSD license".)
+ *
+ * This differs from Colin Plumb's older public domain implementation in that
+ * no exactly 32-bit integer data type is required (any 32-bit or wider
+ * unsigned integer data type will do), there's no compile-time endianness
+ * configuration, and the function prototypes match OpenSSL's. No code from
+ * Colin Plumb's implementation has been reused; this comment merely compares
+ * the properties of the two independent implementations.
+ *
+ * The primary goals of this implementation are portability and ease of use.
+ * It is meant to be fast, but not as fast as possible. Some known
+ * optimizations are not included to reduce source code size and avoid
+ * compile-time configuration.
+ */
+
+source/fitz/crypt-sha2.c
+/*
+This code is based on the code found from 7-Zip, which has a modified
+version of the SHA-256 found from Crypto++ <http://www.cryptopp.com/>.
+The code was modified a little to fit into liblzma and fitz.
+
+This file has been put into the public domain.
+You can do whatever you want with this file.
+
+SHA-384 and SHA-512 were also taken from Crypto++ and adapted for fitz.
+*/
+
+source/fitz/ftoa.c
+/*
+	Copyright (c) 2009 Florian Loitsch
+
+	Permission is hereby granted, free of charge, to any person
+	obtaining a copy of this software and associated documentation
+	files (the "Software"), to deal in the Software without
+	restriction, including without limitation the rights to use,
+	copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the
+	Software is furnished to do so, subject to the following
+	conditions:
+
+	The above copyright notice and this permission notice shall be
+	included in all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+	EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+	OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+	NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+	HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+	WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+	FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+	OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+source/fitz/getopt.c
+/*
+ * This is a version of the public domain getopt implementation by
+ * Henry Spencer originally posted to net.sources.
+ *
+ * This file is in the public domain.
+ */
+
+source/fitz/icc34.h
+/*****************************************************************
+ Copyright (c) 1994-1996 SunSoft, Inc.
+
+					Rights Reserved
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without restrict-
+ion, including without limitation the rights to use, copy, modify,
+merge, publish distribute, sublicense, and/or sell copies of the
+Software, and to permit persons to whom the Software is furnished
+to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-
+INFRINGEMENT.  IN NO EVENT SHALL SUNSOFT, INC. OR ITS PARENT
+COMPANY BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of SunSoft, Inc.
+shall not be used in advertising or otherwise to promote the
+sale, use or other dealings in this Software without written
+authorization from SunSoft Inc.
+******************************************************************/
+
+source/fitz/ucdn.c
+/*
+ * Copyright (C) 2012 Grigori Goronzy <greg@kinoho.net>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+source/pdf/annotation-icons.h
+/*
+These 8x8 icons have been converted from the MIT licensed
+https://github.com/iconic/open-iconic
+Copyright (c) 2014 Waybury
+ */
+
+source/pdf/annotation-icons.h
+/*
+These 8x8 icons have been converted from the MIT licensed
+https://github.com/michaelampr/jam
+Copyright (c) 2017 Michael Amprimo
+*/
+
+include/mupdf/fitz/bidi.h
+/**
+	Bidirectional text processing.
+
+	Derived from the SmartOffice code, which is itself derived
+	from the example unicode standard code. Original copyright
+	messages follow:
+
+	Copyright (C) Picsel, 2004-2008. All Rights Reserved.
+
+	Processes Unicode text by arranging the characters into an order
+	suitable for display. E.g. Hebrew text will be arranged from
+	right-to-left and any English within the text will remain in the
+	left-to-right order.
+
+	This is an implementation of the Unicode Bidirectional Algorithm
+	which can be found here: http://www.unicode.org/reports/tr9/ and
+	is based on the reference implementation found on Unicode.org.
+*/
+
+include/mupdf/ucdn.h
+/*
+ * Copyright (C) 2012 Grigori Goronzy <greg@kinoho.net>
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+source/fitz/string.c: musl strverscmp
+Copyright © 2005-2020 Rich Felker, et al.
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject
+to the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+

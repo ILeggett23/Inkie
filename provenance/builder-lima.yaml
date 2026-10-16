@@ -1,0 +1,26 @@
+# Lima 2.2.0; pinned ARM64 image from its ubuntu-22.04 template.
+minimumLimaVersion: 2.2.0
+vmType: vz
+arch: aarch64
+cpus: 4
+memory: 6GiB
+disk: 132GiB
+images:
+- location: https://cloud-images.ubuntu.com/releases/jammy/release-20260705/ubuntu-22.04-server-cloudimg-arm64.img
+  arch: aarch64
+  digest: sha256:9c2ddc65079f9a285ca7c9efabdee6d58ff7dd2b08a130114426d2020506db7a
+mounts: []
+containerd:
+  system: false
+  user: false
+ssh:
+  forwardAgent: false
+  loadDotSSHPubKeys: false
+vmOpts:
+  vz:
+    rosetta:
+      enabled: false
+      binfmt: false
+portForwards:
+- guestPortRange: [1, 65535]
+  ignore: true

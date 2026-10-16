@@ -1,0 +1,23 @@
+{
+ "note": "Unmodified real planner responses from the second user-run v4 qualification (plan-only, 2026-10-12), after root/v2 rules were stated. Known negatives: a colored root without colorRole, and chart labels made top-level (instruction wording was ambiguous). Never repaired.",
+ "responses": [
+  {
+   "file": "animal-cat.txt",
+   "sha256": "dad6e3a85399a3b1f8293f4fc080bf94a9d84c33fe7371a77cef8851819d1544",
+   "question": "Draw a cat sitting.",
+   "provider_request_id": "req_a20679eb975045eda6350c068098f46b",
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:40:19.523Z",
+   "rejected_by": "Picture color role missing"
+  },
+  {
+   "file": "data-bar.txt",
+   "sha256": "d71181f4e9dd3a6cf4d63e3aa95bd4d056b01f086ad39c36f521486525c5156c",
+   "question": "Bar chart of monthly rainfall: Jan 78, Feb 61, Mar 70, Apr 55, May 48, Jun 30 (mm).",
+   "provider_request_id": "req_338407ba8ff24ee18cb6d307b539a3d3",
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:40:30.199Z",
+   "rejected_by": "label with top-level parent"
+  }
+ ]
+}

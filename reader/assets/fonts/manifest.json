@@ -1,0 +1,28 @@
+{
+ "format": "inkbound-fonts-v1",
+ "license": "SIL Open Font License 1.1",
+ "sources": {
+  "SourceSerif4": "https://github.com/adobe-fonts/source-serif/releases/download/4.005R/source-serif-4.005_Desktop.zip (sha256 549fdb8f9a682bd06944298621404969f6de77c2e422ff3b8244a1dcd6a0c425)",
+  "SourceSans3": "https://github.com/adobe-fonts/source-sans/releases/download/3.052R/TTF-source-sans-3.052R.zip (sha256 1b0dd1ec44b39f1dd98bbd153a1a3815f083639874ddee02c842bd601bad3d21)",
+  "Caveat": "https://github.com/google/fonts/blob/a85fc09e44c70c7159761adfdc9d5dd007792c15/ofl/caveat/Caveat%5Bwght%5D.ttf (sha256 0bdb6b660482d31531b3945849fba5916b3ef8695da7024a9e6b9ee3c4157988); Tom's handwriting"
+ },
+ "files": {
+  "Caveat.ttf": "0bdb6b660482d31531b3945849fba5916b3ef8695da7024a9e6b9ee3c4157988",
+  "SourceSans3-Medium.ttf": "a7af35c1cab5dd0b29d742f86f2edfdf83fa7ec213643e765c5c51a2dc24edbc",
+  "SourceSans3-Regular.ttf": "4644c81b86ec9caaa76b634889968ed3c4f4f52f054855933acc7c2b21e53b0f",
+  "SourceSans3-Semibold.ttf": "a3f4f8dcf343a8f24dc61951de93f3ba1558b15cd250ba24af8a40e957081b7d",
+  "SourceSerif4-It.ttf": "9d2950a8f1da66e21502c35d646a1d2148e79f9ea43fd2158cf02f5232e7f430",
+  "SourceSerif4-Regular.ttf": "e5a4ee6a3d87bb9024796be390c6771e2a0eb1883dae25effaf57ca01668e24b",
+  "SourceSerif4-Semibold.ttf": "36db62940cb5728b12b1802476dc7fcf4c6c519a7bdd476ba23a4e555fc4655f",
+  "SourceSerif4Display-Regular.ttf": "a1788d674713c99e61d4541c85e5cfbc3145c4e746b0185c674a0b15f7313295",
+  "SourceSerif4SmText-It.ttf": "74963111a9dc458611e6eaa62a6bff8811855f67e015f91b728fb52567020c5e",
+  "SourceSerif4SmText-Regular.ttf": "54379656e8fa22bfbb7a783f8fe4269c9ae4eb966c1c3fcb17ee3b50cba95813",
+  "SourceSerif4SmText-Semibold.ttf": "6ccdc5f613850c9cf68c23767900235c95543b484694accb4ad40a6ceb24a4d0",
+  "SourceSerif4Subhead-Regular.ttf": "d97c728cb9280ae7050b483b238e119a879bd0be088241b5ee110a5cb676d46b"
+ },
+ "licenses": {
+  "Caveat-OFL.txt": "1f9d81d094273d82f3898a1ee8b598a717d050ecbf5ff7bede105b704880157b",
+  "SourceSans3-LICENSE.md": "89ad2c4f66dd29127527493e729c31e731f111cf10faf5774c3db9275ed0c22c",
+  "SourceSerif4-LICENSE.md": "75784a295293a8992f5a8d99210566e0064a012e6dab6731305e3787f15896c7"
+ }
+}

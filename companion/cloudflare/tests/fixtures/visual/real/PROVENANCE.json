@@ -1,0 +1,102 @@
+{
+ "note": "Unmodified real image-model outputs from Stage 1 (prompt v2), downscaled only. They exercise the lineArt converter on genuine model output; they are not quality acceptance evidence by themselves.",
+ "fixtures": [
+  {
+   "file": "stage1-v2-animal-cat.png",
+   "subject": "animal-cat",
+   "width": 512,
+   "height": 768,
+   "sha256": "97c0f6f1c824a3d4c2b0e1e36ed3ae0ba94bd8fa63d79fd7c9dfa0d83549e327",
+   "derived_from": {
+    "path": "claude-stage0/stage1/run-v2/images/animal-cat.png",
+    "sha256": "44f33aa20bb9b86b66a8affc8e17f6ca8e88875feb08526958fe4d4acc7a7987",
+    "size": "1024x1536",
+    "quality": "medium",
+    "model": "gpt-image-2.5-flare",
+    "provider_request_id": "req_ea965b1db66649be81281829c42b81e7",
+    "prompt_version": "v2",
+    "prompt": "A clear illustration of a cat sitting, three-quarter view. Show these structures clearly and in correct relation to each other: head, ears, eyes, body, front legs, tail. Draw it as a pen-and-ink illustration for an e-ink notebook: confident black outlines on plain white paper, clear silhouettes, and only light, sparse hatching for form; no smooth gradients, airbrushing or dense texture. Prefer fewer, deliberate lines that stay legible when redrawn with a pen at notebook size. Keep one consistent viewpoint: every part appears as it would in that view, and in a cross-section cut structures show their cut profile. Mostly black ink on white: add flat color only where the subject naturally has it or where a standard textbook color convention exists, never for decoration or to make parts arbitrarily different, and leave most areas white. No text, letters, numbers, labels, leader lines, arrows, borders or watermarks."
+   },
+   "processing": "downscaled to a 768 px longest edge with macOS sips (Lanczos), otherwise unmodified",
+   "generated": "2026-10-11"
+  },
+  {
+   "file": "stage1-v2-arch-cathedral.png",
+   "subject": "arch-cathedral",
+   "width": 512,
+   "height": 768,
+   "sha256": "d6c68fdcf8f8eecef2a492f9fea1d59091c8a7b7d486c6e07cfc025aa6f5c7cc",
+   "derived_from": {
+    "path": "claude-stage0/stage1/run-v2/images/arch-cathedral.png",
+    "sha256": "154b7b9b37e9a8991d6441386645f5fbcb6a5b4045aa79bd3e92ab9939671b2a",
+    "size": "1024x1536",
+    "quality": "high",
+    "model": "gpt-image-2.5-flare",
+    "provider_request_id": "req_ba4d2c5819634cf1998ef0fb6c6efb2d",
+    "prompt_version": "v2",
+    "prompt": "A detailed but uncluttered architectural illustration of the facade of a Gothic cathedral, straight-on front elevation. Show these structures clearly and in correct relation to each other: rose window, pointed arches, towers, portals. Draw it as a pen-and-ink illustration for an e-ink notebook: confident black outlines on plain white paper, clear silhouettes, and only light, sparse hatching for form; no smooth gradients, airbrushing or dense texture. Prefer fewer, deliberate lines that stay legible when redrawn with a pen at notebook size. Keep one consistent viewpoint: every part appears as it would in that view, and in a cross-section cut structures show their cut profile. Mostly black ink on white: add flat color only where the subject naturally has it or where a standard textbook color convention exists, never for decoration or to make parts arbitrarily different, and leave most areas white. No text, letters, numbers, labels, leader lines, arrows, borders or watermarks."
+   },
+   "processing": "downscaled to a 768 px longest edge with macOS sips (Lanczos), otherwise unmodified",
+   "generated": "2026-10-11"
+  },
+  {
+   "file": "stage1-v2-sci-heart.png",
+   "subject": "sci-heart",
+   "width": 768,
+   "height": 768,
+   "sha256": "85954bc0fb75c43af96068a5a0ec75adf92fa3d49cc2341059fb5e2ad0a13f34",
+   "derived_from": {
+    "path": "claude-stage0/stage1/run-v2/images/sci-heart.png",
+    "sha256": "b9d3b1b41abf9507e0233aeb7b40fbe017d85a2079626e75f967623bc41ed8f9",
+    "size": "1024x1024",
+    "quality": "high",
+    "model": "gpt-image-2.5-flare",
+    "provider_request_id": "req_2afcd4c1efd14244a7a8709f76cb055e",
+    "prompt_version": "v2",
+    "prompt": "A detailed but uncluttered scientific illustration of the human heart, front-view cross-section showing all four chambers. Show these structures clearly and in correct relation to each other: right atrium, right ventricle, left atrium, left ventricle, septum, aorta, pulmonary artery, superior vena cava, inferior vena cava. Draw it as a pen-and-ink illustration for an e-ink notebook: confident black outlines on plain white paper, clear silhouettes, and only light, sparse hatching for form; no smooth gradients, airbrushing or dense texture. Prefer fewer, deliberate lines that stay legible when redrawn with a pen at notebook size. Keep one consistent viewpoint: every part appears as it would in that view, and in a cross-section cut structures show their cut profile. Mostly black ink on white: add flat color only where the subject naturally has it or where a standard textbook color convention exists, never for decoration or to make parts arbitrarily different, and leave most areas white. No text, letters, numbers, labels, leader lines, arrows, borders or watermarks."
+   },
+   "processing": "downscaled to a 768 px longest edge with macOS sips (Lanczos), otherwise unmodified",
+   "generated": "2026-10-11"
+  },
+  {
+   "file": "stage1-v2-object-bicycle.png",
+   "subject": "object-bicycle",
+   "width": 768,
+   "height": 512,
+   "sha256": "be2187afe94acde0a5d838493c5b92074006e6a45f51a9e1cc175afc67ba16ba",
+   "derived_from": {
+    "path": "claude-stage0/stage1/run-v2/images/object-bicycle.png",
+    "sha256": "637099e6041661f3d3f4bd6b0e6fe69add6c00b9e48d598245365b730d543e1a",
+    "size": "1536x1024",
+    "quality": "medium",
+    "model": "gpt-image-2.5-flare",
+    "provider_request_id": "req_a64629104834493fb614875313c0e628",
+    "prompt_version": "v2",
+    "prompt": "A clear illustration of a bicycle, side view. Show these structures clearly and in correct relation to each other: two wheels, frame, handlebars, seat, pedals, chain. Draw it as a pen-and-ink illustration for an e-ink notebook: confident black outlines on plain white paper, clear silhouettes, and only light, sparse hatching for form; no smooth gradients, airbrushing or dense texture. Prefer fewer, deliberate lines that stay legible when redrawn with a pen at notebook size. Keep one consistent viewpoint: every part appears as it would in that view, and in a cross-section cut structures show their cut profile. Mostly black ink on white: add flat color only where the subject naturally has it or where a standard textbook color convention exists, never for decoration or to make parts arbitrarily different, and leave most areas white. No text, letters, numbers, labels, leader lines, arrows, borders or watermarks."
+   },
+   "processing": "downscaled to a 768 px longest edge with macOS sips (Lanczos), otherwise unmodified",
+   "generated": "2026-10-11",
+   "added_by": "converter2: faint frame outlines and a brown saddle (v2 bicycle); warm gray-brown tabby stripes (v1 cat)"
+  },
+  {
+   "file": "stage1-v1-animal-cat.png",
+   "subject": "animal-cat",
+   "width": 512,
+   "height": 768,
+   "sha256": "e47f091d52e48bd39962006465d577239a18421fee083c2238f9e35fd553802f",
+   "derived_from": {
+    "path": "claude-stage0/stage1/run/images/animal-cat.png",
+    "sha256": "0e3bb03e1546d22b317e69e59ac14207b70ec620ffc154c5d8efff443ba4d905",
+    "size": "1024x1536",
+    "quality": "medium",
+    "model": "gpt-image-2.5-flare",
+    "provider_request_id": "req_5770908818834fec9401385083e646d5",
+    "prompt_version": "v1",
+    "prompt": "A clear illustration of a cat sitting, three-quarter view. Show these structures clearly and in correct relation to each other: head, ears, eyes, body, front legs, tail. Pen-and-ink illustration for a color e-ink notebook: confident black outlines, clear silhouettes, light hatching for form, a few flat areas of restrained color (blue, green, red, yellow, orange, purple, pink) only where they carry meaning, plain white background. No text, letters, numbers, labels, leader lines, arrows, borders or watermarks."
+   },
+   "processing": "downscaled to a 768 px longest edge with macOS sips (Lanczos), otherwise unmodified",
+   "generated": "2026-10-11",
+   "added_by": "converter2: faint frame outlines and a brown saddle (v2 bicycle); warm gray-brown tabby stripes (v1 cat)"
+  }
+ ]
+}

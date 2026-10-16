@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "provider": "inkbound-authored-test-v1",
+  "license": "AGPL-3.0-only; project-authored fixture",
+  "description": "Small original qualification fixture, not a general dictionary. No third-party definitions copied.",
+  "entries": {
+    "reader": {"partOfSpeech": "noun", "definition": "A person who reads, or an application used to read documents."},
+    "page": {"partOfSpeech": "noun", "definition": "One numbered surface or section of a document."},
+    "document": {"partOfSpeech": "noun", "definition": "A recorded piece of writing or other information."},
+    "test": {"partOfSpeech": "noun", "definition": "A check used to discover whether something works as intended."},
+    "device": {"partOfSpeech": "noun", "definition": "An object made to perform a particular task."},
+    "inkbound": {"partOfSpeech": "proper noun", "definition": "The name of this experimental document reader."},
+    "café": {"partOfSpeech": "noun", "definition": "A small place serving drinks and light food. Unicode normalization test entry."},
+    "can't": {"partOfSpeech": "contraction", "definition": "A shortened form of cannot. Apostrophe handling test entry."}
+  },
+  "aliases": {"readers": "reader", "pages": "page", "documents": "document", "tests": "test", "devices": "device"}
+}

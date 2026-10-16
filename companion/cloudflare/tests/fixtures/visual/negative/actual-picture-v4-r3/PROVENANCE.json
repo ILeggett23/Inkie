@@ -1,0 +1,13 @@
+{
+ "note": "Unmodified real planner response (third v4 run, plan-only, 2026-10-12): palette keys not matching record categories (rule was not yet stated). Never repaired.",
+ "responses": [
+  {
+   "file": "data-bar.txt",
+   "sha256": "05c493247c983cdebe68cbf9f29b59eb2a4972499d1e0a7b0103256ee875656e",
+   "provider_request_id": "req_b94c1fd2ed1742659c2b4afdb71f5997",
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:46:00.921Z",
+   "rejected_by": "palette"
+  }
+ ]
+}

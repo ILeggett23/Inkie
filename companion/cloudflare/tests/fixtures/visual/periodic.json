@@ -1,0 +1,1219 @@
+{
+  "prompt": "Draw the periodic table.",
+  "scene": {
+    "version": 2,
+    "category": "scientific",
+    "strategy": "native",
+    "title": "",
+    "canvas": [
+      1400,
+      1000
+    ],
+    "objects": [
+      {
+        "id": "entities",
+        "parent": "",
+        "kind": "grid",
+        "bounds": [
+          0,
+          0,
+          1400,
+          900
+        ],
+        "style": {
+          "tool": "fineliner",
+          "color": "black",
+          "width": "medium"
+        },
+        "content": {
+          "data": "entities",
+          "rows": 10,
+          "columns": 18,
+          "fields": [
+            "x",
+            "label"
+          ]
+        }
+      }
+    ],
+    "relations": [],
+    "datasets": [
+      {
+        "id": "entities",
+        "source": "reference:chemical-elements-2022",
+        "rows": [
+          {
+            "id": "1",
+            "label": "H",
+            "x": 1,
+            "y": 1,
+            "row": 0,
+            "column": 0,
+            "category": "group-1"
+          },
+          {
+            "id": "2",
+            "label": "He",
+            "x": 2,
+            "y": 1,
+            "row": 0,
+            "column": 17,
+            "category": "group-18"
+          },
+          {
+            "id": "3",
+            "label": "Li",
+            "x": 3,
+            "y": 2,
+            "row": 1,
+            "column": 0,
+            "category": "group-1"
+          },
+          {
+            "id": "4",
+            "label": "Be",
+            "x": 4,
+            "y": 2,
+            "row": 1,
+            "column": 1,
+            "category": "group-2"
+          },
+          {
+            "id": "5",
+            "label": "B",
+            "x": 5,
+            "y": 2,
+            "row": 1,
+            "column": 12,
+            "category": "group-13"
+          },
+          {
+            "id": "6",
+            "label": "C",
+            "x": 6,
+            "y": 2,
+            "row": 1,
+            "column": 13,
+            "category": "group-14"
+          },
+          {
+            "id": "7",
+            "label": "N",
+            "x": 7,
+            "y": 2,
+            "row": 1,
+            "column": 14,
+            "category": "group-15"
+          },
+          {
+            "id": "8",
+            "label": "O",
+            "x": 8,
+            "y": 2,
+            "row": 1,
+            "column": 15,
+            "category": "group-16"
+          },
+          {
+            "id": "9",
+            "label": "F",
+            "x": 9,
+            "y": 2,
+            "row": 1,
+            "column": 16,
+            "category": "group-17"
+          },
+          {
+            "id": "10",
+            "label": "Ne",
+            "x": 10,
+            "y": 2,
+            "row": 1,
+            "column": 17,
+            "category": "group-18"
+          },
+          {
+            "id": "11",
+            "label": "Na",
+            "x": 11,
+            "y": 3,
+            "row": 2,
+            "column": 0,
+            "category": "group-1"
+          },
+          {
+            "id": "12",
+            "label": "Mg",
+            "x": 12,
+            "y": 3,
+            "row": 2,
+            "column": 1,
+            "category": "group-2"
+          },
+          {
+            "id": "13",
+            "label": "Al",
+            "x": 13,
+            "y": 3,
+            "row": 2,
+            "column": 12,
+            "category": "group-13"
+          },
+          {
+            "id": "14",
+            "label": "Si",
+            "x": 14,
+            "y": 3,
+            "row": 2,
+            "column": 13,
+            "category": "group-14"
+          },
+          {
+            "id": "15",
+            "label": "P",
+            "x": 15,
+            "y": 3,
+            "row": 2,
+            "column": 14,
+            "category": "group-15"
+          },
+          {
+            "id": "16",
+            "label": "S",
+            "x": 16,
+            "y": 3,
+            "row": 2,
+            "column": 15,
+            "category": "group-16"
+          },
+          {
+            "id": "17",
+            "label": "Cl",
+            "x": 17,
+            "y": 3,
+            "row": 2,
+            "column": 16,
+            "category": "group-17"
+          },
+          {
+            "id": "18",
+            "label": "Ar",
+            "x": 18,
+            "y": 3,
+            "row": 2,
+            "column": 17,
+            "category": "group-18"
+          },
+          {
+            "id": "19",
+            "label": "K",
+            "x": 19,
+            "y": 4,
+            "row": 3,
+            "column": 0,
+            "category": "group-1"
+          },
+          {
+            "id": "20",
+            "label": "Ca",
+            "x": 20,
+            "y": 4,
+            "row": 3,
+            "column": 1,
+            "category": "group-2"
+          },
+          {
+            "id": "21",
+            "label": "Sc",
+            "x": 21,
+            "y": 4,
+            "row": 3,
+            "column": 2,
+            "category": "group-3"
+          },
+          {
+            "id": "22",
+            "label": "Ti",
+            "x": 22,
+            "y": 4,
+            "row": 3,
+            "column": 3,
+            "category": "group-4"
+          },
+          {
+            "id": "23",
+            "label": "V",
+            "x": 23,
+            "y": 4,
+            "row": 3,
+            "column": 4,
+            "category": "group-5"
+          },
+          {
+            "id": "24",
+            "label": "Cr",
+            "x": 24,
+            "y": 4,
+            "row": 3,
+            "column": 5,
+            "category": "group-6"
+          },
+          {
+            "id": "25",
+            "label": "Mn",
+            "x": 25,
+            "y": 4,
+            "row": 3,
+            "column": 6,
+            "category": "group-7"
+          },
+          {
+            "id": "26",
+            "label": "Fe",
+            "x": 26,
+            "y": 4,
+            "row": 3,
+            "column": 7,
+            "category": "group-8"
+          },
+          {
+            "id": "27",
+            "label": "Co",
+            "x": 27,
+            "y": 4,
+            "row": 3,
+            "column": 8,
+            "category": "group-9"
+          },
+          {
+            "id": "28",
+            "label": "Ni",
+            "x": 28,
+            "y": 4,
+            "row": 3,
+            "column": 9,
+            "category": "group-10"
+          },
+          {
+            "id": "29",
+            "label": "Cu",
+            "x": 29,
+            "y": 4,
+            "row": 3,
+            "column": 10,
+            "category": "group-11"
+          },
+          {
+            "id": "30",
+            "label": "Zn",
+            "x": 30,
+            "y": 4,
+            "row": 3,
+            "column": 11,
+            "category": "group-12"
+          },
+          {
+            "id": "31",
+            "label": "Ga",
+            "x": 31,
+            "y": 4,
+            "row": 3,
+            "column": 12,
+            "category": "group-13"
+          },
+          {
+            "id": "32",
+            "label": "Ge",
+            "x": 32,
+            "y": 4,
+            "row": 3,
+            "column": 13,
+            "category": "group-14"
+          },
+          {
+            "id": "33",
+            "label": "As",
+            "x": 33,
+            "y": 4,
+            "row": 3,
+            "column": 14,
+            "category": "group-15"
+          },
+          {
+            "id": "34",
+            "label": "Se",
+            "x": 34,
+            "y": 4,
+            "row": 3,
+            "column": 15,
+            "category": "group-16"
+          },
+          {
+            "id": "35",
+            "label": "Br",
+            "x": 35,
+            "y": 4,
+            "row": 3,
+            "column": 16,
+            "category": "group-17"
+          },
+          {
+            "id": "36",
+            "label": "Kr",
+            "x": 36,
+            "y": 4,
+            "row": 3,
+            "column": 17,
+            "category": "group-18"
+          },
+          {
+            "id": "37",
+            "label": "Rb",
+            "x": 37,
+            "y": 5,
+            "row": 4,
+            "column": 0,
+            "category": "group-1"
+          },
+          {
+            "id": "38",
+            "label": "Sr",
+            "x": 38,
+            "y": 5,
+            "row": 4,
+            "column": 1,
+            "category": "group-2"
+          },
+          {
+            "id": "39",
+            "label": "Y",
+            "x": 39,
+            "y": 5,
+            "row": 4,
+            "column": 2,
+            "category": "group-3"
+          },
+          {
+            "id": "40",
+            "label": "Zr",
+            "x": 40,
+            "y": 5,
+            "row": 4,
+            "column": 3,
+            "category": "group-4"
+          },
+          {
+            "id": "41",
+            "label": "Nb",
+            "x": 41,
+            "y": 5,
+            "row": 4,
+            "column": 4,
+            "category": "group-5"
+          },
+          {
+            "id": "42",
+            "label": "Mo",
+            "x": 42,
+            "y": 5,
+            "row": 4,
+            "column": 5,
+            "category": "group-6"
+          },
+          {
+            "id": "43",
+            "label": "Tc",
+            "x": 43,
+            "y": 5,
+            "row": 4,
+            "column": 6,
+            "category": "group-7"
+          },
+          {
+            "id": "44",
+            "label": "Ru",
+            "x": 44,
+            "y": 5,
+            "row": 4,
+            "column": 7,
+            "category": "group-8"
+          },
+          {
+            "id": "45",
+            "label": "Rh",
+            "x": 45,
+            "y": 5,
+            "row": 4,
+            "column": 8,
+            "category": "group-9"
+          },
+          {
+            "id": "46",
+            "label": "Pd",
+            "x": 46,
+            "y": 5,
+            "row": 4,
+            "column": 9,
+            "category": "group-10"
+          },
+          {
+            "id": "47",
+            "label": "Ag",
+            "x": 47,
+            "y": 5,
+            "row": 4,
+            "column": 10,
+            "category": "group-11"
+          },
+          {
+            "id": "48",
+            "label": "Cd",
+            "x": 48,
+            "y": 5,
+            "row": 4,
+            "column": 11,
+            "category": "group-12"
+          },
+          {
+            "id": "49",
+            "label": "In",
+            "x": 49,
+            "y": 5,
+            "row": 4,
+            "column": 12,
+            "category": "group-13"
+          },
+          {
+            "id": "50",
+            "label": "Sn",
+            "x": 50,
+            "y": 5,
+            "row": 4,
+            "column": 13,
+            "category": "group-14"
+          },
+          {
+            "id": "51",
+            "label": "Sb",
+            "x": 51,
+            "y": 5,
+            "row": 4,
+            "column": 14,
+            "category": "group-15"
+          },
+          {
+            "id": "52",
+            "label": "Te",
+            "x": 52,
+            "y": 5,
+            "row": 4,
+            "column": 15,
+            "category": "group-16"
+          },
+          {
+            "id": "53",
+            "label": "I",
+            "x": 53,
+            "y": 5,
+            "row": 4,
+            "column": 16,
+            "category": "group-17"
+          },
+          {
+            "id": "54",
+            "label": "Xe",
+            "x": 54,
+            "y": 5,
+            "row": 4,
+            "column": 17,
+            "category": "group-18"
+          },
+          {
+            "id": "55",
+            "label": "Cs",
+            "x": 55,
+            "y": 6,
+            "row": 5,
+            "column": 0,
+            "category": "group-1"
+          },
+          {
+            "id": "56",
+            "label": "Ba",
+            "x": 56,
+            "y": 6,
+            "row": 5,
+            "column": 1,
+            "category": "group-2"
+          },
+          {
+            "id": "57",
+            "label": "La",
+            "x": 57,
+            "y": 6,
+            "row": 8,
+            "column": 2,
+            "category": "detached"
+          },
+          {
+            "id": "58",
+            "label": "Ce",
+            "x": 58,
+            "y": 6,
+            "row": 8,
+            "column": 3,
+            "category": "detached"
+          },
+          {
+            "id": "59",
+            "label": "Pr",
+            "x": 59,
+            "y": 6,
+            "row": 8,
+            "column": 4,
+            "category": "detached"
+          },
+          {
+            "id": "60",
+            "label": "Nd",
+            "x": 60,
+            "y": 6,
+            "row": 8,
+            "column": 5,
+            "category": "detached"
+          },
+          {
+            "id": "61",
+            "label": "Pm",
+            "x": 61,
+            "y": 6,
+            "row": 8,
+            "column": 6,
+            "category": "detached"
+          },
+          {
+            "id": "62",
+            "label": "Sm",
+            "x": 62,
+            "y": 6,
+            "row": 8,
+            "column": 7,
+            "category": "detached"
+          },
+          {
+            "id": "63",
+            "label": "Eu",
+            "x": 63,
+            "y": 6,
+            "row": 8,
+            "column": 8,
+            "category": "detached"
+          },
+          {
+            "id": "64",
+            "label": "Gd",
+            "x": 64,
+            "y": 6,
+            "row": 8,
+            "column": 9,
+            "category": "detached"
+          },
+          {
+            "id": "65",
+            "label": "Tb",
+            "x": 65,
+            "y": 6,
+            "row": 8,
+            "column": 10,
+            "category": "detached"
+          },
+          {
+            "id": "66",
+            "label": "Dy",
+            "x": 66,
+            "y": 6,
+            "row": 8,
+            "column": 11,
+            "category": "detached"
+          },
+          {
+            "id": "67",
+            "label": "Ho",
+            "x": 67,
+            "y": 6,
+            "row": 8,
+            "column": 12,
+            "category": "detached"
+          },
+          {
+            "id": "68",
+            "label": "Er",
+            "x": 68,
+            "y": 6,
+            "row": 8,
+            "column": 13,
+            "category": "detached"
+          },
+          {
+            "id": "69",
+            "label": "Tm",
+            "x": 69,
+            "y": 6,
+            "row": 8,
+            "column": 14,
+            "category": "detached"
+          },
+          {
+            "id": "70",
+            "label": "Yb",
+            "x": 70,
+            "y": 6,
+            "row": 8,
+            "column": 15,
+            "category": "detached"
+          },
+          {
+            "id": "71",
+            "label": "Lu",
+            "x": 71,
+            "y": 6,
+            "row": 8,
+            "column": 16,
+            "category": "detached"
+          },
+          {
+            "id": "72",
+            "label": "Hf",
+            "x": 72,
+            "y": 6,
+            "row": 5,
+            "column": 3,
+            "category": "group-4"
+          },
+          {
+            "id": "73",
+            "label": "Ta",
+            "x": 73,
+            "y": 6,
+            "row": 5,
+            "column": 4,
+            "category": "group-5"
+          },
+          {
+            "id": "74",
+            "label": "W",
+            "x": 74,
+            "y": 6,
+            "row": 5,
+            "column": 5,
+            "category": "group-6"
+          },
+          {
+            "id": "75",
+            "label": "Re",
+            "x": 75,
+            "y": 6,
+            "row": 5,
+            "column": 6,
+            "category": "group-7"
+          },
+          {
+            "id": "76",
+            "label": "Os",
+            "x": 76,
+            "y": 6,
+            "row": 5,
+            "column": 7,
+            "category": "group-8"
+          },
+          {
+            "id": "77",
+            "label": "Ir",
+            "x": 77,
+            "y": 6,
+            "row": 5,
+            "column": 8,
+            "category": "group-9"
+          },
+          {
+            "id": "78",
+            "label": "Pt",
+            "x": 78,
+            "y": 6,
+            "row": 5,
+            "column": 9,
+            "category": "group-10"
+          },
+          {
+            "id": "79",
+            "label": "Au",
+            "x": 79,
+            "y": 6,
+            "row": 5,
+            "column": 10,
+            "category": "group-11"
+          },
+          {
+            "id": "80",
+            "label": "Hg",
+            "x": 80,
+            "y": 6,
+            "row": 5,
+            "column": 11,
+            "category": "group-12"
+          },
+          {
+            "id": "81",
+            "label": "Tl",
+            "x": 81,
+            "y": 6,
+            "row": 5,
+            "column": 12,
+            "category": "group-13"
+          },
+          {
+            "id": "82",
+            "label": "Pb",
+            "x": 82,
+            "y": 6,
+            "row": 5,
+            "column": 13,
+            "category": "group-14"
+          },
+          {
+            "id": "83",
+            "label": "Bi",
+            "x": 83,
+            "y": 6,
+            "row": 5,
+            "column": 14,
+            "category": "group-15"
+          },
+          {
+            "id": "84",
+            "label": "Po",
+            "x": 84,
+            "y": 6,
+            "row": 5,
+            "column": 15,
+            "category": "group-16"
+          },
+          {
+            "id": "85",
+            "label": "At",
+            "x": 85,
+            "y": 6,
+            "row": 5,
+            "column": 16,
+            "category": "group-17"
+          },
+          {
+            "id": "86",
+            "label": "Rn",
+            "x": 86,
+            "y": 6,
+            "row": 5,
+            "column": 17,
+            "category": "group-18"
+          },
+          {
+            "id": "87",
+            "label": "Fr",
+            "x": 87,
+            "y": 7,
+            "row": 6,
+            "column": 0,
+            "category": "group-1"
+          },
+          {
+            "id": "88",
+            "label": "Ra",
+            "x": 88,
+            "y": 7,
+            "row": 6,
+            "column": 1,
+            "category": "group-2"
+          },
+          {
+            "id": "89",
+            "label": "Ac",
+            "x": 89,
+            "y": 7,
+            "row": 9,
+            "column": 2,
+            "category": "detached"
+          },
+          {
+            "id": "90",
+            "label": "Th",
+            "x": 90,
+            "y": 7,
+            "row": 9,
+            "column": 3,
+            "category": "detached"
+          },
+          {
+            "id": "91",
+            "label": "Pa",
+            "x": 91,
+            "y": 7,
+            "row": 9,
+            "column": 4,
+            "category": "detached"
+          },
+          {
+            "id": "92",
+            "label": "U",
+            "x": 92,
+            "y": 7,
+            "row": 9,
+            "column": 5,
+            "category": "detached"
+          },
+          {
+            "id": "93",
+            "label": "Np",
+            "x": 93,
+            "y": 7,
+            "row": 9,
+            "column": 6,
+            "category": "detached"
+          },
+          {
+            "id": "94",
+            "label": "Pu",
+            "x": 94,
+            "y": 7,
+            "row": 9,
+            "column": 7,
+            "category": "detached"
+          },
+          {
+            "id": "95",
+            "label": "Am",
+            "x": 95,
+            "y": 7,
+            "row": 9,
+            "column": 8,
+            "category": "detached"
+          },
+          {
+            "id": "96",
+            "label": "Cm",
+            "x": 96,
+            "y": 7,
+            "row": 9,
+            "column": 9,
+            "category": "detached"
+          },
+          {
+            "id": "97",
+            "label": "Bk",
+            "x": 97,
+            "y": 7,
+            "row": 9,
+            "column": 10,
+            "category": "detached"
+          },
+          {
+            "id": "98",
+            "label": "Cf",
+            "x": 98,
+            "y": 7,
+            "row": 9,
+            "column": 11,
+            "category": "detached"
+          },
+          {
+            "id": "99",
+            "label": "Es",
+            "x": 99,
+            "y": 7,
+            "row": 9,
+            "column": 12,
+            "category": "detached"
+          },
+          {
+            "id": "100",
+            "label": "Fm",
+            "x": 100,
+            "y": 7,
+            "row": 9,
+            "column": 13,
+            "category": "detached"
+          },
+          {
+            "id": "101",
+            "label": "Md",
+            "x": 101,
+            "y": 7,
+            "row": 9,
+            "column": 14,
+            "category": "detached"
+          },
+          {
+            "id": "102",
+            "label": "No",
+            "x": 102,
+            "y": 7,
+            "row": 9,
+            "column": 15,
+            "category": "detached"
+          },
+          {
+            "id": "103",
+            "label": "Lr",
+            "x": 103,
+            "y": 7,
+            "row": 9,
+            "column": 16,
+            "category": "detached"
+          },
+          {
+            "id": "104",
+            "label": "Rf",
+            "x": 104,
+            "y": 7,
+            "row": 6,
+            "column": 3,
+            "category": "group-4"
+          },
+          {
+            "id": "105",
+            "label": "Db",
+            "x": 105,
+            "y": 7,
+            "row": 6,
+            "column": 4,
+            "category": "group-5"
+          },
+          {
+            "id": "106",
+            "label": "Sg",
+            "x": 106,
+            "y": 7,
+            "row": 6,
+            "column": 5,
+            "category": "group-6"
+          },
+          {
+            "id": "107",
+            "label": "Bh",
+            "x": 107,
+            "y": 7,
+            "row": 6,
+            "column": 6,
+            "category": "group-7"
+          },
+          {
+            "id": "108",
+            "label": "Hs",
+            "x": 108,
+            "y": 7,
+            "row": 6,
+            "column": 7,
+            "category": "group-8"
+          },
+          {
+            "id": "109",
+            "label": "Mt",
+            "x": 109,
+            "y": 7,
+            "row": 6,
+            "column": 8,
+            "category": "group-9"
+          },
+          {
+            "id": "110",
+            "label": "Ds",
+            "x": 110,
+            "y": 7,
+            "row": 6,
+            "column": 9,
+            "category": "group-10"
+          },
+          {
+            "id": "111",
+            "label": "Rg",
+            "x": 111,
+            "y": 7,
+            "row": 6,
+            "column": 10,
+            "category": "group-11"
+          },
+          {
+            "id": "112",
+            "label": "Cn",
+            "x": 112,
+            "y": 7,
+            "row": 6,
+            "column": 11,
+            "category": "group-12"
+          },
+          {
+            "id": "113",
+            "label": "Nh",
+            "x": 113,
+            "y": 7,
+            "row": 6,
+            "column": 12,
+            "category": "group-13"
+          },
+          {
+            "id": "114",
+            "label": "Fl",
+            "x": 114,
+            "y": 7,
+            "row": 6,
+            "column": 13,
+            "category": "group-14"
+          },
+          {
+            "id": "115",
+            "label": "Mc",
+            "x": 115,
+            "y": 7,
+            "row": 6,
+            "column": 14,
+            "category": "group-15"
+          },
+          {
+            "id": "116",
+            "label": "Lv",
+            "x": 116,
+            "y": 7,
+            "row": 6,
+            "column": 15,
+            "category": "group-16"
+          },
+          {
+            "id": "117",
+            "label": "Ts",
+            "x": 117,
+            "y": 7,
+            "row": 6,
+            "column": 16,
+            "category": "group-17"
+          },
+          {
+            "id": "118",
+            "label": "Og",
+            "x": 118,
+            "y": 7,
+            "row": 6,
+            "column": 17,
+            "category": "group-18"
+          }
+        ]
+      }
+    ],
+    "required": [
+      "entities"
+    ],
+    "image": null,
+    "palette": [
+      {
+        "category": "detached",
+        "color": "blue"
+      },
+      {
+        "category": "group-1",
+        "color": "green"
+      },
+      {
+        "category": "group-10",
+        "color": "orange"
+      },
+      {
+        "category": "group-11",
+        "color": "purple"
+      },
+      {
+        "category": "group-12",
+        "color": "red"
+      },
+      {
+        "category": "group-13",
+        "color": "pink"
+      },
+      {
+        "category": "group-14",
+        "color": "yellow"
+      },
+      {
+        "category": "group-15",
+        "color": "blue"
+      },
+      {
+        "category": "group-16",
+        "color": "green"
+      },
+      {
+        "category": "group-17",
+        "color": "orange"
+      },
+      {
+        "category": "group-18",
+        "color": "purple"
+      },
+      {
+        "category": "group-2",
+        "color": "red"
+      },
+      {
+        "category": "group-3",
+        "color": "pink"
+      },
+      {
+        "category": "group-4",
+        "color": "yellow"
+      },
+      {
+        "category": "group-5",
+        "color": "blue"
+      },
+      {
+        "category": "group-6",
+        "color": "green"
+      },
+      {
+        "category": "group-7",
+        "color": "orange"
+      },
+      {
+        "category": "group-8",
+        "color": "purple"
+      },
+      {
+        "category": "group-9",
+        "color": "red"
+      }
+    ],
+    "plan": {
+      "subject": "Draw the periodic table.",
+      "detail": "standard",
+      "style": "precise data-driven native ink",
+      "components": [
+        {
+          "id": "entities",
+          "name": "entities",
+          "features": [
+            "Exact requested structure or data without invented decoration"
+          ],
+          "layer": 1,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        }
+      ],
+      "spatial": [],
+      "mapKind": null,
+      "context": [],
+      "rubric": [
+        "Correct complete data and relationships",
+        "Legible unclipped native layout"
+      ]
+    }
+  }
+}

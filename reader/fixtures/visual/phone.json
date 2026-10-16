@@ -1,0 +1,157 @@
+{
+  "prompt": "Draw a detailed smartphone sitting beside a coffee cup on a desk.",
+  "scene": {
+    "version": 2,
+    "category": "technical",
+    "strategy": "image_native",
+    "title": "Draw a detailed smartphone sitting beside a coffee cup on a desk.",
+    "canvas": [
+      1200,
+      800
+    ],
+    "palette": [],
+    "objects": [
+      {
+        "id": "composition",
+        "parent": "",
+        "kind": "image",
+        "bounds": [
+          0,
+          0,
+          1200,
+          800
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "desk",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          24.0,
+          280.0,
+          1152.0,
+          496.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "smartphone",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          240.0,
+          280.0,
+          432.0,
+          400.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "coffee-cup",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          720.0,
+          128.0,
+          372.0,
+          440.00000000000006
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      }
+    ],
+    "relations": [],
+    "datasets": [],
+    "required": [
+      "desk",
+      "smartphone",
+      "coffee-cup"
+    ],
+    "image": {
+      "prompt": "Draw a detailed smartphone sitting beside a coffee cup on a desk. Plan actual organic contours, internal details, perspective and shading before rendering. No substitute primitive diagram.",
+      "detail": "detailed",
+      "tool": "mechanical-pencil",
+      "size": "1536x1024"
+    },
+    "plan": {
+      "subject": "Draw a detailed smartphone sitting beside a coffee cup on a desk.",
+      "detail": "detailed",
+      "style": "coherent illustrated composition with depth, texture and purposeful color",
+      "components": [
+        {
+          "id": "desk",
+          "name": "desk",
+          "features": [
+            "coherent perspective desk surface"
+          ],
+          "layer": 0,
+          "depth": "background",
+          "target": null,
+          "colors": [],
+          "role": "background"
+        },
+        {
+          "id": "smartphone",
+          "name": "smartphone",
+          "features": [
+            "perspective body, rounded frame, screen, camera and secondary controls"
+          ],
+          "layer": 1,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        },
+        {
+          "id": "coffee-cup",
+          "name": "coffee cup",
+          "features": [
+            "elliptical rim, cylindrical body, handle and contact shadow"
+          ],
+          "layer": 2,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        }
+      ],
+      "spatial": [
+        {
+          "to": "coffee-cup",
+          "kind": "left-of",
+          "reason": "The objects sit beside one another on the desk",
+          "from": "smartphone"
+        }
+      ],
+      "mapKind": null,
+      "context": [],
+      "rubric": [
+        "Recognizable requested subject and every essential feature",
+        "Coherent proportions and meaningful internal geometry",
+        "Purposeful filled color and controlled shading",
+        "Clear spatial relationships and unclipped composition"
+      ]
+    }
+  },
+  "acceptance": "PLANNING_AND_MOCK_TRANSPORT_FIXTURE_ONLY; recognizability requires live generation and human review"
+}

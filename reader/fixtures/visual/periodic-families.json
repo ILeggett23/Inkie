@@ -1,0 +1,1936 @@
+{
+ "prompt": "Draw the periodic table (scene version 5: colored by element family, from the companion catalog)",
+ "scene": {
+  "version": 2,
+  "category": "table",
+  "strategy": "native",
+  "title": "Chemical elements, IUPAC 4 May 2022, colored by element family",
+  "canvas": [
+   1440,
+   1186
+  ],
+  "palette": [
+   {
+    "category": "hydrogen",
+    "color": "#bab0ac"
+   },
+   {
+    "category": "alkali metals",
+    "color": "#e15759"
+   },
+   {
+    "category": "alkaline earth metals",
+    "color": "#f28e2b"
+   },
+   {
+    "category": "transition elements",
+    "color": "#edc948"
+   },
+   {
+    "category": "lanthanoids",
+    "color": "#ff9da7"
+   },
+   {
+    "category": "actinoids",
+    "color": "#b07aa1"
+   },
+   {
+    "category": "group 13",
+    "color": "#9c755f"
+   },
+   {
+    "category": "group 14",
+    "color": "#b6992d"
+   },
+   {
+    "category": "pnictogens",
+    "color": "#59a14f"
+   },
+   {
+    "category": "chalcogens",
+    "color": "#499894"
+   },
+   {
+    "category": "halogens",
+    "color": "#4e79a7"
+   },
+   {
+    "category": "noble gases",
+    "color": "#a0cbe8"
+   }
+  ],
+  "objects": [
+   {
+    "id": "reference-grid",
+    "parent": "",
+    "kind": "grid",
+    "bounds": [
+     0,
+     0,
+     1440,
+     900
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "data": "chemical-elements-2022",
+     "rows": 10,
+     "columns": 18,
+     "fields": [
+      "x",
+      "label"
+     ]
+    }
+   },
+   {
+    "id": "family-1",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     16,
+     930,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#bab0ac"
+    },
+    "content": {
+     "points": [
+      [
+       16,
+       930
+      ],
+      [
+       60,
+       930
+      ],
+      [
+       60,
+       974
+      ],
+      [
+       16,
+       974
+      ],
+      [
+       16,
+       930
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-1-name",
+    "parent": "family-1",
+    "kind": "label",
+    "bounds": [
+     74,
+     926,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "hydrogen",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-2",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     496,
+     930,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#e15759"
+    },
+    "content": {
+     "points": [
+      [
+       496,
+       930
+      ],
+      [
+       540,
+       930
+      ],
+      [
+       540,
+       974
+      ],
+      [
+       496,
+       974
+      ],
+      [
+       496,
+       930
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-2-name",
+    "parent": "family-2",
+    "kind": "label",
+    "bounds": [
+     554,
+     926,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "alkali metals",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-3",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     976,
+     930,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#f28e2b"
+    },
+    "content": {
+     "points": [
+      [
+       976,
+       930
+      ],
+      [
+       1020,
+       930
+      ],
+      [
+       1020,
+       974
+      ],
+      [
+       976,
+       974
+      ],
+      [
+       976,
+       930
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-3-name",
+    "parent": "family-3",
+    "kind": "label",
+    "bounds": [
+     1034,
+     926,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "alkaline earth metals",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-4",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     16,
+     994,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#edc948"
+    },
+    "content": {
+     "points": [
+      [
+       16,
+       994
+      ],
+      [
+       60,
+       994
+      ],
+      [
+       60,
+       1038
+      ],
+      [
+       16,
+       1038
+      ],
+      [
+       16,
+       994
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-4-name",
+    "parent": "family-4",
+    "kind": "label",
+    "bounds": [
+     74,
+     990,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "transition elements",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-5",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     496,
+     994,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#ff9da7"
+    },
+    "content": {
+     "points": [
+      [
+       496,
+       994
+      ],
+      [
+       540,
+       994
+      ],
+      [
+       540,
+       1038
+      ],
+      [
+       496,
+       1038
+      ],
+      [
+       496,
+       994
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-5-name",
+    "parent": "family-5",
+    "kind": "label",
+    "bounds": [
+     554,
+     990,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "lanthanoids",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-6",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     976,
+     994,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#b07aa1"
+    },
+    "content": {
+     "points": [
+      [
+       976,
+       994
+      ],
+      [
+       1020,
+       994
+      ],
+      [
+       1020,
+       1038
+      ],
+      [
+       976,
+       1038
+      ],
+      [
+       976,
+       994
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-6-name",
+    "parent": "family-6",
+    "kind": "label",
+    "bounds": [
+     1034,
+     990,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "actinoids",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-7",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     16,
+     1058,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#9c755f"
+    },
+    "content": {
+     "points": [
+      [
+       16,
+       1058
+      ],
+      [
+       60,
+       1058
+      ],
+      [
+       60,
+       1102
+      ],
+      [
+       16,
+       1102
+      ],
+      [
+       16,
+       1058
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-7-name",
+    "parent": "family-7",
+    "kind": "label",
+    "bounds": [
+     74,
+     1054,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "group 13",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-8",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     496,
+     1058,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#b6992d"
+    },
+    "content": {
+     "points": [
+      [
+       496,
+       1058
+      ],
+      [
+       540,
+       1058
+      ],
+      [
+       540,
+       1102
+      ],
+      [
+       496,
+       1102
+      ],
+      [
+       496,
+       1058
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-8-name",
+    "parent": "family-8",
+    "kind": "label",
+    "bounds": [
+     554,
+     1054,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "group 14",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-9",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     976,
+     1058,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#59a14f"
+    },
+    "content": {
+     "points": [
+      [
+       976,
+       1058
+      ],
+      [
+       1020,
+       1058
+      ],
+      [
+       1020,
+       1102
+      ],
+      [
+       976,
+       1102
+      ],
+      [
+       976,
+       1058
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-9-name",
+    "parent": "family-9",
+    "kind": "label",
+    "bounds": [
+     1034,
+     1054,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "pnictogens",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-10",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     16,
+     1122,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#499894"
+    },
+    "content": {
+     "points": [
+      [
+       16,
+       1122
+      ],
+      [
+       60,
+       1122
+      ],
+      [
+       60,
+       1166
+      ],
+      [
+       16,
+       1166
+      ],
+      [
+       16,
+       1122
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-10-name",
+    "parent": "family-10",
+    "kind": "label",
+    "bounds": [
+     74,
+     1118,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "chalcogens",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-11",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     496,
+     1122,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#4e79a7"
+    },
+    "content": {
+     "points": [
+      [
+       496,
+       1122
+      ],
+      [
+       540,
+       1122
+      ],
+      [
+       540,
+       1166
+      ],
+      [
+       496,
+       1166
+      ],
+      [
+       496,
+       1122
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-11-name",
+    "parent": "family-11",
+    "kind": "label",
+    "bounds": [
+     554,
+     1118,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "halogens",
+     "size": 30
+    }
+   },
+   {
+    "id": "family-12",
+    "parent": "reference-grid",
+    "kind": "path",
+    "bounds": [
+     976,
+     1122,
+     44,
+     44
+    ],
+    "style": {
+     "tool": "highlighter",
+     "width": "thick",
+     "color": "#a0cbe8"
+    },
+    "content": {
+     "points": [
+      [
+       976,
+       1122
+      ],
+      [
+       1020,
+       1122
+      ],
+      [
+       1020,
+       1166
+      ],
+      [
+       976,
+       1166
+      ],
+      [
+       976,
+       1122
+      ]
+     ],
+     "filled": true,
+     "holes": []
+    }
+   },
+   {
+    "id": "family-12-name",
+    "parent": "family-12",
+    "kind": "label",
+    "bounds": [
+     1034,
+     1118,
+     390,
+     52
+    ],
+    "style": {
+     "tool": "fineliner",
+     "width": "medium",
+     "color": "black"
+    },
+    "content": {
+     "text": "noble gases",
+     "size": 30
+    }
+   }
+  ],
+  "relations": [],
+  "datasets": [
+   {
+    "id": "chemical-elements-2022",
+    "source": "reference:chemical-elements-2022",
+    "rows": [
+     {
+      "id": "1",
+      "label": "H",
+      "x": 1,
+      "y": 1,
+      "row": 0,
+      "column": 0,
+      "category": "hydrogen"
+     },
+     {
+      "id": "2",
+      "label": "He",
+      "x": 2,
+      "y": 1,
+      "row": 0,
+      "column": 17,
+      "category": "noble gases"
+     },
+     {
+      "id": "3",
+      "label": "Li",
+      "x": 3,
+      "y": 2,
+      "row": 1,
+      "column": 0,
+      "category": "alkali metals"
+     },
+     {
+      "id": "4",
+      "label": "Be",
+      "x": 4,
+      "y": 2,
+      "row": 1,
+      "column": 1,
+      "category": "alkaline earth metals"
+     },
+     {
+      "id": "5",
+      "label": "B",
+      "x": 5,
+      "y": 2,
+      "row": 1,
+      "column": 12,
+      "category": "group 13"
+     },
+     {
+      "id": "6",
+      "label": "C",
+      "x": 6,
+      "y": 2,
+      "row": 1,
+      "column": 13,
+      "category": "group 14"
+     },
+     {
+      "id": "7",
+      "label": "N",
+      "x": 7,
+      "y": 2,
+      "row": 1,
+      "column": 14,
+      "category": "pnictogens"
+     },
+     {
+      "id": "8",
+      "label": "O",
+      "x": 8,
+      "y": 2,
+      "row": 1,
+      "column": 15,
+      "category": "chalcogens"
+     },
+     {
+      "id": "9",
+      "label": "F",
+      "x": 9,
+      "y": 2,
+      "row": 1,
+      "column": 16,
+      "category": "halogens"
+     },
+     {
+      "id": "10",
+      "label": "Ne",
+      "x": 10,
+      "y": 2,
+      "row": 1,
+      "column": 17,
+      "category": "noble gases"
+     },
+     {
+      "id": "11",
+      "label": "Na",
+      "x": 11,
+      "y": 3,
+      "row": 2,
+      "column": 0,
+      "category": "alkali metals"
+     },
+     {
+      "id": "12",
+      "label": "Mg",
+      "x": 12,
+      "y": 3,
+      "row": 2,
+      "column": 1,
+      "category": "alkaline earth metals"
+     },
+     {
+      "id": "13",
+      "label": "Al",
+      "x": 13,
+      "y": 3,
+      "row": 2,
+      "column": 12,
+      "category": "group 13"
+     },
+     {
+      "id": "14",
+      "label": "Si",
+      "x": 14,
+      "y": 3,
+      "row": 2,
+      "column": 13,
+      "category": "group 14"
+     },
+     {
+      "id": "15",
+      "label": "P",
+      "x": 15,
+      "y": 3,
+      "row": 2,
+      "column": 14,
+      "category": "pnictogens"
+     },
+     {
+      "id": "16",
+      "label": "S",
+      "x": 16,
+      "y": 3,
+      "row": 2,
+      "column": 15,
+      "category": "chalcogens"
+     },
+     {
+      "id": "17",
+      "label": "Cl",
+      "x": 17,
+      "y": 3,
+      "row": 2,
+      "column": 16,
+      "category": "halogens"
+     },
+     {
+      "id": "18",
+      "label": "Ar",
+      "x": 18,
+      "y": 3,
+      "row": 2,
+      "column": 17,
+      "category": "noble gases"
+     },
+     {
+      "id": "19",
+      "label": "K",
+      "x": 19,
+      "y": 4,
+      "row": 3,
+      "column": 0,
+      "category": "alkali metals"
+     },
+     {
+      "id": "20",
+      "label": "Ca",
+      "x": 20,
+      "y": 4,
+      "row": 3,
+      "column": 1,
+      "category": "alkaline earth metals"
+     },
+     {
+      "id": "21",
+      "label": "Sc",
+      "x": 21,
+      "y": 4,
+      "row": 3,
+      "column": 2,
+      "category": "transition elements"
+     },
+     {
+      "id": "22",
+      "label": "Ti",
+      "x": 22,
+      "y": 4,
+      "row": 3,
+      "column": 3,
+      "category": "transition elements"
+     },
+     {
+      "id": "23",
+      "label": "V",
+      "x": 23,
+      "y": 4,
+      "row": 3,
+      "column": 4,
+      "category": "transition elements"
+     },
+     {
+      "id": "24",
+      "label": "Cr",
+      "x": 24,
+      "y": 4,
+      "row": 3,
+      "column": 5,
+      "category": "transition elements"
+     },
+     {
+      "id": "25",
+      "label": "Mn",
+      "x": 25,
+      "y": 4,
+      "row": 3,
+      "column": 6,
+      "category": "transition elements"
+     },
+     {
+      "id": "26",
+      "label": "Fe",
+      "x": 26,
+      "y": 4,
+      "row": 3,
+      "column": 7,
+      "category": "transition elements"
+     },
+     {
+      "id": "27",
+      "label": "Co",
+      "x": 27,
+      "y": 4,
+      "row": 3,
+      "column": 8,
+      "category": "transition elements"
+     },
+     {
+      "id": "28",
+      "label": "Ni",
+      "x": 28,
+      "y": 4,
+      "row": 3,
+      "column": 9,
+      "category": "transition elements"
+     },
+     {
+      "id": "29",
+      "label": "Cu",
+      "x": 29,
+      "y": 4,
+      "row": 3,
+      "column": 10,
+      "category": "transition elements"
+     },
+     {
+      "id": "30",
+      "label": "Zn",
+      "x": 30,
+      "y": 4,
+      "row": 3,
+      "column": 11,
+      "category": "transition elements"
+     },
+     {
+      "id": "31",
+      "label": "Ga",
+      "x": 31,
+      "y": 4,
+      "row": 3,
+      "column": 12,
+      "category": "group 13"
+     },
+     {
+      "id": "32",
+      "label": "Ge",
+      "x": 32,
+      "y": 4,
+      "row": 3,
+      "column": 13,
+      "category": "group 14"
+     },
+     {
+      "id": "33",
+      "label": "As",
+      "x": 33,
+      "y": 4,
+      "row": 3,
+      "column": 14,
+      "category": "pnictogens"
+     },
+     {
+      "id": "34",
+      "label": "Se",
+      "x": 34,
+      "y": 4,
+      "row": 3,
+      "column": 15,
+      "category": "chalcogens"
+     },
+     {
+      "id": "35",
+      "label": "Br",
+      "x": 35,
+      "y": 4,
+      "row": 3,
+      "column": 16,
+      "category": "halogens"
+     },
+     {
+      "id": "36",
+      "label": "Kr",
+      "x": 36,
+      "y": 4,
+      "row": 3,
+      "column": 17,
+      "category": "noble gases"
+     },
+     {
+      "id": "37",
+      "label": "Rb",
+      "x": 37,
+      "y": 5,
+      "row": 4,
+      "column": 0,
+      "category": "alkali metals"
+     },
+     {
+      "id": "38",
+      "label": "Sr",
+      "x": 38,
+      "y": 5,
+      "row": 4,
+      "column": 1,
+      "category": "alkaline earth metals"
+     },
+     {
+      "id": "39",
+      "label": "Y",
+      "x": 39,
+      "y": 5,
+      "row": 4,
+      "column": 2,
+      "category": "transition elements"
+     },
+     {
+      "id": "40",
+      "label": "Zr",
+      "x": 40,
+      "y": 5,
+      "row": 4,
+      "column": 3,
+      "category": "transition elements"
+     },
+     {
+      "id": "41",
+      "label": "Nb",
+      "x": 41,
+      "y": 5,
+      "row": 4,
+      "column": 4,
+      "category": "transition elements"
+     },
+     {
+      "id": "42",
+      "label": "Mo",
+      "x": 42,
+      "y": 5,
+      "row": 4,
+      "column": 5,
+      "category": "transition elements"
+     },
+     {
+      "id": "43",
+      "label": "Tc",
+      "x": 43,
+      "y": 5,
+      "row": 4,
+      "column": 6,
+      "category": "transition elements"
+     },
+     {
+      "id": "44",
+      "label": "Ru",
+      "x": 44,
+      "y": 5,
+      "row": 4,
+      "column": 7,
+      "category": "transition elements"
+     },
+     {
+      "id": "45",
+      "label": "Rh",
+      "x": 45,
+      "y": 5,
+      "row": 4,
+      "column": 8,
+      "category": "transition elements"
+     },
+     {
+      "id": "46",
+      "label": "Pd",
+      "x": 46,
+      "y": 5,
+      "row": 4,
+      "column": 9,
+      "category": "transition elements"
+     },
+     {
+      "id": "47",
+      "label": "Ag",
+      "x": 47,
+      "y": 5,
+      "row": 4,
+      "column": 10,
+      "category": "transition elements"
+     },
+     {
+      "id": "48",
+      "label": "Cd",
+      "x": 48,
+      "y": 5,
+      "row": 4,
+      "column": 11,
+      "category": "transition elements"
+     },
+     {
+      "id": "49",
+      "label": "In",
+      "x": 49,
+      "y": 5,
+      "row": 4,
+      "column": 12,
+      "category": "group 13"
+     },
+     {
+      "id": "50",
+      "label": "Sn",
+      "x": 50,
+      "y": 5,
+      "row": 4,
+      "column": 13,
+      "category": "group 14"
+     },
+     {
+      "id": "51",
+      "label": "Sb",
+      "x": 51,
+      "y": 5,
+      "row": 4,
+      "column": 14,
+      "category": "pnictogens"
+     },
+     {
+      "id": "52",
+      "label": "Te",
+      "x": 52,
+      "y": 5,
+      "row": 4,
+      "column": 15,
+      "category": "chalcogens"
+     },
+     {
+      "id": "53",
+      "label": "I",
+      "x": 53,
+      "y": 5,
+      "row": 4,
+      "column": 16,
+      "category": "halogens"
+     },
+     {
+      "id": "54",
+      "label": "Xe",
+      "x": 54,
+      "y": 5,
+      "row": 4,
+      "column": 17,
+      "category": "noble gases"
+     },
+     {
+      "id": "55",
+      "label": "Cs",
+      "x": 55,
+      "y": 6,
+      "row": 5,
+      "column": 0,
+      "category": "alkali metals"
+     },
+     {
+      "id": "56",
+      "label": "Ba",
+      "x": 56,
+      "y": 6,
+      "row": 5,
+      "column": 1,
+      "category": "alkaline earth metals"
+     },
+     {
+      "id": "57",
+      "label": "La",
+      "x": 57,
+      "y": 6,
+      "row": 8,
+      "column": 1,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "58",
+      "label": "Ce",
+      "x": 58,
+      "y": 6,
+      "row": 8,
+      "column": 2,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "59",
+      "label": "Pr",
+      "x": 59,
+      "y": 6,
+      "row": 8,
+      "column": 3,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "60",
+      "label": "Nd",
+      "x": 60,
+      "y": 6,
+      "row": 8,
+      "column": 4,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "61",
+      "label": "Pm",
+      "x": 61,
+      "y": 6,
+      "row": 8,
+      "column": 5,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "62",
+      "label": "Sm",
+      "x": 62,
+      "y": 6,
+      "row": 8,
+      "column": 6,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "63",
+      "label": "Eu",
+      "x": 63,
+      "y": 6,
+      "row": 8,
+      "column": 7,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "64",
+      "label": "Gd",
+      "x": 64,
+      "y": 6,
+      "row": 8,
+      "column": 8,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "65",
+      "label": "Tb",
+      "x": 65,
+      "y": 6,
+      "row": 8,
+      "column": 9,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "66",
+      "label": "Dy",
+      "x": 66,
+      "y": 6,
+      "row": 8,
+      "column": 10,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "67",
+      "label": "Ho",
+      "x": 67,
+      "y": 6,
+      "row": 8,
+      "column": 11,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "68",
+      "label": "Er",
+      "x": 68,
+      "y": 6,
+      "row": 8,
+      "column": 12,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "69",
+      "label": "Tm",
+      "x": 69,
+      "y": 6,
+      "row": 8,
+      "column": 13,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "70",
+      "label": "Yb",
+      "x": 70,
+      "y": 6,
+      "row": 8,
+      "column": 14,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "71",
+      "label": "Lu",
+      "x": 71,
+      "y": 6,
+      "row": 8,
+      "column": 15,
+      "category": "lanthanoids"
+     },
+     {
+      "id": "72",
+      "label": "Hf",
+      "x": 72,
+      "y": 6,
+      "row": 5,
+      "column": 3,
+      "category": "transition elements"
+     },
+     {
+      "id": "73",
+      "label": "Ta",
+      "x": 73,
+      "y": 6,
+      "row": 5,
+      "column": 4,
+      "category": "transition elements"
+     },
+     {
+      "id": "74",
+      "label": "W",
+      "x": 74,
+      "y": 6,
+      "row": 5,
+      "column": 5,
+      "category": "transition elements"
+     },
+     {
+      "id": "75",
+      "label": "Re",
+      "x": 75,
+      "y": 6,
+      "row": 5,
+      "column": 6,
+      "category": "transition elements"
+     },
+     {
+      "id": "76",
+      "label": "Os",
+      "x": 76,
+      "y": 6,
+      "row": 5,
+      "column": 7,
+      "category": "transition elements"
+     },
+     {
+      "id": "77",
+      "label": "Ir",
+      "x": 77,
+      "y": 6,
+      "row": 5,
+      "column": 8,
+      "category": "transition elements"
+     },
+     {
+      "id": "78",
+      "label": "Pt",
+      "x": 78,
+      "y": 6,
+      "row": 5,
+      "column": 9,
+      "category": "transition elements"
+     },
+     {
+      "id": "79",
+      "label": "Au",
+      "x": 79,
+      "y": 6,
+      "row": 5,
+      "column": 10,
+      "category": "transition elements"
+     },
+     {
+      "id": "80",
+      "label": "Hg",
+      "x": 80,
+      "y": 6,
+      "row": 5,
+      "column": 11,
+      "category": "transition elements"
+     },
+     {
+      "id": "81",
+      "label": "Tl",
+      "x": 81,
+      "y": 6,
+      "row": 5,
+      "column": 12,
+      "category": "group 13"
+     },
+     {
+      "id": "82",
+      "label": "Pb",
+      "x": 82,
+      "y": 6,
+      "row": 5,
+      "column": 13,
+      "category": "group 14"
+     },
+     {
+      "id": "83",
+      "label": "Bi",
+      "x": 83,
+      "y": 6,
+      "row": 5,
+      "column": 14,
+      "category": "pnictogens"
+     },
+     {
+      "id": "84",
+      "label": "Po",
+      "x": 84,
+      "y": 6,
+      "row": 5,
+      "column": 15,
+      "category": "chalcogens"
+     },
+     {
+      "id": "85",
+      "label": "At",
+      "x": 85,
+      "y": 6,
+      "row": 5,
+      "column": 16,
+      "category": "halogens"
+     },
+     {
+      "id": "86",
+      "label": "Rn",
+      "x": 86,
+      "y": 6,
+      "row": 5,
+      "column": 17,
+      "category": "noble gases"
+     },
+     {
+      "id": "87",
+      "label": "Fr",
+      "x": 87,
+      "y": 7,
+      "row": 6,
+      "column": 0,
+      "category": "alkali metals"
+     },
+     {
+      "id": "88",
+      "label": "Ra",
+      "x": 88,
+      "y": 7,
+      "row": 6,
+      "column": 1,
+      "category": "alkaline earth metals"
+     },
+     {
+      "id": "89",
+      "label": "Ac",
+      "x": 89,
+      "y": 7,
+      "row": 9,
+      "column": 1,
+      "category": "actinoids"
+     },
+     {
+      "id": "90",
+      "label": "Th",
+      "x": 90,
+      "y": 7,
+      "row": 9,
+      "column": 2,
+      "category": "actinoids"
+     },
+     {
+      "id": "91",
+      "label": "Pa",
+      "x": 91,
+      "y": 7,
+      "row": 9,
+      "column": 3,
+      "category": "actinoids"
+     },
+     {
+      "id": "92",
+      "label": "U",
+      "x": 92,
+      "y": 7,
+      "row": 9,
+      "column": 4,
+      "category": "actinoids"
+     },
+     {
+      "id": "93",
+      "label": "Np",
+      "x": 93,
+      "y": 7,
+      "row": 9,
+      "column": 5,
+      "category": "actinoids"
+     },
+     {
+      "id": "94",
+      "label": "Pu",
+      "x": 94,
+      "y": 7,
+      "row": 9,
+      "column": 6,
+      "category": "actinoids"
+     },
+     {
+      "id": "95",
+      "label": "Am",
+      "x": 95,
+      "y": 7,
+      "row": 9,
+      "column": 7,
+      "category": "actinoids"
+     },
+     {
+      "id": "96",
+      "label": "Cm",
+      "x": 96,
+      "y": 7,
+      "row": 9,
+      "column": 8,
+      "category": "actinoids"
+     },
+     {
+      "id": "97",
+      "label": "Bk",
+      "x": 97,
+      "y": 7,
+      "row": 9,
+      "column": 9,
+      "category": "actinoids"
+     },
+     {
+      "id": "98",
+      "label": "Cf",
+      "x": 98,
+      "y": 7,
+      "row": 9,
+      "column": 10,
+      "category": "actinoids"
+     },
+     {
+      "id": "99",
+      "label": "Es",
+      "x": 99,
+      "y": 7,
+      "row": 9,
+      "column": 11,
+      "category": "actinoids"
+     },
+     {
+      "id": "100",
+      "label": "Fm",
+      "x": 100,
+      "y": 7,
+      "row": 9,
+      "column": 12,
+      "category": "actinoids"
+     },
+     {
+      "id": "101",
+      "label": "Md",
+      "x": 101,
+      "y": 7,
+      "row": 9,
+      "column": 13,
+      "category": "actinoids"
+     },
+     {
+      "id": "102",
+      "label": "No",
+      "x": 102,
+      "y": 7,
+      "row": 9,
+      "column": 14,
+      "category": "actinoids"
+     },
+     {
+      "id": "103",
+      "label": "Lr",
+      "x": 103,
+      "y": 7,
+      "row": 9,
+      "column": 15,
+      "category": "actinoids"
+     },
+     {
+      "id": "104",
+      "label": "Rf",
+      "x": 104,
+      "y": 7,
+      "row": 6,
+      "column": 3,
+      "category": "transition elements"
+     },
+     {
+      "id": "105",
+      "label": "Db",
+      "x": 105,
+      "y": 7,
+      "row": 6,
+      "column": 4,
+      "category": "transition elements"
+     },
+     {
+      "id": "106",
+      "label": "Sg",
+      "x": 106,
+      "y": 7,
+      "row": 6,
+      "column": 5,
+      "category": "transition elements"
+     },
+     {
+      "id": "107",
+      "label": "Bh",
+      "x": 107,
+      "y": 7,
+      "row": 6,
+      "column": 6,
+      "category": "transition elements"
+     },
+     {
+      "id": "108",
+      "label": "Hs",
+      "x": 108,
+      "y": 7,
+      "row": 6,
+      "column": 7,
+      "category": "transition elements"
+     },
+     {
+      "id": "109",
+      "label": "Mt",
+      "x": 109,
+      "y": 7,
+      "row": 6,
+      "column": 8,
+      "category": "transition elements"
+     },
+     {
+      "id": "110",
+      "label": "Ds",
+      "x": 110,
+      "y": 7,
+      "row": 6,
+      "column": 9,
+      "category": "transition elements"
+     },
+     {
+      "id": "111",
+      "label": "Rg",
+      "x": 111,
+      "y": 7,
+      "row": 6,
+      "column": 10,
+      "category": "transition elements"
+     },
+     {
+      "id": "112",
+      "label": "Cn",
+      "x": 112,
+      "y": 7,
+      "row": 6,
+      "column": 11,
+      "category": "transition elements"
+     },
+     {
+      "id": "113",
+      "label": "Nh",
+      "x": 113,
+      "y": 7,
+      "row": 6,
+      "column": 12,
+      "category": "group 13"
+     },
+     {
+      "id": "114",
+      "label": "Fl",
+      "x": 114,
+      "y": 7,
+      "row": 6,
+      "column": 13,
+      "category": "group 14"
+     },
+     {
+      "id": "115",
+      "label": "Mc",
+      "x": 115,
+      "y": 7,
+      "row": 6,
+      "column": 14,
+      "category": "pnictogens"
+     },
+     {
+      "id": "116",
+      "label": "Lv",
+      "x": 116,
+      "y": 7,
+      "row": 6,
+      "column": 15,
+      "category": "chalcogens"
+     },
+     {
+      "id": "117",
+      "label": "Ts",
+      "x": 117,
+      "y": 7,
+      "row": 6,
+      "column": 16,
+      "category": "halogens"
+     },
+     {
+      "id": "118",
+      "label": "Og",
+      "x": 118,
+      "y": 7,
+      "row": 6,
+      "column": 17,
+      "category": "noble gases"
+     }
+    ]
+   }
+  ],
+  "required": [
+   "reference-grid"
+  ],
+  "image": null,
+  "plan": {
+   "subject": "Chemical elements, IUPAC 4 May 2022",
+   "detail": "standard",
+   "style": "precise native reference grid",
+   "components": [
+    {
+     "id": "reference-grid",
+     "name": "Chemical elements, IUPAC 4 May 2022",
+     "role": "part",
+     "features": [
+      "Complete registered records in their declared ordinal dimensions"
+     ],
+     "layer": 1,
+     "depth": "midground",
+     "target": null,
+     "colors": []
+    }
+   ],
+   "spatial": [],
+   "mapKind": null,
+   "context": [],
+   "rubric": [
+    "Preserve every registered record and dimension",
+    "Legible unclipped native table",
+    "Element families from IUPAC collective names with a legend"
+   ]
+  }
+ }
+}

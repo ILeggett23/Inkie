@@ -1,0 +1,57 @@
+{
+ "note": "Unmodified real advisory review results (Responses API JSON) from the user-run v4 qualification after the [x,y,width,height] rule was stated (2026-10-12). Real reviewer inconsistencies remain (points outside own bounds, centre targets on rims, target in a hole); per-observation screening removes only those locations. Never repaired; not quality evidence.",
+ "responses": [
+  {
+   "review": "sci-heart-review.json",
+   "scene": "sci-heart-scene.json",
+   "review_sha256": "29f7b0425cf6f3e56c75fe2c20757d8daebe176350610c607399c45fbf3aa9fa",
+   "response_id": "resp_03b6110352201530016accd4c95bcc87d19c25aa4e9ef341b3",
+   "model": "gpt-5.4-mini-2026-03-17",
+   "created_at": 1791808713,
+   "expected": {
+    "kept": 6,
+    "located": 2,
+    "locations_dropped": 4
+   }
+  },
+  {
+   "review": "sci-eye-section-review.json",
+   "scene": "sci-eye-section-scene.json",
+   "review_sha256": "375f6bb8a4b0b7f53e6e5983504d3191f6323a712b3c7157cf919f05fc6a1392",
+   "response_id": "resp_0abd2739b434ed3b016accd4d0b84487d19d3c3b48efaa03e8",
+   "model": "gpt-5.4-mini-2026-03-17",
+   "created_at": 1791808720,
+   "expected": {
+    "kept": 15,
+    "located": 11,
+    "locations_dropped": 4
+   }
+  },
+  {
+   "review": "object-bicycle-review.json",
+   "scene": "object-bicycle-scene.json",
+   "review_sha256": "5200d2e1d0813837d312b9e5ba1598943cc9a809ee9d33b590d3a26dda8a644b",
+   "response_id": "resp_0a105a4a07a008b3016accd4dd25ac87d1a426f0e246ac0e28",
+   "model": "gpt-5.4-mini-2026-03-17",
+   "created_at": 1791808733,
+   "expected": {
+    "kept": 8,
+    "located": 3,
+    "locations_dropped": 5
+   }
+  },
+  {
+   "review": "map-illustrative-town-review.json",
+   "scene": "map-illustrative-town-scene.json",
+   "review_sha256": "5f07df4f83db4a6fb9c0fca6c53269b523de7d9985c2054dfd27adaaa7578e7b",
+   "response_id": "resp_0fd293920d936575016accd4e5493887d19bf161804bfe0aa5",
+   "model": "gpt-5.4-mini-2026-03-17",
+   "created_at": 1791808741,
+   "expected": {
+    "kept": 6,
+    "located": 6,
+    "locations_dropped": 0
+   }
+  }
+ ]
+}

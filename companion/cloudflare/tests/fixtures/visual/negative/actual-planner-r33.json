@@ -1,0 +1,1606 @@
+{
+  "mode": "visual",
+  "response": "",
+  "visual": {
+    "version": 2,
+    "category": "scientific",
+    "strategy": "native",
+    "title": "Cross-section of the Human Eye",
+    "canvas": [
+      1400,
+      1000
+    ],
+    "palette": [
+      {
+        "category": "anatomy",
+        "color": "black"
+      },
+      {
+        "category": "labels",
+        "color": "blue"
+      },
+      {
+        "category": "emphasis",
+        "color": "red"
+      }
+    ],
+    "objects": [
+      {
+        "id": "image_frame",
+        "parent": "root",
+        "kind": "rect",
+        "bounds": [
+          180,
+          80,
+          1220,
+          880
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "medium",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "eye_outer",
+        "parent": "root",
+        "kind": "curve",
+        "bounds": [
+          260,
+          180,
+          1080,
+          820
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "medium",
+          "color": "black"
+        },
+        "content": {
+          "commands": [
+            {
+              "op": "M",
+              "points": [
+                [
+                  360,
+                  500
+                ]
+              ],
+              "pressure": 0.7
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  360,
+                  320
+                ],
+                [
+                  560,
+                  220
+                ],
+                [
+                  760,
+                  250
+                ]
+              ],
+              "pressure": 0.7
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  980,
+                  285
+                ],
+                [
+                  1110,
+                  430
+                ],
+                [
+                  1120,
+                  530
+                ]
+              ],
+              "pressure": 0.7
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  1130,
+                  650
+                ],
+                [
+                  980,
+                  790
+                ],
+                [
+                  780,
+                  790
+                ]
+              ],
+              "pressure": 0.7
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  560,
+                  790
+                ],
+                [
+                  360,
+                  680
+                ],
+                [
+                  360,
+                  500
+                ]
+              ],
+              "pressure": 0.7
+            },
+            {
+              "op": "Z",
+              "points": [],
+              "pressure": 0.7
+            }
+          ],
+          "filled": false,
+          "holes": [],
+          "texture": {
+            "mode": "none",
+            "spacing": 0,
+            "angle": 0,
+            "seed": 0
+          }
+        }
+      },
+      {
+        "id": "cornea",
+        "parent": "root",
+        "kind": "curve",
+        "bounds": [
+          330,
+          395,
+          510,
+          605
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "medium",
+          "color": "black"
+        },
+        "content": {
+          "commands": [
+            {
+              "op": "M",
+              "points": [
+                [
+                  360,
+                  500
+                ]
+              ],
+              "pressure": 0.75
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  350,
+                  430
+                ],
+                [
+                  400,
+                  385
+                ],
+                [
+                  470,
+                  395
+                ]
+              ],
+              "pressure": 0.75
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  520,
+                  410
+                ],
+                [
+                  545,
+                  485
+                ],
+                [
+                  515,
+                  560
+                ]
+              ],
+              "pressure": 0.75
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  445,
+                  610
+                ],
+                [
+                  370,
+                  580
+                ],
+                [
+                  360,
+                  500
+                ]
+              ],
+              "pressure": 0.75
+            },
+            {
+              "op": "Z",
+              "points": [],
+              "pressure": 0.75
+            }
+          ],
+          "filled": false,
+          "holes": [],
+          "texture": {
+            "mode": "none",
+            "spacing": 0,
+            "angle": 0,
+            "seed": 1
+          }
+        }
+      },
+      {
+        "id": "iris",
+        "parent": "root",
+        "kind": "ellipse",
+        "bounds": [
+          455,
+          430,
+          640,
+          620
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "medium",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "pupil",
+        "parent": "root",
+        "kind": "ellipse",
+        "bounds": [
+          520,
+          475,
+          585,
+          540
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "medium",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "lens",
+        "parent": "root",
+        "kind": "ellipse",
+        "bounds": [
+          595,
+          430,
+          710,
+          620
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "medium",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "retina",
+        "parent": "root",
+        "kind": "curve",
+        "bounds": [
+          760,
+          300,
+          1110,
+          780
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "red"
+        },
+        "content": {
+          "commands": [
+            {
+              "op": "M",
+              "points": [
+                [
+                  790,
+                  330
+                ]
+              ],
+              "pressure": 0.55
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  920,
+                  300
+                ],
+                [
+                  1040,
+                  360
+                ],
+                [
+                  1085,
+                  500
+                ]
+              ],
+              "pressure": 0.55
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  1045,
+                  680
+                ],
+                [
+                  910,
+                  755
+                ],
+                [
+                  800,
+                  740
+                ]
+              ],
+              "pressure": 0.55
+            }
+          ],
+          "filled": false,
+          "holes": [],
+          "texture": {
+            "mode": "none",
+            "spacing": 0,
+            "angle": 0,
+            "seed": 2
+          }
+        }
+      },
+      {
+        "id": "choroid",
+        "parent": "root",
+        "kind": "curve",
+        "bounds": [
+          745,
+          285,
+          1125,
+          795
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "commands": [
+            {
+              "op": "M",
+              "points": [
+                [
+                  770,
+                  320
+                ]
+              ],
+              "pressure": 0.5
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  900,
+                  285
+                ],
+                [
+                  1060,
+                  360
+                ],
+                [
+                  1100,
+                  510
+                ]
+              ],
+              "pressure": 0.5
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  1070,
+                  700
+                ],
+                [
+                  915,
+                  790
+                ],
+                [
+                  790,
+                  760
+                ]
+              ],
+              "pressure": 0.5
+            }
+          ],
+          "filled": false,
+          "holes": [],
+          "texture": {
+            "mode": "none",
+            "spacing": 0,
+            "angle": 0,
+            "seed": 3
+          }
+        }
+      },
+      {
+        "id": "sclera",
+        "parent": "root",
+        "kind": "curve",
+        "bounds": [
+          250,
+          160,
+          1125,
+          845
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "medium",
+          "color": "black"
+        },
+        "content": {
+          "commands": [
+            {
+              "op": "M",
+              "points": [
+                [
+                  330,
+                  500
+                ]
+              ],
+              "pressure": 0.7
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  330,
+                  290
+                ],
+                [
+                  560,
+                  190
+                ],
+                [
+                  770,
+                  220
+                ]
+              ],
+              "pressure": 0.7
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  1020,
+                  255
+                ],
+                [
+                  1160,
+                  415
+                ],
+                [
+                  1165,
+                  530
+                ]
+              ],
+              "pressure": 0.7
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  1170,
+                  680
+                ],
+                [
+                  1015,
+                  840
+                ],
+                [
+                  780,
+                  835
+                ]
+              ],
+              "pressure": 0.7
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  550,
+                  830
+                ],
+                [
+                  330,
+                  705
+                ],
+                [
+                  330,
+                  500
+                ]
+              ],
+              "pressure": 0.7
+            }
+          ],
+          "filled": false,
+          "holes": [],
+          "texture": {
+            "mode": "none",
+            "spacing": 0,
+            "angle": 0,
+            "seed": 4
+          }
+        }
+      },
+      {
+        "id": "optic_nerve",
+        "parent": "root",
+        "kind": "curve",
+        "bounds": [
+          1080,
+          470,
+          1270,
+          610
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "medium",
+          "color": "black"
+        },
+        "content": {
+          "commands": [
+            {
+              "op": "M",
+              "points": [
+                [
+                  1110,
+                  535
+                ]
+              ],
+              "pressure": 0.8
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  1170,
+                  520
+                ],
+                [
+                  1220,
+                  530
+                ],
+                [
+                  1260,
+                  560
+                ]
+              ],
+              "pressure": 0.8
+            }
+          ],
+          "filled": false,
+          "holes": [],
+          "texture": {
+            "mode": "none",
+            "spacing": 0,
+            "angle": 0,
+            "seed": 5
+          }
+        }
+      },
+      {
+        "id": "aqueous",
+        "parent": "root",
+        "kind": "curve",
+        "bounds": [
+          390,
+          410,
+          565,
+          610
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "blue"
+        },
+        "content": {
+          "commands": [
+            {
+              "op": "M",
+              "points": [
+                [
+                  400,
+                  500
+                ]
+              ],
+              "pressure": 0.45
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  395,
+                  445
+                ],
+                [
+                  430,
+                  410
+                ],
+                [
+                  485,
+                  405
+                ]
+              ],
+              "pressure": 0.45
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  535,
+                  415
+                ],
+                [
+                  560,
+                  465
+                ],
+                [
+                  555,
+                  535
+                ]
+              ],
+              "pressure": 0.45
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  500,
+                  605
+                ],
+                [
+                  430,
+                  590
+                ],
+                [
+                  400,
+                  500
+                ]
+              ],
+              "pressure": 0.45
+            }
+          ],
+          "filled": false,
+          "holes": [],
+          "texture": {
+            "mode": "none",
+            "spacing": 0,
+            "angle": 0,
+            "seed": 6
+          }
+        }
+      },
+      {
+        "id": "ciliary_body",
+        "parent": "root",
+        "kind": "curve",
+        "bounds": [
+          520,
+          390,
+          700,
+          650
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "commands": [
+            {
+              "op": "M",
+              "points": [
+                [
+                  565,
+                  430
+                ]
+              ],
+              "pressure": 0.6
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  620,
+                  400
+                ],
+                [
+                  675,
+                  430
+                ],
+                [
+                  690,
+                  500
+                ]
+              ],
+              "pressure": 0.6
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  675,
+                  585
+                ],
+                [
+                  620,
+                  635
+                ],
+                [
+                  565,
+                  620
+                ]
+              ],
+              "pressure": 0.6
+            }
+          ],
+          "filled": false,
+          "holes": [],
+          "texture": {
+            "mode": "none",
+            "spacing": 0,
+            "angle": 0,
+            "seed": 7
+          }
+        }
+      },
+      {
+        "id": "vitreous_body",
+        "parent": "root",
+        "kind": "curve",
+        "bounds": [
+          640,
+          300,
+          1080,
+          780
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "blue"
+        },
+        "content": {
+          "commands": [
+            {
+              "op": "M",
+              "points": [
+                [
+                  700,
+                  330
+                ]
+              ],
+              "pressure": 0.4
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  900,
+                  300
+                ],
+                [
+                  1030,
+                  400
+                ],
+                [
+                  1060,
+                  530
+                ]
+              ],
+              "pressure": 0.4
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  1025,
+                  705
+                ],
+                [
+                  875,
+                  770
+                ],
+                [
+                  715,
+                  740
+                ]
+              ],
+              "pressure": 0.4
+            },
+            {
+              "op": "C",
+              "points": [
+                [
+                  650,
+                  610
+                ],
+                [
+                  635,
+                  420
+                ],
+                [
+                  700,
+                  330
+                ]
+              ],
+              "pressure": 0.4
+            }
+          ],
+          "filled": false,
+          "holes": [],
+          "texture": {
+            "mode": "none",
+            "spacing": 0,
+            "angle": 0,
+            "seed": 8
+          }
+        }
+      },
+      {
+        "id": "label_cornea",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          80,
+          210,
+          240,
+          250
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Cornea",
+          "size": 28
+        }
+      },
+      {
+        "id": "label_iris",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          80,
+          290,
+          240,
+          330
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Iris",
+          "size": 28
+        }
+      },
+      {
+        "id": "label_pupil",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          80,
+          370,
+          240,
+          410
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Pupil",
+          "size": 28
+        }
+      },
+      {
+        "id": "label_lens",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          80,
+          450,
+          240,
+          490
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Lens",
+          "size": 28
+        }
+      },
+      {
+        "id": "label_retina",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          1140,
+          260,
+          1320,
+          300
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Retina",
+          "size": 28
+        }
+      },
+      {
+        "id": "label_choroid",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          1140,
+          340,
+          1320,
+          380
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Choroid",
+          "size": 28
+        }
+      },
+      {
+        "id": "label_sclera",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          1140,
+          420,
+          1320,
+          460
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Sclera",
+          "size": 28
+        }
+      },
+      {
+        "id": "label_optic_nerve",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          1140,
+          520,
+          1340,
+          560
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Optic nerve",
+          "size": 28
+        }
+      },
+      {
+        "id": "label_aqueous",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          80,
+          530,
+          240,
+          570
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Aqueous humor",
+          "size": 28
+        }
+      },
+      {
+        "id": "label_ciliary",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          80,
+          610,
+          240,
+          650
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Ciliary body",
+          "size": 28
+        }
+      },
+      {
+        "id": "label_vitreous",
+        "parent": "root",
+        "kind": "label",
+        "bounds": [
+          1140,
+          610,
+          1360,
+          650
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "medium",
+          "color": "blue"
+        },
+        "content": {
+          "text": "Vitreous body",
+          "size": 28
+        }
+      }
+    ],
+    "relations": [
+      {
+        "id": "r1",
+        "from": "label_cornea",
+        "to": "cornea",
+        "kind": "arrow",
+        "points": [
+          [
+            240,
+            230
+          ],
+          [
+            310,
+            430
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      },
+      {
+        "id": "r2",
+        "from": "label_iris",
+        "to": "iris",
+        "kind": "arrow",
+        "points": [
+          [
+            240,
+            310
+          ],
+          [
+            430,
+            470
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      },
+      {
+        "id": "r3",
+        "from": "label_pupil",
+        "to": "pupil",
+        "kind": "arrow",
+        "points": [
+          [
+            240,
+            390
+          ],
+          [
+            515,
+            505
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      },
+      {
+        "id": "r4",
+        "from": "label_lens",
+        "to": "lens",
+        "kind": "arrow",
+        "points": [
+          [
+            240,
+            470
+          ],
+          [
+            590,
+            500
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      },
+      {
+        "id": "r5",
+        "from": "label_retina",
+        "to": "retina",
+        "kind": "arrow",
+        "points": [
+          [
+            1140,
+            280
+          ],
+          [
+            1070,
+            360
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      },
+      {
+        "id": "r6",
+        "from": "label_choroid",
+        "to": "choroid",
+        "kind": "arrow",
+        "points": [
+          [
+            1140,
+            360
+          ],
+          [
+            1080,
+            420
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      },
+      {
+        "id": "r7",
+        "from": "label_sclera",
+        "to": "sclera",
+        "kind": "arrow",
+        "points": [
+          [
+            1140,
+            440
+          ],
+          [
+            1080,
+            500
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      },
+      {
+        "id": "r8",
+        "from": "label_optic_nerve",
+        "to": "optic_nerve",
+        "kind": "arrow",
+        "points": [
+          [
+            1140,
+            540
+          ],
+          [
+            1180,
+            550
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      },
+      {
+        "id": "r9",
+        "from": "label_aqueous",
+        "to": "aqueous",
+        "kind": "arrow",
+        "points": [
+          [
+            240,
+            550
+          ],
+          [
+            420,
+            515
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      },
+      {
+        "id": "r10",
+        "from": "label_ciliary",
+        "to": "ciliary_body",
+        "kind": "arrow",
+        "points": [
+          [
+            240,
+            630
+          ],
+          [
+            560,
+            560
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      },
+      {
+        "id": "r11",
+        "from": "label_vitreous",
+        "to": "vitreous_body",
+        "kind": "arrow",
+        "points": [
+          [
+            1140,
+            630
+          ],
+          [
+            1010,
+            620
+          ]
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "blue"
+        }
+      }
+    ],
+    "datasets": [],
+    "required": [
+      "eye_outer",
+      "cornea",
+      "iris",
+      "pupil",
+      "lens",
+      "retina",
+      "choroid",
+      "sclera",
+      "optic_nerve",
+      "aqueous",
+      "ciliary_body",
+      "vitreous_body"
+    ],
+    "image": null,
+    "plan": {
+      "subject": "Human eye cross-section",
+      "detail": "detailed",
+      "style": "scientific textbook illustration",
+      "components": [
+        {
+          "id": "eye_outer",
+          "name": "overall eye section",
+          "role": "subject",
+          "features": [
+            "oval cross-sectional eyeball silhouette",
+            "clear anterior-to-posterior orientation",
+            "single cutaway view"
+          ],
+          "layer": 0,
+          "depth": "background",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "black"
+          ]
+        },
+        {
+          "id": "cornea",
+          "name": "cornea",
+          "role": "part",
+          "features": [
+            "transparent bulging anterior covering",
+            "front-most curved dome"
+          ],
+          "layer": 3,
+          "depth": "foreground",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "black"
+          ]
+        },
+        {
+          "id": "iris",
+          "name": "iris",
+          "role": "part",
+          "features": [
+            "ring-shaped diaphragm behind cornea",
+            "colored curtain around pupil"
+          ],
+          "layer": 3,
+          "depth": "foreground",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "black"
+          ]
+        },
+        {
+          "id": "pupil",
+          "name": "pupil",
+          "role": "part",
+          "features": [
+            "central opening within iris"
+          ],
+          "layer": 4,
+          "depth": "detail",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "black"
+          ]
+        },
+        {
+          "id": "lens",
+          "name": "lens",
+          "role": "part",
+          "features": [
+            "biconvex transparent body behind pupil"
+          ],
+          "layer": 3,
+          "depth": "foreground",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "black"
+          ]
+        },
+        {
+          "id": "aqueous",
+          "name": "aqueous humor",
+          "role": "part",
+          "features": [
+            "fluid-filled space between cornea and lens"
+          ],
+          "layer": 2,
+          "depth": "midground",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "blue"
+          ]
+        },
+        {
+          "id": "ciliary_body",
+          "name": "ciliary body",
+          "role": "part",
+          "features": [
+            "muscular ring adjacent to lens",
+            "posterior to iris"
+          ],
+          "layer": 3,
+          "depth": "foreground",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "black"
+          ]
+        },
+        {
+          "id": "vitreous_body",
+          "name": "vitreous body",
+          "role": "part",
+          "features": [
+            "large gel-filled posterior chamber"
+          ],
+          "layer": 1,
+          "depth": "background",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "blue"
+          ]
+        },
+        {
+          "id": "retina",
+          "name": "retina",
+          "role": "part",
+          "features": [
+            "thin inner light-sensitive lining"
+          ],
+          "layer": 2,
+          "depth": "midground",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "red"
+          ]
+        },
+        {
+          "id": "choroid",
+          "name": "choroid",
+          "role": "part",
+          "features": [
+            "vascular middle coat between retina and sclera"
+          ],
+          "layer": 1,
+          "depth": "background",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "black"
+          ]
+        },
+        {
+          "id": "sclera",
+          "name": "sclera",
+          "role": "part",
+          "features": [
+            "outer tough white coat"
+          ],
+          "layer": 0,
+          "depth": "background",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "black"
+          ]
+        },
+        {
+          "id": "optic_nerve",
+          "name": "optic nerve",
+          "role": "part",
+          "features": [
+            "posterior nerve bundle exiting the eyeball"
+          ],
+          "layer": 0,
+          "depth": "background",
+          "target": [
+            0,
+            0
+          ],
+          "colors": [
+            "black"
+          ]
+        }
+      ],
+      "spatial": [
+        {
+          "from": "cornea",
+          "to": "iris",
+          "kind": "above",
+          "reason": "iris sits behind the cornea at the front of the eye"
+        },
+        {
+          "from": "iris",
+          "to": "pupil",
+          "kind": "above",
+          "reason": "pupil is the opening centered within the iris"
+        },
+        {
+          "from": "lens",
+          "to": "vitreous_body",
+          "kind": "left-of",
+          "reason": "lens sits anterior to the vitreous chamber"
+        },
+        {
+          "from": "retina",
+          "to": "sclera",
+          "kind": "inside",
+          "reason": "retina lines the inside of the sclera"
+        }
+      ],
+      "mapKind": null,
+      "context": [
+        "Educational anatomy illustration",
+        "Need major structures labeled",
+        "Use a clean cross-sectional side view"
+      ],
+      "rubric": [
+        "Recognizable eye cross-section",
+        "Major named structures present and labeled",
+        "Clear spatial relationships",
+        "Readable labels with arrows",
+        "Scientific textbook style"
+      ]
+    }
+  }
+}

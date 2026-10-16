@@ -1,0 +1,195 @@
+{
+  "prompt": "Draw a person sitting beneath a tree reading a book.",
+  "scene": {
+    "version": 2,
+    "category": "freeform",
+    "strategy": "image_native",
+    "title": "Draw a person sitting beneath a tree reading a book.",
+    "canvas": [
+      1200,
+      800
+    ],
+    "palette": [],
+    "objects": [
+      {
+        "id": "composition",
+        "parent": "",
+        "kind": "image",
+        "bounds": [
+          0,
+          0,
+          1200,
+          800
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "person",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          264.0,
+          320.0,
+          480.0,
+          400.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "book",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          504.0,
+          463.99999999999994,
+          216.0,
+          128.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "tree",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          72.0,
+          16.0,
+          780.0,
+          688.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "ground",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          24.0,
+          624.0,
+          1152.0,
+          160.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      }
+    ],
+    "relations": [],
+    "datasets": [],
+    "required": [
+      "person",
+      "book",
+      "tree",
+      "ground"
+    ],
+    "image": {
+      "prompt": "Draw a person sitting beneath a tree reading a book. Plan actual organic contours, internal details, perspective and shading before rendering. No substitute primitive diagram.",
+      "detail": "detailed",
+      "tool": "pencil",
+      "size": "1536x1024"
+    },
+    "plan": {
+      "subject": "Draw a person sitting beneath a tree reading a book.",
+      "detail": "detailed",
+      "style": "coherent illustrated composition with depth, texture and purposeful color",
+      "components": [
+        {
+          "id": "person",
+          "name": "person",
+          "features": [
+            "coherent human head and torso",
+            "arms and hands holding a book",
+            "bent legs, clothing and a recognizable seated pose"
+          ],
+          "layer": 0,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        },
+        {
+          "id": "book",
+          "name": "book",
+          "features": [
+            "open book held in the reader's hands"
+          ],
+          "layer": 1,
+          "depth": "detail",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        },
+        {
+          "id": "tree",
+          "name": "tree",
+          "features": [
+            "tree trunk, branching structure and substantial foliage"
+          ],
+          "layer": 2,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        },
+        {
+          "id": "ground",
+          "name": "ground",
+          "features": [
+            "supporting ground plane and contact shadows"
+          ],
+          "layer": 3,
+          "depth": "background",
+          "target": null,
+          "colors": [],
+          "role": "background"
+        }
+      ],
+      "spatial": [
+        {
+          "to": "person",
+          "kind": "connected",
+          "reason": "Hands support the open book",
+          "from": "book"
+        },
+        {
+          "to": "tree",
+          "kind": "below",
+          "reason": "Reader is beneath the tree canopy",
+          "from": "person"
+        }
+      ],
+      "mapKind": null,
+      "context": [],
+      "rubric": [
+        "Recognizable requested subject and every essential feature",
+        "Coherent proportions and meaningful internal geometry",
+        "Purposeful filled color and controlled shading",
+        "Clear spatial relationships and unclipped composition"
+      ]
+    }
+  },
+  "acceptance": "PLANNING_AND_MOCK_TRANSPORT_FIXTURE_ONLY; recognizability requires live generation and human review"
+}

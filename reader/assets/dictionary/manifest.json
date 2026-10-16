@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "provider": "princeton-wordnet-3.0",
+  "datasetVersion": "3.0",
+  "entries": 151384,
+  "bytes": 59844215,
+  "sha256": "0981613693b1d118f9ff6eeb0a19642bab3f19576e6b208ab16ea8efd92db1fc",
+  "sourceSha256": "640db279c949a88f61f851dd54ebbb22d003f8b90b85267042ef85a3781d3a52",
+  "sourceUrl": "https://wordnetcode.princeton.edu/3.0/WordNet-3.0.tar.gz",
+  "license": "../../notices/dictionary/LICENSE.wordnet",
+  "format": "ibwn3-v1",
+  "pronunciation": "not provided by WordNet",
+  "maxGlossCharacters": 505,
+  "buildScript": "tools/build-offline-dictionary.py",
+  "licenseSha256": "7731175a77952e259390b496fab905e57118b8d19ad3a8383c67eee724ff443f",
+  "buildScriptSha256": "234c745d9ebc4c93febc8fc117738867590bf5a12e66bde79bdb4e6ebd194758",
+  "assetOrigin": "Existing authorized local asset /home/zayway.guest/inkbound-reader-integration/dictionary/wordnet.ibd; fresh hash matched original manifest.",
+  "sourcePinStatus": "Fresh official WordNet3.0 archive download matched the pinned SHA256; converter regenerated dictionary and license exactly byte-identical to the reused asset.",
+  "officialLicenseUrl": "https://wordnet.princeton.edu/license-and-commercial-use",
+  "officialFormatUrl": "https://wordnet.princeton.edu/documentation/wndb5wn",
+  "runtime": "ibwn3-v1 sorted fixed-size index, <=19 bounded positional index reads and <=32768-byte selected record; exact normalized and source exception entries only; no heuristic suffix generation.",
+  "limitations": [
+    "WordNet 3.0 is a substantial English lexical dataset, not complete English coverage or a pronunciation dictionary.",
+    "Original gloss text including quoted examples is preserved verbatim in definition.",
+    "No pronunciation supplied by WordNet; field left empty.",
+    "Unsupported languages/unknown words return not found.",
+    "Case/Unicode normalization is used for lookup; source headwords and definitions retained."
+  ],
+  "sourceArchiveBytes": 11537239,
+  "rebuildVerified": true,
+  "rebuildEvidence": "tools/build-offline-dictionary.py official archive -> task-private rebuilt-wordnet; cmp dictionary and LICENSE both exit0",
+  "reuseWorkingCopyProvenance": {
+    "path": "/home/zayway.guest/inkbound-reader-integration",
+    "classification": "Extended working copy; not a qualified baseline; no source-root switch",
+    "readmeProvenanceCheckpoint": "No top-level README.md/PROVENANCE.json or depth2 checkpoint found",
+    "observedMtimes": {
+      "CMakeLists.txt": "2026-09-19 09:45",
+      "src/main.cpp": "2026-09-13 09:00",
+      "src/offline_dictionary.cpp": "2026-09-13 09:13",
+      "dictionary/manifest.json": "2026-09-13 09:11"
+    },
+    "reuse": "Only compatible dictionary provider/index/converter and licensed asset reused; provider factory adapted; no heuristic suffix guesses."
+  },
+  "tests": {
+    "sdkReleaseChecks": 22,
+    "sdkASanUbsanChecks": 22,
+    "buildDirectory": "/home/zayway.guest/reader-offline-dictionary-test",
+    "sanitizerScope": "Provider/tests instrumented; existing Qt libraries are not instrumented.",
+    "coverage": "Real reader/book/word source glosses; source exception aliases; not-found; unsupported language; bounded malformed input; missing/symlink/nonregular/oversized assets; per-record checksum failure."
+  },
+  "sourceArchiveCache": "work/document-agent/WordNet-3.0.tar.gz in coordinating Codex task workspace",
+  "sdkSqliteAvailable": true,
+  "sqliteUsed": false,
+  "definitionBoundsAudit": {
+    "entriesScanned": 151384,
+    "maximumFirstGlossUtf8Bytes": 505,
+    "maximumAnyGlossUtf8Bytes": 505,
+    "semanticCaptureLimit": 2048
+  },
+  "semanticIntegration": {
+    "sdkReleaseChecks": 23,
+    "sdkASanUbsanChecks": 23,
+    "legacySemanticQualificationCases": 20,
+    "legacyFreshProcessReopen": "PASS",
+    "sourceRouting": "Validated imported descriptor + matching stable document ID -> WordNet. Only exact descriptor-less packaged PDF qualification selections -> authored fixture. No production missing-asset fallback.",
+    "failureBehavior": "Unavailable dictionary or lookup integrity failure returns UNAVAILABLE without writing vocabulary.",
+    "evidenceDirectory": "/home/zayway.guest/reader-dictionary-integration-check",
+    "logs": [
+      "release-final.log",
+      "sanitized.log",
+      "build-and-tests.log"
+    ],
+    "mainVmSourceTouched": false
+  }
+}

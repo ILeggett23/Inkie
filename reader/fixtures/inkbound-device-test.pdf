@@ -1,0 +1,131 @@
+%PDF-1.4
+%“Œ‹ž ReportLab Generated PDF document (opensource)
+1 0 obj
+<<
+/F1 2 0 R /F2 3 0 R
+>>
+endobj
+2 0 obj
+<<
+/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+>>
+endobj
+3 0 obj
+<<
+/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+>>
+endobj
+4 0 obj
+<<
+/Contents 9 0 R /MediaBox [ 0 0 600 800 ] /Parent 8 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+5 0 obj
+<<
+/Contents 10 0 R /MediaBox [ 0 0 800 600 ] /Parent 8 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+6 0 obj
+<<
+/PageMode /UseNone /Pages 8 0 R /Type /Catalog
+>>
+endobj
+7 0 obj
+<<
+/Author (Inkbound test fixture generator) /CreationDate (D:20000101000000+00'00') /Creator (anonymous) /Keywords () /ModDate (D:20000101000000+00'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+  /Subject (unspecified) /Title (Inkbound PDF device test) /Trapped /False
+>>
+endobj
+8 0 obj
+<<
+/Count 2 /Kids [ 4 0 R 5 0 R ] /Type /Pages
+>>
+endobj
+9 0 obj
+<<
+/Length 386
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+1 g
+n 0 0 600 800 re f*
+0 g
+BT /F2 30 Tf 36 TL ET
+BT 1 0 0 1 45 715 Tm (INKBOUND READER) Tj T* ET
+BT /F1 22 Tf 26.4 TL ET
+BT 1 0 0 1 45 675 Tm (PDF DEVICE TEST) Tj T* ET
+BT /F2 26 Tf 31.2 TL ET
+BT 1 0 0 1 45 625 Tm (PAGE 1 OF 2) Tj T* ET
+.5 w
+n 45 605 m 555 605 l S
+.5 g
+n 45 80 170 170 re f*
+0 g
+n 565 765 10 10 re f*
+1 w
+n 25 25 550 750 re S
+ 
+endstream
+endobj
+10 0 obj
+<<
+/Length 386
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+1 g
+n 0 0 800 600 re f*
+0 g
+BT /F2 30 Tf 36 TL ET
+BT 1 0 0 1 45 515 Tm (INKBOUND READER) Tj T* ET
+BT /F1 22 Tf 26.4 TL ET
+BT 1 0 0 1 45 475 Tm (PDF DEVICE TEST) Tj T* ET
+BT /F2 26 Tf 31.2 TL ET
+BT 1 0 0 1 45 425 Tm (PAGE 2 OF 2) Tj T* ET
+.5 w
+n 45 405 m 755 405 l S
+.5 g
+n 400 80 170 90 re f*
+0 g
+n 765 565 10 10 re f*
+1 w
+n 25 25 750 550 re S
+ 
+endstream
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000061 00000 n 
+0000000102 00000 n 
+0000000209 00000 n 
+0000000321 00000 n 
+0000000514 00000 n 
+0000000708 00000 n 
+0000000776 00000 n 
+0000001075 00000 n 
+0000001140 00000 n 
+0000001576 00000 n 
+trailer
+<<
+/ID 
+[<8f612416a4957231b06c633be0efe34a><8f612416a4957231b06c633be0efe34a>]
+% ReportLab generated PDF document -- digest (opensource)
+
+/Info 7 0 R
+/Root 6 0 R
+/Size 11
+>>
+startxref
+2013
+%%EOF

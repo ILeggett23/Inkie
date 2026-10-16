@@ -1,0 +1,1 @@
+{"name":"inkbound-companion-converter","private":true,"version":"1.0.0","type":"module","dependencies":{"@cloudflare/containers":"0.3.7"},"devDependencies":{"wrangler":"4.131.1"}}

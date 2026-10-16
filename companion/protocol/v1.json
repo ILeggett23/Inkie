@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:inkbound:companion:protocol:1",
+  "title": "Inkbound Companion delivery manifest v1",
+  "type": "object",
+  "required": ["version", "jobs"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"const": 1},
+    "jobs": {"type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/job"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "job": {
+      "type": "object", "additionalProperties": false,
+      "required": ["job_id", "document_id", "filename", "format", "sha256", "size", "converted", "intentional_new", "download_token", "download_expires_at"],
+      "properties": {
+        "job_id": {"$ref": "#/$defs/id"}, "document_id": {"$ref": "#/$defs/id"},
+        "filename": {"type": "string", "minLength": 1, "maxLength": 180},
+        "format": {"enum": ["pdf", "epub"]}, "sha256": {"$ref": "#/$defs/sha256"},
+        "size": {"type": "integer", "minimum": 1, "maximum": 67108864},
+        "converted": {"type": "boolean"}, "intentional_new": {"type": "boolean", "description": "True only when the upload was explicitly created with new_import:true; never infer intention from a new UUID"}, "download_token": {"type": "string", "maxLength": 128},
+        "download_expires_at": {"type": "number", "description": "Unix seconds; 5-minute download authorization, distinct from the device credential"}
+      }
+    },
+    "ack": {
+      "type": "object", "required": ["document_id", "sha256", "durable"],
+      "additionalProperties": false,
+      "properties": {"document_id": {"$ref": "#/$defs/id"}, "sha256": {"$ref": "#/$defs/sha256"}, "durable": {"const": true}}
+    },
+    "tombstone": {"type": "object", "required": ["document_id"], "additionalProperties": false, "properties": {"document_id": {"$ref": "#/$defs/id"}}},
+    "scope": {"enum": ["word", "sentences", "paragraphs", "page", "general"]},
+    "semanticColor": {"enum": ["black", "pink", "green", "orange", "yellow", "purple", "blue", "red"]}
+  }
+}

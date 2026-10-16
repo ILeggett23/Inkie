@@ -1,0 +1,284 @@
+{
+  "version": 4,
+  "category": "sketch",
+  "strategy": "image_native",
+  "title": "bicycle",
+  "canvas": [
+    1400,
+    1000
+  ],
+  "palette": [],
+  "objects": [
+    {
+      "id": "whole",
+      "parent": "",
+      "kind": "image",
+      "bounds": [
+        280,
+        220,
+        840,
+        560
+      ],
+      "style": {
+        "tool": "fineliner",
+        "width": "medium",
+        "color": "black"
+      },
+      "content": null
+    }
+  ],
+  "relations": [],
+  "datasets": [],
+  "required": [
+    "whole"
+  ],
+  "image": {
+    "prompt": "bicycle",
+    "detail": "standard",
+    "size": "1536x1024",
+    "tool": "fineliner"
+  },
+  "plan": {
+    "subject": "bicycle",
+    "detail": "standard",
+    "style": "simple line sketch",
+    "components": [
+      {
+        "id": "whole",
+        "name": "bicycle",
+        "role": "subject",
+        "features": [
+          "two wheels",
+          "frame",
+          "handlebars",
+          "seat",
+          "pedals",
+          "chain area"
+        ],
+        "layer": 0,
+        "depth": "foreground",
+        "target": null,
+        "colors": [
+          "black"
+        ]
+      }
+    ],
+    "spatial": [],
+    "mapKind": null,
+    "context": [],
+    "rubric": [
+      "Coherent requested whole subject"
+    ],
+    "picture": {
+      "spec": {
+        "version": 4,
+        "kind": "picture",
+        "category": "sketch",
+        "subject": "bicycle",
+        "view": "side view",
+        "style": "simple line sketch",
+        "detail": "standard",
+        "aspect": "landscape",
+        "tool": "fineliner",
+        "orientation": {
+          "horizontal": "left to right",
+          "vertical": "upright"
+        },
+        "components": [
+          {
+            "id": "whole",
+            "parent": null,
+            "name": "bicycle",
+            "semanticClass": "vehicle",
+            "role": "whole",
+            "features": [
+              "two wheels",
+              "frame",
+              "handlebars",
+              "seat",
+              "pedals",
+              "chain area"
+            ],
+            "layer": 0,
+            "depth": "foreground",
+            "colors": [
+              "black"
+            ],
+            "colorRole": "outline",
+            "label": null
+          },
+          {
+            "id": "frame",
+            "parent": "whole",
+            "name": "frame",
+            "semanticClass": "frame",
+            "role": "part",
+            "features": [
+              "triangular frame structure",
+              "top tube",
+              "down tube",
+              "seat tube"
+            ],
+            "layer": 1,
+            "depth": "foreground",
+            "colors": [
+              "black"
+            ],
+            "colorRole": "structure",
+            "label": null
+          },
+          {
+            "id": "front-wheel",
+            "parent": "whole",
+            "name": "front wheel",
+            "semanticClass": "wheel",
+            "role": "part",
+            "features": [
+              "circular wheel",
+              "spokes",
+              "tire"
+            ],
+            "layer": 1,
+            "depth": "foreground",
+            "colors": [
+              "black"
+            ],
+            "colorRole": "wheel",
+            "label": null
+          },
+          {
+            "id": "rear-wheel",
+            "parent": "whole",
+            "name": "rear wheel",
+            "semanticClass": "wheel",
+            "role": "part",
+            "features": [
+              "circular wheel",
+              "spokes",
+              "tire"
+            ],
+            "layer": 1,
+            "depth": "foreground",
+            "colors": [
+              "black"
+            ],
+            "colorRole": "wheel",
+            "label": null
+          },
+          {
+            "id": "handlebars",
+            "parent": "whole",
+            "name": "handlebars",
+            "semanticClass": "handlebar",
+            "role": "part",
+            "features": [
+              "curved bar",
+              "grips",
+              "angled stem"
+            ],
+            "layer": 2,
+            "depth": "detail",
+            "colors": [
+              "black"
+            ],
+            "colorRole": "control",
+            "label": null
+          },
+          {
+            "id": "seat",
+            "parent": "whole",
+            "name": "seat",
+            "semanticClass": "saddle",
+            "role": "part",
+            "features": [
+              "narrow saddle",
+              "slightly raised position"
+            ],
+            "layer": 2,
+            "depth": "detail",
+            "colors": [
+              "black"
+            ],
+            "colorRole": "rider",
+            "label": null
+          },
+          {
+            "id": "pedals",
+            "parent": "whole",
+            "name": "pedals",
+            "semanticClass": "pedal",
+            "role": "part",
+            "features": [
+              "crank",
+              "two pedals"
+            ],
+            "layer": 2,
+            "depth": "detail",
+            "colors": [
+              "black"
+            ],
+            "colorRole": "mechanism",
+            "label": null
+          },
+          {
+            "id": "chain",
+            "parent": "whole",
+            "name": "chain area",
+            "semanticClass": "drivetrain",
+            "role": "part",
+            "features": [
+              "chain ring",
+              "rear sprocket area"
+            ],
+            "layer": 2,
+            "depth": "detail",
+            "colors": [
+              "black"
+            ],
+            "colorRole": "mechanism",
+            "label": null
+          }
+        ],
+        "relations": [
+          {
+            "from": "frame",
+            "to": "front-wheel",
+            "kind": "connected",
+            "reason": "front fork connects frame to the front wheel"
+          },
+          {
+            "from": "frame",
+            "to": "rear-wheel",
+            "kind": "connected",
+            "reason": "rear stays connect frame to the rear wheel"
+          },
+          {
+            "from": "handlebars",
+            "to": "frame",
+            "kind": "attached",
+            "reason": "handlebar stem attaches to the front of the frame"
+          },
+          {
+            "from": "seat",
+            "to": "frame",
+            "kind": "attached",
+            "reason": "seat post attaches to the top of the frame"
+          },
+          {
+            "from": "pedals",
+            "to": "frame",
+            "kind": "attached",
+            "reason": "crankset mounts near the lower frame"
+          },
+          {
+            "from": "chain",
+            "to": "pedals",
+            "kind": "connected",
+            "reason": "drivetrain links pedals to the rear wheel area"
+          }
+        ]
+      },
+      "grounding": []
+    }
+  }
+}

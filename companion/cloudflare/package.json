@@ -1,0 +1,19 @@
+{
+  "name": "inkbound-companion-cloudflare",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "dev": "wrangler dev --local",
+    "types": "wrangler types",
+    "dry-run": "wrangler deploy --dry-run --outdir work/dry-run",
+    "migrate:local": "wrangler d1 migrations apply inkbound-companion --local",
+    "build": "node tools/build-worker.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "4.131.1",
+    "miniflare": "5.20260911.0-alpha",
+    "@cloudflare/workers-types": "5.20260911.1"
+  }
+}

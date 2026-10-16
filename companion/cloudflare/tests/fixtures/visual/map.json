@@ -1,0 +1,355 @@
+{
+  "prompt": "Draw an illustrative map showing a route from a house through a library and park to a destination.",
+  "scene": {
+    "version": 2,
+    "category": "map",
+    "strategy": "image_native",
+    "title": "Draw an illustrative map showing a route from a house through a library and park to a destination.",
+    "canvas": [
+      1200,
+      800
+    ],
+    "palette": [],
+    "objects": [
+      {
+        "id": "composition",
+        "parent": "",
+        "kind": "image",
+        "bounds": [
+          240,
+          140,
+          720,
+          480
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "house",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          297.6,
+          428.0,
+          115.2,
+          96.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "library",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          456.0,
+          250.4,
+          144.0,
+          105.6
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "park",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          650.4,
+          298.4,
+          194.4,
+          144.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "destination",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          837.6,
+          178.4,
+          86.39999999999999,
+          86.39999999999999
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "street-network",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          261.6,
+          178.4,
+          676.8,
+          403.2
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "route",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          333.6,
+          207.2,
+          547.2,
+          297.6
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "orientation",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          261.6,
+          154.4,
+          43.199999999999996,
+          57.599999999999994
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "house-label",
+        "parent": "house",
+        "kind": "label",
+        "bounds": [
+          20,
+          100,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "house",
+          "size": 26
+        }
+      },
+      {
+        "id": "library-label",
+        "parent": "library",
+        "kind": "label",
+        "bounds": [
+          980,
+          100,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "library",
+          "size": 26
+        }
+      },
+      {
+        "id": "park-label",
+        "parent": "park",
+        "kind": "label",
+        "bounds": [
+          20,
+          250,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "park",
+          "size": 26
+        }
+      },
+      {
+        "id": "destination-label",
+        "parent": "destination",
+        "kind": "label",
+        "bounds": [
+          980,
+          250,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "destination",
+          "size": 26
+        }
+      }
+    ],
+    "relations": [],
+    "datasets": [],
+    "required": [
+      "house",
+      "library",
+      "park",
+      "destination",
+      "street-network",
+      "route",
+      "orientation"
+    ],
+    "image": {
+      "prompt": "Draw an illustrative map showing a route from a house through a library and park to a destination. Plan actual organic contours, internal details, perspective and shading before rendering. No substitute primitive diagram.",
+      "detail": "detailed",
+      "tool": "fineliner",
+      "size": "1536x1024"
+    },
+    "plan": {
+      "subject": "Draw an illustrative map showing a route from a house through a library and park to a destination.",
+      "detail": "detailed",
+      "style": "coherent illustrated composition with depth, texture and purposeful color",
+      "components": [
+        {
+          "id": "house",
+          "name": "house",
+          "features": [
+            "recognizable start location and building marker"
+          ],
+          "layer": 0,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "landmark"
+        },
+        {
+          "id": "library",
+          "name": "library",
+          "features": [
+            "library landmark on the route"
+          ],
+          "layer": 1,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "landmark"
+        },
+        {
+          "id": "park",
+          "name": "park",
+          "features": [
+            "park region with paths and vegetation"
+          ],
+          "layer": 2,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "landmark"
+        },
+        {
+          "id": "destination",
+          "name": "destination",
+          "features": [
+            "clearly distinguished destination marker"
+          ],
+          "layer": 3,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "landmark"
+        },
+        {
+          "id": "street-network",
+          "name": "street network",
+          "features": [
+            "interconnected streets, intersections and blocks rather than disconnected straight links"
+          ],
+          "layer": 4,
+          "depth": "background",
+          "target": null,
+          "colors": [],
+          "role": "background"
+        },
+        {
+          "id": "route",
+          "name": "route",
+          "features": [
+            "continuous highlighted route following streets via all requested stops in order"
+          ],
+          "layer": 5,
+          "depth": "detail",
+          "target": null,
+          "colors": [],
+          "role": "route"
+        },
+        {
+          "id": "orientation",
+          "name": "orientation",
+          "features": [
+            "clear north orientation and map-like spatial context"
+          ],
+          "layer": 6,
+          "depth": "detail",
+          "target": null,
+          "colors": [],
+          "role": "orientation"
+        }
+      ],
+      "spatial": [],
+      "mapKind": "illustrative",
+      "context": [
+        "streets",
+        "landmarks",
+        "regions",
+        "orientation"
+      ],
+      "rubric": [
+        "Recognizable requested subject and every essential feature",
+        "Coherent proportions and meaningful internal geometry",
+        "Purposeful filled color and controlled shading",
+        "Clear spatial relationships and unclipped composition"
+      ]
+    }
+  },
+  "acceptance": "PLANNING_AND_MOCK_TRANSPORT_FIXTURE_ONLY; recognizability requires live generation and human review"
+}

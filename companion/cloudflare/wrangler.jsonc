@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "inkbound-companion",
+  "account_id": "5fb3dae0db353886a06c52d02be862fd",
+  "main": "src/worker.mjs",
+  "compatibility_date": "2026-09-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "assets": {"directory": "../web", "binding": "ASSETS", "run_worker_first": true},
+  "vars": {"TOM_IMAGE_MODEL": "gpt-image-2.5-flare","APP_ORIGIN": "http://localhost:8787", "ALLOW_LOCAL_HTTP": "true", "TOM_MODELS": "gpt-5.4-mini", "CONVERSION_ENABLED": "false", "TOM_ENABLED": "false"},
+  "d1_databases": [{"binding": "DB", "database_name": "inkbound-companion", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations"}],
+  "r2_buckets": [{"binding": "UPLOADS", "bucket_name": "inkbound-companion-private"}],
+  "services": [{"binding": "CONVERTER", "service": "inkbound-companion-converter"}],
+  "queues": {"producers": [{"binding": "WORK", "queue": "inkbound-companion-work"}], "consumers": [{"queue": "inkbound-companion-work", "max_batch_size": 1, "max_batch_timeout": 1, "max_retries": 2}]},
+  "triggers": {"crons": ["*/10 * * * *"]},
+  "observability": {"enabled": true, "head_sampling_rate": 0.01},
+  "limits": {"cpu_ms": 30000},
+  "env": {"production": {
+    "name": "inkbound-companion",
+    "vars": {"TOM_IMAGE_MODEL": "gpt-image-2.5-flare","APP_ORIGIN": "https://inkbound-companion.bridgecrm-zayway.workers.dev", "ALLOW_LOCAL_HTTP": "false", "TOM_PROVIDER": "openai", "TOM_MAX_OUTPUT_TOKENS": "800",
+    "TOM_SCENE_MAX_OUTPUT_TOKENS": "16384",
+    "TOM_SCENE_REQUEST_VERSION": "5", "TOM_MODELS": "gpt-5.4-mini", "CONVERSION_ENABLED": "true", "TOM_ENABLED": "true",
+    "TOM_DAILY_LIMIT": "unlimited", "TOM_IMAGE_DAILY_LIMIT": "unlimited"},
+    "ai": {"binding": "AI"},
+    "d1_databases": [{"binding": "DB", "database_name": "inkbound-companion", "database_id": "134d464d-2514-469a-9f30-cfac7f10ddec", "migrations_dir": "migrations"}],
+    "r2_buckets": [{"binding": "UPLOADS", "bucket_name": "inkbound-companion-private"}],
+    "services": [{"binding": "CONVERTER", "service": "inkbound-companion-converter"}],
+    "queues": {"producers": [{"binding": "WORK", "queue": "inkbound-companion-work"}], "consumers": [{"queue": "inkbound-companion-work", "max_batch_size": 1, "max_batch_timeout": 1, "max_retries": 2}]}
+  }}
+}

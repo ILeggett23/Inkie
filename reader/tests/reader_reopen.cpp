@@ -1,0 +1,4 @@
+#include "reader.h"
+#include <QCoreApplication>
+#include <cstdio>
+int main(int argc,char**argv){QCoreApplication app(argc,argv);if(argc!=3)return 64;try{std::filesystem::path root=argv[1],data=argv[2];auto p=reader::initialPrepare(root,data/"main");if(p.metadata["page"].toInt()!=1)throw std::runtime_error("resume");for(int i=0;i<2;++i){auto page=underlay::prepare(root,reader::pagePath(data/"main",i),i,false);auto hash=underlay::digest(QByteArray(reinterpret_cast<const char*>(page.ink.data()),underlay::Pixels*4)).toHex();if(hash!=underlay::readBounded(data/("expected"+std::to_string(i)),64))throw std::runtime_error("replay");}std::puts("FRESH_PROCESS_REOPEN_PASS pages=2 resume=1 byte_exact_ink=true");return 0;}catch(const std::exception& e){std::fprintf(stderr,"REOPEN_FAIL %s\n",e.what());return 1;}}

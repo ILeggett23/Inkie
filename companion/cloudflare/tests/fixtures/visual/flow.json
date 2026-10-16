@@ -1,0 +1,231 @@
+{
+  "prompt": "Create a flowchart showing this process: Start, Check data, Finish.",
+  "scene": {
+    "version": 2,
+    "category": "diagram",
+    "strategy": "native",
+    "title": "",
+    "canvas": [
+      1200,
+      800
+    ],
+    "objects": [
+      {
+        "id": "start",
+        "parent": "",
+        "kind": "rect",
+        "bounds": [
+          350,
+          40,
+          400,
+          140
+        ],
+        "style": {
+          "tool": "fineliner",
+          "color": "black",
+          "width": "medium"
+        },
+        "content": null
+      },
+      {
+        "id": "start-label",
+        "parent": "start",
+        "kind": "label",
+        "bounds": [
+          380,
+          80,
+          340,
+          50
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "color": "black",
+          "width": "medium"
+        },
+        "content": {
+          "text": "Start",
+          "size": 26
+        }
+      },
+      {
+        "id": "check",
+        "parent": "",
+        "kind": "rect",
+        "bounds": [
+          350,
+          290,
+          400,
+          140
+        ],
+        "style": {
+          "tool": "fineliner",
+          "color": "black",
+          "width": "medium"
+        },
+        "content": null
+      },
+      {
+        "id": "check-label",
+        "parent": "check",
+        "kind": "label",
+        "bounds": [
+          380,
+          330,
+          340,
+          50
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "color": "black",
+          "width": "medium"
+        },
+        "content": {
+          "text": "Check data",
+          "size": 26
+        }
+      },
+      {
+        "id": "finish",
+        "parent": "",
+        "kind": "rect",
+        "bounds": [
+          350,
+          540,
+          400,
+          140
+        ],
+        "style": {
+          "tool": "fineliner",
+          "color": "black",
+          "width": "medium"
+        },
+        "content": null
+      },
+      {
+        "id": "finish-label",
+        "parent": "finish",
+        "kind": "label",
+        "bounds": [
+          380,
+          580,
+          340,
+          50
+        ],
+        "style": {
+          "tool": "ballpoint",
+          "color": "black",
+          "width": "medium"
+        },
+        "content": {
+          "text": "Finish",
+          "size": 26
+        }
+      }
+    ],
+    "relations": [
+      {
+        "id": "edge1",
+        "from": "start",
+        "to": "check",
+        "kind": "arrow",
+        "points": [
+          [
+            550,
+            180
+          ],
+          [
+            550,
+            290
+          ]
+        ],
+        "style": {
+          "tool": "fineliner",
+          "color": "black",
+          "width": "medium"
+        }
+      },
+      {
+        "id": "edge2",
+        "from": "check",
+        "to": "finish",
+        "kind": "arrow",
+        "points": [
+          [
+            550,
+            430
+          ],
+          [
+            550,
+            540
+          ]
+        ],
+        "style": {
+          "tool": "fineliner",
+          "color": "black",
+          "width": "medium"
+        }
+      }
+    ],
+    "datasets": [],
+    "required": [
+      "start",
+      "start-label",
+      "check",
+      "check-label",
+      "finish",
+      "finish-label"
+    ],
+    "image": null,
+    "palette": [],
+    "plan": {
+      "subject": "Create a flowchart showing this process: Start, Check data, Finish.",
+      "detail": "standard",
+      "style": "precise data-driven native ink",
+      "components": [
+        {
+          "id": "start",
+          "name": "start",
+          "features": [
+            "Exact requested structure or data without invented decoration"
+          ],
+          "layer": 1,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        },
+        {
+          "id": "check",
+          "name": "check",
+          "features": [
+            "Exact requested structure or data without invented decoration"
+          ],
+          "layer": 1,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        },
+        {
+          "id": "finish",
+          "name": "finish",
+          "features": [
+            "Exact requested structure or data without invented decoration"
+          ],
+          "layer": 1,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        }
+      ],
+      "spatial": [],
+      "mapKind": null,
+      "context": [],
+      "rubric": [
+        "Correct complete data and relationships",
+        "Legible unclipped native layout"
+      ]
+    }
+  }
+}

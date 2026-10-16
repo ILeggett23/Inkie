@@ -1,0 +1,72 @@
+name: Companion synthetic tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - run: python scripts/audit_boundary.py --history
+      - run: python scripts/check_dependencies.py
+      - run: python -m unittest -v tests.test_integration tests.test_boundary
+      - run: node --check web/app.js
+      # No private runtime directory, document bytes, or credentials are artifacts.
+
+  cloudflare-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_LOG_PATH: ./work/wrangler-ci.log
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: cloudflare/package-lock.json
+      - run: python -m venv .venv
+      - run: .venv/bin/python -m pip install -r requirements.txt
+      - run: npm ci
+        working-directory: cloudflare
+      - run: npm test
+        working-directory: cloudflare
+      - run: npx wrangler deploy --dry-run --env '' --outdir work/ci-dry-run
+        working-directory: cloudflare
+      # Uses synthetic local D1/R2/queue state and a real local Python converter.
+      # Tom SSE is provider-simulated; no Cloudflare/OpenAI credentials are set.
+
+  isolated-converter-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build companion-only converter for the cloud target architecture
+        run: docker build --platform linux/amd64 -t inkbound-converter:test -f cloudflare/converter/Dockerfile .
+      - name: Exercise synthetic files inside an isolated converter
+        shell: bash
+        run: |
+          set -euo pipefail
+          converter_id=$(docker run -d --platform linux/amd64 --network none --read-only --tmpfs /tmp:rw,noexec,nosuid,size=192m --memory=1g --cpus=1 --pids-limit=32 --cap-drop ALL --security-opt no-new-privileges inkbound-converter:test)
+          trap 'docker rm -f "$converter_id" >/dev/null' EXIT
+          test "$(docker inspect --format '{{.HostConfig.NetworkMode}}' "$converter_id")" = none
+          test "$(docker inspect --format '{{.HostConfig.ReadonlyRootfs}}' "$converter_id")" = true
+          docker exec -i "$converter_id" python - < cloudflare/tests/container_smoke.py
+      # Build context and fixtures belong exclusively to this companion repository.

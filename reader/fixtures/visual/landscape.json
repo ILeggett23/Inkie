@@ -1,0 +1,193 @@
+{
+  "prompt": "Draw a cabin beside a lake with mountains in the background.",
+  "scene": {
+    "version": 2,
+    "category": "freeform",
+    "strategy": "image_native",
+    "title": "Draw a cabin beside a lake with mountains in the background.",
+    "canvas": [
+      1200,
+      800
+    ],
+    "palette": [],
+    "objects": [
+      {
+        "id": "composition",
+        "parent": "",
+        "kind": "image",
+        "bounds": [
+          0,
+          0,
+          1200,
+          800
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "mountains",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          24.0,
+          16.0,
+          1152.0,
+          336.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "lake",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          540.0,
+          336.0,
+          636.0,
+          400.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "cabin",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          144.0,
+          320.0,
+          360.0,
+          288.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "terrain",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          24.0,
+          520.0,
+          1080.0,
+          264.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      }
+    ],
+    "relations": [],
+    "datasets": [],
+    "required": [
+      "mountains",
+      "lake",
+      "cabin",
+      "terrain"
+    ],
+    "image": {
+      "prompt": "Draw a cabin beside a lake with mountains in the background. Plan actual organic contours, internal details, perspective and shading before rendering. No substitute primitive diagram.",
+      "detail": "detailed",
+      "tool": "paintbrush",
+      "size": "1536x1024"
+    },
+    "plan": {
+      "subject": "Draw a cabin beside a lake with mountains in the background.",
+      "detail": "detailed",
+      "style": "coherent illustrated composition with depth, texture and purposeful color",
+      "components": [
+        {
+          "id": "mountains",
+          "name": "mountains",
+          "features": [
+            "layered mountain silhouettes, terrain and atmospheric depth"
+          ],
+          "layer": 0,
+          "depth": "background",
+          "target": null,
+          "colors": [],
+          "role": "background"
+        },
+        {
+          "id": "lake",
+          "name": "lake",
+          "features": [
+            "water surface, shoreline and restrained reflections"
+          ],
+          "layer": 1,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        },
+        {
+          "id": "cabin",
+          "name": "cabin",
+          "features": [
+            "recognizable cabin, roof, walls, door, windows and perspective"
+          ],
+          "layer": 2,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        },
+        {
+          "id": "terrain",
+          "name": "terrain",
+          "features": [
+            "foreground land connecting cabin and shore, vegetation and shadows"
+          ],
+          "layer": 3,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        }
+      ],
+      "spatial": [
+        {
+          "to": "lake",
+          "kind": "left-of",
+          "reason": "Cabin sits beside the lake",
+          "from": "cabin"
+        },
+        {
+          "to": "cabin",
+          "kind": "above",
+          "reason": "Mountains sit in the background",
+          "from": "mountains"
+        }
+      ],
+      "mapKind": null,
+      "context": [],
+      "rubric": [
+        "Recognizable requested subject and every essential feature",
+        "Coherent proportions and meaningful internal geometry",
+        "Purposeful filled color and controlled shading",
+        "Clear spatial relationships and unclipped composition"
+      ]
+    }
+  },
+  "acceptance": "PLANNING_AND_MOCK_TRANSPORT_FIXTURE_ONLY; recognizability requires live generation and human review"
+}

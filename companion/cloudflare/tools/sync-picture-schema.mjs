@@ -1,0 +1,2 @@
+import fs from 'node:fs';import path from 'node:path';import {picturePlanSchema,PICTURE_STYLE_V2} from '../src/picture_plan.mjs';import {pictureReviewFormat} from '../src/picture_review.mjs';
+const root=process.argv[2];if(!root)throw Error('Pass the isolated reader root explicitly');for(const [name,value] of [['picture_schema',JSON.stringify(picturePlanSchema)],['picture_review_schema',JSON.stringify(pictureReviewFormat.schema)],['picture_style',PICTURE_STYLE_V2]])fs.writeFileSync(path.join(root,'src',name+'.inc'),'R"PICTURE('+value+')PICTURE"\n');

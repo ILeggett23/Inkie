@@ -1,0 +1,2 @@
+CREATE TABLE tom_illustrations(  id TEXT PRIMARY KEY,  user_id TEXT NOT NULL REFERENCES users(id),  device_id TEXT,  fingerprint TEXT NOT NULL,  prompt TEXT NOT NULL,  provider TEXT NOT NULL,  model TEXT NOT NULL,  preset TEXT NOT NULL,  status TEXT NOT NULL,  object_key TEXT,  error TEXT,  created REAL NOT NULL,  updated REAL NOT NULL,  expires REAL NOT NULL );
+CREATE INDEX tom_illustrations_expiry ON tom_illustrations(expires,status);

@@ -1,0 +1,75 @@
+{
+  "prompt": "Graph y = x\u00b2.",
+  "scene": {
+    "version": 2,
+    "category": "math",
+    "strategy": "native",
+    "title": "",
+    "canvas": [
+      1200,
+      800
+    ],
+    "objects": [
+      {
+        "id": "graph",
+        "parent": "",
+        "kind": "math",
+        "bounds": [
+          0,
+          0,
+          1200,
+          800
+        ],
+        "style": {
+          "tool": "fineliner",
+          "color": "blue",
+          "width": "medium"
+        },
+        "content": {
+          "expression": "x^2",
+          "domain": [
+            -3,
+            3
+          ],
+          "range": [
+            -1,
+            10
+          ]
+        }
+      }
+    ],
+    "relations": [],
+    "datasets": [],
+    "required": [
+      "graph"
+    ],
+    "image": null,
+    "palette": [],
+    "plan": {
+      "subject": "Graph y = x\u00b2.",
+      "detail": "standard",
+      "style": "precise data-driven native ink",
+      "components": [
+        {
+          "id": "graph",
+          "name": "graph",
+          "features": [
+            "Exact requested structure or data without invented decoration"
+          ],
+          "layer": 1,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "subject"
+        }
+      ],
+      "spatial": [],
+      "mapKind": null,
+      "context": [],
+      "rubric": [
+        "Correct complete data and relationships",
+        "Legible unclipped native layout"
+      ]
+    }
+  }
+}

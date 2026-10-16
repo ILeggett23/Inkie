@@ -1,0 +1,427 @@
+{
+  "version": 4,
+  "category": "annotated",
+  "strategy": "image_native",
+  "title": "human eye cross-section",
+  "canvas": [
+    1400,
+    1000
+  ],
+  "palette": [],
+  "objects": [
+    {
+      "id": "whole",
+      "parent": "",
+      "kind": "image",
+      "bounds": [
+        280,
+        220,
+        840,
+        560
+      ],
+      "style": {
+        "tool": "fineliner",
+        "width": "medium",
+        "color": "black"
+      },
+      "content": null
+    }
+  ],
+  "relations": [],
+  "datasets": [],
+  "required": [
+    "whole"
+  ],
+  "image": {
+    "prompt": "human eye cross-section",
+    "detail": "detailed",
+    "size": "1536x1024",
+    "tool": "fineliner"
+  },
+  "plan": {
+    "subject": "human eye cross-section",
+    "detail": "detailed",
+    "style": "detailed anatomical illustration",
+    "components": [
+      {
+        "id": "whole",
+        "name": "human eye cross-section",
+        "role": "subject",
+        "features": [
+          "detailed anatomical cross-section",
+          "major ocular structures labeled",
+          "clean educational illustration"
+        ],
+        "layer": 0,
+        "depth": "background",
+        "target": null,
+        "colors": [
+          "white"
+        ]
+      }
+    ],
+    "spatial": [],
+    "mapKind": null,
+    "context": [],
+    "rubric": [
+      "Coherent requested whole subject"
+    ],
+    "picture": {
+      "spec": {
+        "version": 4,
+        "kind": "picture",
+        "category": "annotated",
+        "subject": "human eye cross-section",
+        "view": "cross-section",
+        "style": "detailed anatomical illustration",
+        "detail": "detailed",
+        "aspect": "landscape",
+        "tool": "fineliner",
+        "orientation": {
+          "horizontal": "left-to-right",
+          "vertical": "anterior-to-posterior"
+        },
+        "components": [
+          {
+            "id": "whole",
+            "parent": null,
+            "name": "human eye cross-section",
+            "semanticClass": "organ",
+            "role": "whole",
+            "features": [
+              "detailed anatomical cross-section",
+              "major ocular structures labeled",
+              "clean educational illustration"
+            ],
+            "layer": 0,
+            "depth": "background",
+            "colors": [
+              "white"
+            ],
+            "colorRole": "overall field",
+            "label": null
+          },
+          {
+            "id": "cornea",
+            "parent": "whole",
+            "name": "cornea",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "clear curved outer front surface",
+              "transparent protective dome"
+            ],
+            "layer": 2,
+            "depth": "foreground",
+            "colors": [
+              "white"
+            ],
+            "colorRole": "transparent outer cover",
+            "label": "Cornea"
+          },
+          {
+            "id": "anterior_chamber",
+            "parent": "whole",
+            "name": "anterior chamber",
+            "semanticClass": "ocular-space",
+            "role": "part",
+            "features": [
+              "fluid-filled space behind cornea",
+              "small front chamber"
+            ],
+            "layer": 2,
+            "depth": "detail",
+            "colors": [],
+            "colorRole": "aqueous humor space",
+            "label": "Anterior chamber"
+          },
+          {
+            "id": "iris",
+            "parent": "whole",
+            "name": "iris",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "colored ring",
+              "curved diaphragm",
+              "surrounds pupil"
+            ],
+            "layer": 2,
+            "depth": "foreground",
+            "colors": [
+              "blue",
+              "green",
+              "yellow",
+              "orange",
+              "purple",
+              "pink"
+            ],
+            "colorRole": "colored ring",
+            "label": "Iris"
+          },
+          {
+            "id": "pupil",
+            "parent": "whole",
+            "name": "pupil",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "central opening",
+              "dark circular aperture"
+            ],
+            "layer": 2,
+            "depth": "detail",
+            "colors": [
+              "black"
+            ],
+            "colorRole": "light-entry opening",
+            "label": "Pupil"
+          },
+          {
+            "id": "lens",
+            "parent": "whole",
+            "name": "lens",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "biconvex transparent body",
+              "behind iris and pupil"
+            ],
+            "layer": 2,
+            "depth": "foreground",
+            "colors": [
+              "white"
+            ],
+            "colorRole": "focus element",
+            "label": "Lens"
+          },
+          {
+            "id": "ciliary_body",
+            "parent": "whole",
+            "name": "ciliary body",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "ring of muscle and tissue",
+              "supports lens"
+            ],
+            "layer": 2,
+            "depth": "detail",
+            "colors": [
+              "red"
+            ],
+            "colorRole": "supporting muscular ring",
+            "label": "Ciliary body"
+          },
+          {
+            "id": "zonular_fibers",
+            "parent": "whole",
+            "name": "zonular fibers",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "fine suspensory fibers",
+              "connect ciliary body to lens"
+            ],
+            "layer": 2,
+            "depth": "detail",
+            "colors": [
+              "white"
+            ],
+            "colorRole": "suspensory fibers",
+            "label": "Zonular fibers"
+          },
+          {
+            "id": "vitreous_body",
+            "parent": "whole",
+            "name": "vitreous body",
+            "semanticClass": "ocular-space",
+            "role": "part",
+            "features": [
+              "large gel-filled posterior cavity",
+              "fills interior behind lens"
+            ],
+            "layer": 1,
+            "depth": "midground",
+            "colors": [],
+            "colorRole": "clear gel space",
+            "label": "Vitreous body"
+          },
+          {
+            "id": "retina",
+            "parent": "whole",
+            "name": "retina",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "thin light-sensitive inner lining",
+              "curves along back of eye"
+            ],
+            "layer": 2,
+            "depth": "background",
+            "colors": [
+              "yellow",
+              "red"
+            ],
+            "colorRole": "light-sensitive lining",
+            "label": "Retina"
+          },
+          {
+            "id": "choroid",
+            "parent": "whole",
+            "name": "choroid",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "vascular middle coat",
+              "between retina and sclera"
+            ],
+            "layer": 1,
+            "depth": "background",
+            "colors": [
+              "red"
+            ],
+            "colorRole": "vascular layer",
+            "label": "Choroid"
+          },
+          {
+            "id": "sclera",
+            "parent": "whole",
+            "name": "sclera",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "thick outer white coat",
+              "forms back and sides of eyeball"
+            ],
+            "layer": 0,
+            "depth": "background",
+            "colors": [
+              "white"
+            ],
+            "colorRole": "protective outer coat",
+            "label": "Sclera"
+          },
+          {
+            "id": "optic_nerve",
+            "parent": "whole",
+            "name": "optic nerve",
+            "semanticClass": "nerve",
+            "role": "part",
+            "features": [
+              "bundled nerve exiting posterior eye",
+              "connects to brain"
+            ],
+            "layer": 3,
+            "depth": "foreground",
+            "colors": [
+              "yellow"
+            ],
+            "colorRole": "signal pathway",
+            "label": "Optic nerve"
+          },
+          {
+            "id": "macula",
+            "parent": "whole",
+            "name": "macula",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "central retina region",
+              "specialized for detailed vision"
+            ],
+            "layer": 2,
+            "depth": "detail",
+            "colors": [
+              "yellow",
+              "red"
+            ],
+            "colorRole": "central retinal area",
+            "label": "Macula"
+          },
+          {
+            "id": "fovea",
+            "parent": "whole",
+            "name": "fovea",
+            "semanticClass": "ocular-structure",
+            "role": "part",
+            "features": [
+              "small central pit within macula",
+              "sharpest vision point"
+            ],
+            "layer": 2,
+            "depth": "detail",
+            "colors": [
+              "red"
+            ],
+            "colorRole": "high-acuity center",
+            "label": "Fovea"
+          }
+        ],
+        "relations": [
+          {
+            "from": "cornea",
+            "to": "anterior_chamber",
+            "kind": "adjacent",
+            "reason": "The anterior chamber lies directly behind the cornea."
+          },
+          {
+            "from": "iris",
+            "to": "pupil",
+            "kind": "adjacent",
+            "reason": "The pupil is the opening at the center of the iris."
+          },
+          {
+            "from": "lens",
+            "to": "iris",
+            "kind": "below",
+            "reason": "In cross-section, the lens sits just behind the iris and pupil."
+          },
+          {
+            "from": "zonular_fibers",
+            "to": "lens",
+            "kind": "attached",
+            "reason": "Zonular fibers suspend the lens."
+          },
+          {
+            "from": "ciliary_body",
+            "to": "zonular_fibers",
+            "kind": "attached",
+            "reason": "Ciliary body connects to the suspensory fibers."
+          },
+          {
+            "from": "retina",
+            "to": "choroid",
+            "kind": "inside",
+            "reason": "The retina lines the inside of the choroid."
+          },
+          {
+            "from": "choroid",
+            "to": "sclera",
+            "kind": "inside",
+            "reason": "The choroid lies internal to the sclera."
+          },
+          {
+            "from": "optic_nerve",
+            "to": "whole",
+            "kind": "attached",
+            "reason": "The optic nerve exits from the back of the eye."
+          },
+          {
+            "from": "macula",
+            "to": "retina",
+            "kind": "inside",
+            "reason": "The macula is a central region of the retina."
+          },
+          {
+            "from": "fovea",
+            "to": "macula",
+            "kind": "inside",
+            "reason": "The fovea is located within the macula."
+          }
+        ]
+      },
+      "grounding": []
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "source": "Unmodified answer retained by the installed 20x reader",
+  "request_id": "56910230-320f-4642-bf88-7fe5209a69d3",
+  "reader_turn": "63fb097e-2e6a-4986-9479-8f634ac83cff",
+  "observed_status": "interrupted",
+  "sha256": "8e8f152838b67d1006d1dfe1713d576953f408d769dd0ec4770cc4731fb61517",
+  "provider_request_id": "not available in reader record",
+  "observed_utc": "2026-10-12",
+  "paid_calls_by_this_audit": 0
+}

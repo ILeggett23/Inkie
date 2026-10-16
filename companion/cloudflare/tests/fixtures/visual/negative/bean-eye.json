@@ -1,0 +1,7 @@
+{
+  "use": "KNOWN_NEGATIVE_ONLY_NEVER_POSITIVE_QUALITY_EVIDENCE",
+  "sha256": "77afae8c962401eb9c59f2448f6ce4e45dd23dfed946f36377ec308d8ab02a37",
+  "expected": "reject composite-repeated-unrelated-geometry",
+  "diagnosis": "12 identical translated contours, repeated internal geometry, arbitrary alternating colors, no recognizable whole eye",
+  "source": "Retained exact original QPainter test image; no positive assessment attached"
+}

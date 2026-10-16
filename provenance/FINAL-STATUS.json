@@ -1,0 +1,22 @@
+{
+  "software_release_qualified": true,
+  "clean_fresh_full_gate_pass": false,
+  "qualification_basis": "Fresh R10 production build plus full R11 test-only retry; original failure preserved",
+  "production_source_manifest_sha256": "943ebcde5edde7e7b9ebbbea86ab2b9f154d445e9048e161cb0b003267bc1b8b",
+  "validation_source_manifest_sha256": "e93355c6077d6a9355527fc9826fbdf4a5ee98da45b79cba8870ad96ec36e13c",
+  "app_manifest_sha256": "471b5d004fdbf02c0f008ac29593717594bcdb128f18a8615852aa83198112d0",
+  "release_invocations": 129,
+  "sanitizers": "COMPLETE_PASS_NO_REPORTS",
+  "ux_cases": 25,
+  "semantic_cases": 30,
+  "app_install": "INSTALLED_VERIFIED_NOT_LAUNCHED",
+  "data_preservation": "HASHES_AND_METADATA_UNCHANGED_AT_INSTALL",
+  "companion_version": "990ac5ed-92fa-475b-b652-abd20ab09fe8",
+  "native_companion": "PAIRED_PENDING_0",
+  "canceled_receipt": "TERMINAL_RETIRED_LOCAL_BOOK_SHA_UNCHANGED",
+  "native_tom_config": "PASS_SCENE5_16384",
+  "provider_inference": "NOT_RUN",
+  "physical_acceptance": "PENDING_USER_READY",
+  "normal_new_candidate_exit": "PENDING",
+  "book_limit": "64MiB_UNCHANGED"
+}

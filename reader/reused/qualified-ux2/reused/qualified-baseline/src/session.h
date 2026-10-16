@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+#pragma once
+#include "marker.h"
+#include <memory>
+namespace spike {
+struct RecoveryLease {
+ virtual bool valid()const noexcept=0;
+ virtual Ns deadline()const noexcept=0;
+ virtual bool stopRequested()const noexcept=0;
+ virtual ~RecoveryLease()=default;
+};
+// A one-use permit comes only from the independent PID1 recovery owner.
+std::unique_ptr<RecoveryLease> receiveQualifiedRecoveryLease()noexcept;
+int armOwnedSession()noexcept;
+struct SessionDisplay:Display {
+ virtual bool diagnosticSegment()const noexcept{return true;}
+ virtual struct OperationSink* operationSink()noexcept{return nullptr;}
+ virtual bool initialize(const RecoveryLease&)noexcept=0;
+ virtual Surface surface()const noexcept=0;
+ virtual bool initialPage()noexcept=0;
+ virtual void pump()noexcept=0;
+ virtual void shutdown()noexcept=0; // retire borrow, NOT proof of driver termination
+};
+struct Scheduler {
+ static constexpr Ns Interval=8000000;
+ Ns last{};bool force{};
+ void observe(Phase p)noexcept{if(p==Phase::Down||p==Phase::Up)force=true;}
+ bool due(Ns now,bool dirty)const noexcept{return dirty&&now&&(force||!last||(now>=last&&now-last>=Interval));}
+ void submitted(Ns now)noexcept{last=now;force=false;}
+ int waitMs(Ns now,bool dirty)const noexcept;
+};
+struct SessionStats {std::uint64_t samples{},submits{},contacts{},released{},penContacts{},eraserContacts{};bool failed{},cancelled{};PressureEvidence pressure{};};
+struct OperationSink {
+ virtual bool reserve()noexcept=0;
+ virtual bool append(const Point&)noexcept=0;
+ virtual void cancel()noexcept=0;
+ virtual ~OperationSink()=default;
+};
+bool consumeEvents(std::span<const input_event>,FrameAssembler&,Engine&,Scheduler&,SessionStats&,Ns,RecoveryLease* =nullptr,OperationSink* =nullptr)noexcept;
+int runDirectSession(RecoveryLease&,SessionDisplay&)noexcept;
+}

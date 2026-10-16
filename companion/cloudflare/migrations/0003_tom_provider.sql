@@ -1,0 +1,1 @@
+ALTER TABLE tom ADD COLUMN provider TEXT NOT NULL DEFAULT 'openai';

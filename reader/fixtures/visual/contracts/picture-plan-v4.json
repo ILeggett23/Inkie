@@ -1,0 +1,126 @@
+{
+  "version": 4,
+  "kind": "picture",
+  "category": "technical",
+  "subject": "Nested mechanism α",
+  "view": "side cutaway",
+  "style": "technical line drawing",
+  "detail": "standard",
+  "aspect": "landscape",
+  "tool": "fineliner",
+  "orientation": {
+    "horizontal": "front to rear",
+    "vertical": "top to bottom"
+  },
+  "components": [
+    {
+      "id": "whole",
+      "parent": null,
+      "name": "Nested mechanism α",
+      "semanticClass": "mechanism",
+      "role": "whole",
+      "features": [
+        "one connected subject"
+      ],
+      "layer": 0,
+      "depth": "background",
+      "colors": [
+        "black"
+      ],
+      "colorRole": "contour",
+      "label": null
+    },
+    {
+      "id": "zone",
+      "parent": "whole",
+      "name": "working region",
+      "semanticClass": "region",
+      "role": "region",
+      "features": [
+        "contains connected parts"
+      ],
+      "layer": 0,
+      "depth": "midground",
+      "colors": [],
+      "colorRole": null,
+      "label": null
+    },
+    {
+      "id": "alpha",
+      "parent": "zone",
+      "name": "alpha component",
+      "semanticClass": "alpha",
+      "role": "part",
+      "features": [
+        "distinct visible region"
+      ],
+      "layer": 1,
+      "depth": "detail",
+      "colors": [
+        "red"
+      ],
+      "colorRole": "functional region",
+      "label": "Alpha"
+    },
+    {
+      "id": "beta",
+      "parent": "zone",
+      "name": "beta component",
+      "semanticClass": "beta",
+      "role": "part",
+      "features": [
+        "distinct visible region"
+      ],
+      "layer": 2,
+      "depth": "detail",
+      "colors": [
+        "blue"
+      ],
+      "colorRole": "functional region",
+      "label": "Beta"
+    },
+    {
+      "id": "gamma",
+      "parent": "zone",
+      "name": "gamma component",
+      "semanticClass": "gamma",
+      "role": "part",
+      "features": [
+        "distinct visible region"
+      ],
+      "layer": 3,
+      "depth": "detail",
+      "colors": [
+        "black"
+      ],
+      "colorRole": "functional region",
+      "label": "Gamma"
+    }
+  ],
+  "relations": [
+    {
+      "from": "alpha",
+      "to": "zone",
+      "kind": "inside",
+      "reason": "part of region"
+    },
+    {
+      "from": "alpha",
+      "to": "beta",
+      "kind": "adjacent",
+      "reason": "neighbouring parts"
+    },
+    {
+      "from": "gamma",
+      "to": "alpha",
+      "kind": "attached",
+      "reason": "connected support"
+    },
+    {
+      "from": "beta",
+      "to": "alpha",
+      "kind": "occludes",
+      "reason": "front part overlaps rear part"
+    }
+  ]
+}

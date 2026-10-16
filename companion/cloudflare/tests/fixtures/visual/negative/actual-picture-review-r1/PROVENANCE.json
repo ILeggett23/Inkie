@@ -1,0 +1,41 @@
+{
+ "note": "Unmodified real advisory review outputs (first v4 image run, 2026-10-12). Known negatives: the review instructions did not define bounds as [x,y,width,height]; the reviewer used corners. Images stayed unverified (review unavailable). Never repaired.",
+ "responses": [
+  {
+   "advice": "sci-heart-advice.txt",
+   "scene": "sci-heart-scene.json",
+   "advice_sha256": "3087b337b753dff348128081398f4b0bb803d1b9e8d5a91fac3e62ede131ce91",
+   "provider_request_id": null,
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:43:25.015Z",
+   "rejected_by": "bounds returned as corners [x1,y1,x2,y2]; some targets outside own geometry"
+  },
+  {
+   "advice": "sci-eye-section-advice.txt",
+   "scene": "sci-eye-section-scene.json",
+   "advice_sha256": "caf827fa1883dd1378a208f137393320d738742d1732f5ff3982644930c11aa8",
+   "provider_request_id": null,
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:43:56.818Z",
+   "rejected_by": "bounds returned as corners [x1,y1,x2,y2]; some targets outside own geometry"
+  },
+  {
+   "advice": "object-bicycle-advice.txt",
+   "scene": "object-bicycle-scene.json",
+   "advice_sha256": "d46910c8266a13b434c8da4dfbba9bfe7a99699909505ef3c39913125af06c0a",
+   "provider_request_id": null,
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:44:14.407Z",
+   "rejected_by": "bounds returned as corners [x1,y1,x2,y2]; some targets outside own geometry"
+  },
+  {
+   "advice": "map-illustrative-town-advice.txt",
+   "scene": "map-illustrative-town-scene.json",
+   "advice_sha256": "02ac17d8057f9e77504b38e999197955b0a4a6fa2201c1bb86dd156b742748c4",
+   "provider_request_id": null,
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T11:44:37.433Z",
+   "rejected_by": "bounds returned as corners [x1,y1,x2,y2]; some targets outside own geometry"
+  }
+ ]
+}

@@ -1,0 +1,42 @@
+{
+  "origin": "Project-authored synthetic fixtures; no private documents or downloads",
+  "license": "AGPL-3.0-only",
+  "pdf_pages": 3,
+  "epub_spine_items": 3,
+  "expected_text": [
+    "ORCHARD ALPHA",
+    "RIVER BRAVO",
+    "SUMMIT CHARLIE"
+  ],
+  "oversized_entry_declared_bytes": 1073741824,
+  "files": {
+    "authored-three-pages.pdf": {
+      "bytes": 3907,
+      "sha256": "04af55e8cdb034676e3c8507ed7e30bdb07867b3248a7dd857d2d0f273ea7fcc"
+    },
+    "authored-three-chapters.epub": {
+      "bytes": 2959,
+      "sha256": "776c7128d27401279fa1084b55f3b96de3084eb4a3c57a18364f6c4439b6f4af"
+    },
+    "malformed.pdf": {
+      "bytes": 38,
+      "sha256": "6570750a9d40b5ac8f2aaeae8bae0e26f132330c9ff508c858dba685a731ea3a"
+    },
+    "malformed.epub": {
+      "bytes": 32,
+      "sha256": "450340bf0524481e1fa0bb06da68d884feabf92629c6e7b98eb7d25bceff8300"
+    },
+    "traversal.epub": {
+      "bytes": 3103,
+      "sha256": "131b4b24fb793371c2b14d1dadf3ab524a5007b36a154fc75775601043c0e4d0"
+    },
+    "oversized-entry.epub": {
+      "bytes": 3074,
+      "sha256": "2f4e88f0f8f160372cce32db199ccaae82fd283888a1ba24976244782792f7fe"
+    },
+    "marker.png": {
+      "bytes": 79,
+      "sha256": "e1e066d85b292811fb3bdf5dd3bebfc803653ea86720a36ef1bf8f99974642c3"
+    }
+  }
+}

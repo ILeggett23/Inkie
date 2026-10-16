@@ -1,0 +1,523 @@
+{
+  "prompt": "Draw and label a detailed plant cell.",
+  "scene": {
+    "version": 2,
+    "category": "scientific",
+    "strategy": "image_native",
+    "title": "Draw and label a detailed plant cell.",
+    "canvas": [
+      1200,
+      800
+    ],
+    "palette": [],
+    "objects": [
+      {
+        "id": "composition",
+        "parent": "",
+        "kind": "image",
+        "bounds": [
+          240,
+          140,
+          720,
+          480
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "cell-wall",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          268.8,
+          164.0,
+          662.4,
+          432.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "cell-wall-label",
+        "parent": "cell-wall",
+        "kind": "label",
+        "bounds": [
+          20,
+          35,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "cell wall",
+          "size": 26
+        }
+      },
+      {
+        "id": "cell-membrane",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          290.4,
+          178.4,
+          619.2,
+          403.2
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "cell-membrane-label",
+        "parent": "cell-membrane",
+        "kind": "label",
+        "bounds": [
+          980,
+          35,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "cell membrane",
+          "size": 26
+        }
+      },
+      {
+        "id": "nucleus",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          348.0,
+          308.0,
+          151.2,
+          134.4
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "nucleus-label",
+        "parent": "nucleus",
+        "kind": "label",
+        "bounds": [
+          20,
+          103,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "nucleus",
+          "size": 26
+        }
+      },
+      {
+        "id": "nucleolus",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          391.2,
+          346.4,
+          57.6,
+          48.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "nucleolus-label",
+        "parent": "nucleolus",
+        "kind": "label",
+        "bounds": [
+          980,
+          103,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "nucleolus",
+          "size": 26
+        }
+      },
+      {
+        "id": "central-vacuole",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          513.6,
+          212.0,
+          324.0,
+          326.40000000000003
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "central-vacuole-label",
+        "parent": "central-vacuole",
+        "kind": "label",
+        "bounds": [
+          20,
+          171,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "central vacuole",
+          "size": 26
+        }
+      },
+      {
+        "id": "chloroplasts",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          340.8,
+          197.6,
+          144.0,
+          86.39999999999999
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "chloroplasts-label",
+        "parent": "chloroplasts",
+        "kind": "label",
+        "bounds": [
+          980,
+          171,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "chloroplasts",
+          "size": 26
+        }
+      },
+      {
+        "id": "mitochondria",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          650.4,
+          500.0,
+          151.2,
+          57.599999999999994
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "mitochondria-label",
+        "parent": "mitochondria",
+        "kind": "label",
+        "bounds": [
+          20,
+          239,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "mitochondria",
+          "size": 26
+        }
+      },
+      {
+        "id": "cytoplasm",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          297.6,
+          183.2,
+          604.8,
+          393.59999999999997
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "cytoplasm-label",
+        "parent": "cytoplasm",
+        "kind": "label",
+        "bounds": [
+          980,
+          239,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "cytoplasm",
+          "size": 26
+        }
+      },
+      {
+        "id": "golgi-apparatus",
+        "parent": "composition",
+        "kind": "anchor",
+        "bounds": [
+          348.0,
+          471.2,
+          144.0,
+          72.0
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": null
+      },
+      {
+        "id": "golgi-apparatus-label",
+        "parent": "golgi-apparatus",
+        "kind": "label",
+        "bounds": [
+          20,
+          307,
+          200,
+          45
+        ],
+        "style": {
+          "tool": "fineliner",
+          "width": "thin",
+          "color": "black"
+        },
+        "content": {
+          "text": "golgi apparatus",
+          "size": 26
+        }
+      }
+    ],
+    "relations": [],
+    "datasets": [],
+    "required": [
+      "cell-wall",
+      "cell-membrane",
+      "nucleus",
+      "nucleolus",
+      "central-vacuole",
+      "chloroplasts",
+      "mitochondria",
+      "cytoplasm",
+      "golgi-apparatus"
+    ],
+    "image": {
+      "prompt": "Draw and label a detailed plant cell. Plan actual organic contours, internal details, perspective and shading before rendering. No substitute primitive diagram.",
+      "detail": "detailed",
+      "tool": "fineliner",
+      "size": "1536x1024"
+    },
+    "plan": {
+      "subject": "Draw and label a detailed plant cell.",
+      "detail": "detailed",
+      "style": "educational cross-section with organic geometry and restrained filled color",
+      "components": [
+        {
+          "id": "cell-wall",
+          "name": "cell wall",
+          "features": [
+            "thick coherent outer cell boundary"
+          ],
+          "layer": 0,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "cell-membrane",
+          "name": "cell membrane",
+          "features": [
+            "thin inner boundary just inside the wall"
+          ],
+          "layer": 1,
+          "depth": "detail",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "nucleus",
+          "name": "nucleus",
+          "features": [
+            "nuclear envelope containing a distinct nucleolus"
+          ],
+          "layer": 2,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "nucleolus",
+          "name": "nucleolus",
+          "features": [
+            "dense structure inside the nucleus"
+          ],
+          "layer": 3,
+          "depth": "detail",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "central-vacuole",
+          "name": "central vacuole",
+          "features": [
+            "large fluid compartment occupying much of the interior"
+          ],
+          "layer": 4,
+          "depth": "midground",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "chloroplasts",
+          "name": "chloroplasts",
+          "features": [
+            "several elongated organelles with internal stacked thylakoid detail"
+          ],
+          "layer": 5,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "mitochondria",
+          "name": "mitochondria",
+          "features": [
+            "bean-shaped organelles with inner membrane folds"
+          ],
+          "layer": 6,
+          "depth": "foreground",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        },
+        {
+          "id": "cytoplasm",
+          "name": "cytoplasm",
+          "features": [
+            "continuous internal medium around the organelles"
+          ],
+          "layer": 7,
+          "depth": "background",
+          "target": null,
+          "colors": [],
+          "role": "background"
+        },
+        {
+          "id": "golgi-apparatus",
+          "name": "golgi apparatus",
+          "features": [
+            "stacked curved membrane sacs near nucleus"
+          ],
+          "layer": 8,
+          "depth": "detail",
+          "target": null,
+          "colors": [],
+          "role": "part"
+        }
+      ],
+      "spatial": [
+        {
+          "to": "nucleus",
+          "kind": "inside",
+          "reason": "The nucleolus is inside the nucleus",
+          "from": "nucleolus"
+        },
+        {
+          "to": "cell-wall",
+          "kind": "inside",
+          "reason": "The membrane lies within the cell wall",
+          "from": "cell-membrane"
+        }
+      ],
+      "mapKind": null,
+      "context": [],
+      "rubric": [
+        "Recognizable requested subject and every essential feature",
+        "Coherent proportions and meaningful internal geometry",
+        "Purposeful filled color and controlled shading",
+        "Clear spatial relationships and unclipped composition"
+      ]
+    }
+  },
+  "acceptance": "PLANNING_AND_MOCK_TRANSPORT_FIXTURE_ONLY; recognizability requires live generation and human review"
+}

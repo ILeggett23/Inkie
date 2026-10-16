@@ -1,0 +1,12 @@
+{
+  "type": "summary",
+  "complete": true,
+  "files": 382673,
+  "directories": 73828,
+  "symlinks": 2272,
+  "logical_bytes": 130942186129,
+  "allocated_bytes_before_hardlink_dedup": 131520180224,
+  "unique_chunks": 159066,
+  "unique_bytes": 67124312776,
+  "elapsed_seconds": 221
+}

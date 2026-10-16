@@ -1,0 +1,13 @@
+{
+ "note": "Unmodified real planner response (fourth v4 run, plan-only, 2026-10-12). Known negative: plan component id \"whole\" is not a declared object and plan.context is non-empty for a chart; also the question phrasing (Jan 78) is not bindable by the source validator, so the contract answer is a text clarification. Never repaired.",
+ "responses": [
+  {
+   "file": "data-bar.txt",
+   "sha256": "0f1a5fc7a8aad7a63acd238c8630d8c4dce6408331f7b9447d425f5ea9944b29",
+   "provider_request_id": "req_bfc0e04097184373834a298bfcf0acd5",
+   "model": "gpt-5.4-mini",
+   "time": "2026-10-12T13:11:17.387Z",
+   "rejected_by": "Visual quality plan is invalid"
+  }
+ ]
+}
