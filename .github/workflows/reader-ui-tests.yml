@@ -81,7 +81,7 @@ jobs:
           .ci-build/sustained-session-tests
           .ci-build/ui-damage-tests
           .ci-build/eink-refresh-tests
-          cmake --build .ci-build --parallel 2 --target styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests semantic-tests reader-experience1-prepare refresh-extent-tests semantic-range-tests tom-auto-reply-tests companion-client-tests picture-panel-tests tom-runtime-tests
+          cmake --build .ci-build --parallel 2 --target styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests semantic-tests reader-experience1-prepare refresh-extent-tests semantic-range-tests tom-auto-reply-tests companion-client-tests picture-panel-tests tom-runtime-tests receiver-interactive-tests
       - name: Native Linux fixture loader
         run: |
           mkdir -p .ci-sysroot/usr/lib
@@ -100,6 +100,7 @@ jobs:
           .ci-build/sustained-session-tests
           .ci-build/ui-damage-tests
           .ci-build/eink-refresh-tests
+          .ci-build/receiver-interactive-tests
           .ci-build/refresh-extent-tests
           .ci-build/semantic-range-tests
           .ci-build/tom-auto-reply-tests
@@ -147,3 +148,10 @@ jobs:
       - name: Compile deployable Worker bundle without deployment
         working-directory: companion/cloudflare
         run: npm run build
+      - name: Preserve reviewed Companion bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: companion-qol-bundle
+          path: companion/cloudflare/work/scene-build/
+          retention-days: 7
+          if-no-files-found: error
