@@ -11,7 +11,7 @@ python3 reader/tools/source-fingerprint.py "$root/reader" > "$out/SOURCE-before.
 sys="$INKBOUND_FERRARI_SYSROOT"
 loader="$sys/usr/lib/ld-linux-aarch64.so.1"
 test -x "$loader"
-common=(-G Ninja -DCMAKE_TOOLCHAIN_FILE="$INKBOUND_FERRARI_TOOLCHAIN_FILE" -DBUILD_VENDOR_RUNTIME=ON -DMUPDF_INCLUDE="$deps/mupdf-1.28.3-source/include" "-DMUPDF_ARCHIVES=$deps/mupdf/lib/libmupdf.a;$deps/mupdf/lib/libmupdf-third.a")
+common=(-G Ninja -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_TOOLCHAIN_FILE="$INKBOUND_FERRARI_TOOLCHAIN_FILE" -DBUILD_VENDOR_RUNTIME=ON -DMUPDF_INCLUDE="$deps/mupdf-1.28.3-source/include" "-DMUPDF_ARCHIVES=$deps/mupdf/lib/libmupdf.a;$deps/mupdf/lib/libmupdf-third.a")
 targets=(sustained-session-tests ui-damage-tests eink-refresh-tests styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests semantic-tests reader-experience1-prepare)
 export QT_QPA_PLATFORM=offscreen
 export QT_PLUGIN_PATH="$sys/usr/lib/plugins"
