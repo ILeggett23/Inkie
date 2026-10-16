@@ -1,0 +1,16 @@
+{
+  "backup_verified": true,
+  "repository": "ILeggett23/Inkie",
+  "private": true,
+  "release_id": 414540368,
+  "release_tag": "inkbound-builder-backup-2026-10-15",
+  "snapshot_index_sha256": "fa6f984f2b35742f26c9983ae2be2c12e9572544b0c6e3495ac489650e7f52e9",
+  "manifest_sha256": "48a4e202e10e8af5b1335d0d8072e981cc7f8f630b61aa0beda64f34a807db55",
+  "regular_files": 382673,
+  "packs": 126,
+  "source_unchanged": true,
+  "critical_remote_restore_files": 875,
+  "restore_utility_source_files": 257,
+  "vm_deleted": false,
+  "source_tree_originals_modified": false
+}

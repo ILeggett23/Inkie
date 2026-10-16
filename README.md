@@ -14,7 +14,7 @@ Visible acceptance is unfinished. A supervised candidate reached native input re
 
 ## Full builder backup
 
-The draft release `inkbound-builder-backup-2026-10-15` is being populated. The VM will remain intact until all project files are covered, every uploaded asset matches GitHub's server SHA256, representative source/app files restore correctly, and the source files are still unchanged. `snapshot-index.json` will report `complete: true` only after these checks pass.
+The [verified builder backup](https://github.com/ILeggett23/Inkie/releases/tag/inkbound-builder-backup-2026-10-15) is complete. All 126 encrypted packs match GitHub server SHA256. The encrypted manifest recovered correctly; 845 current source files and 30 app payload/manifest files were restored from downloaded packs with matching hashes. The provided restore utility passed on 257 actual remotely recovered source files. All 458,819 original project entries remained unchanged. See `provenance/BACKUP-VERIFIED.json` and `provenance/snapshot-index.json`. VM retirement is the next separately verified step.
 
 The snapshot includes 382,673 project files and their original modes, ownership, timestamps, symbolic links and hard-link identity. Duplicate content is stored once in 4 MiB chunks, packed into standard gzip/tar files and encrypted with age. Authentication identity directories are excluded. The manifest and historical captures are encrypted; the private recovery key stays on the Mac at `~/.ssh/inkbound_tablet_ed25519` and is never uploaded.
 

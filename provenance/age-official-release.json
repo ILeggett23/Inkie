@@ -1,0 +1,10 @@
+{
+  "tag": "v1.3.2",
+  "url": "https://github.com/FiloSottile/age/releases/tag/v1.3.2",
+  "asset": {
+    "name": "age-v1.3.2-darwin-arm64.tar.gz",
+    "url": "https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-darwin-arm64.tar.gz",
+    "size": 18106798,
+    "digest": "sha256:e2020b073c44f692685a24d6abc378817eb81ffaaf49fd0531ef8565f767f2f5"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "official_version": "v1.3.2",
+  "official_archive_digest": "sha256:e2020b073c44f692685a24d6abc378817eb81ffaaf49fd0531ef8565f767f2f5",
+  "existing_public_recipient_file": "/Users/zayway/.ssh/inkbound_tablet_ed25519.pub",
+  "recovery_identity_file": "/Users/zayway/.ssh/inkbound_tablet_ed25519",
+  "round_trip_verified": true,
+  "private_key_uploaded": false
+}
