@@ -6,7 +6,7 @@ Base: Inkie `85a4451357f478ad04c7d02d667eebb0110a42ca`; isolated branch `fix/ui-
 
 | Boundary | Finding | Repair |
 | --- | --- | --- |
-| Reader damage queue | `Shell::damage` promoted a region above one quarter of the display, or eight queued regions, to `change.full`. | Retain regional intent; bounded accumulation merges the least costly pair at capacity. `Display::live` already bands large fast updates. Page transitions retain their explicit complete update. |
+| Reader damage queue | `Shell::damage` promoted a region above one quarter of the display, or eight queued regions, to `change.full`. | Retain regional intent; bounded accumulation merges the least costly pair at capacity. `Display::live` already bands large fast updates. Ordinary page turns now use the regional page-difference path; opening/closing documents and recovery scene transitions retain their explicit complete update. |
 | Document settings | `viewPaint`, tab interaction and closing settings explicitly requested a complete page update. | Opening/closing uses panel bounds; state edits and arriving thumbnails use changed pixels. Unconsumed taps do not paint. |
 | Library preferences | Individual setting toggles repainted the library and unconditionally requested a complete update. | Use the existing old/new library diff for tool handle, handedness, progress, Tom preferences, contrast, motion and sleep settings. The existing mostly-new-screen policy remains. |
 | Wi-Fi | Every status/password repaint requested a complete update. | Diff old/new composed pixels and submit bounded regional damage. |
@@ -29,9 +29,14 @@ Base: Inkie `85a4451357f478ad04c7d02d667eebb0110a42ca`; isolated branch `fix/ui-
 | Library settings, Wi-Fi | Preference/status edits use regional comparisons. Large section changes remain explicit scene transitions. |
 | Notes Hub, Note, Layers, keyboard | Existing pixel-diff damage and opaque popup ordering retained; asynchronous note removal is now a state transition to Hub. |
 | Tom input, response, picker, keyboard | Existing changed-pixel damage and opaque overlays retained. Whole-reply color classification, prefix preparation and viewport plan reuse repaired. |
-| PDF/EPUB page open/close, reflow | Actual document/geometry transitions retain complete updates; this patch does not suppress required page restoration. |
+| PDF/EPUB next/previous page | Compare the old displayed scene with the new page using existing input scratch; local quality cleanup preserves old/new color. Input remains gated until the local presentation is accepted. No additional full-frame allocation. |
+| PDF/EPUB document open/close, reflow | Actual document/geometry transitions retain complete updates. |
 | Sleep/wake, passcode, failure restoration | Existing complete scene restoration and recovery ownership retained. |
 | Companion pairing, notebook creation, destructive-library confirmation | Existing modal lifecycle retained. Further incremental painting needs measured evidence before changing asynchronous ownership or persistence. |
+
+## Overload hardening
+
+Closed Notes and Tom panels retain several full-frame buffers and worker caches. Before opening the other panel, drain and retire the inactive owner, then release its buffers. Active owners and unsaved ink are never evicted. Tom retirement has an explicit short polling budget; an unfinished retirement asks for another moment instead of ending the reader. Notes allocation failure is reported locally. Large asynchronous ink-result damage also stays regional rather than escalating to a complete update. Recovery, durability checks, watchdogs and unsaved-input refusal remain enabled. These source-backed repairs do not establish that every reported random crash had the same cause; OOM and device failure logs still require physical qualification.
 
 ## Validation and limits
 

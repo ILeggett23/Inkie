@@ -47,7 +47,7 @@ enum MenuId:int {MenuNotes=500,MenuTom,MenuLayers,MenuSettings,MenuPages,MenuLib
 // cleanup: where content was removed (erase, undo/redo, snap, highlight or layer changes). It was redrawn with the fast
 // update; the display gives it one quality refresh once ink is settled and the pen is up, so no colour or grey ghost
 // stays. Additions (new strokes) never request it, so writing never flashes.
-struct Change {bool full{};unsigned regions{};std::array<spike::Rect,8> extra{};unsigned extraCount{};spike::Rect cleanup{};std::array<spike::Rect,16> uiCleanup{};unsigned uiCleanupCount{};bool content{},preview{};};
+struct Change {bool full{};unsigned regions{};std::array<spike::Rect,8> extra{};unsigned extraCount{};spike::Rect cleanup{};std::array<spike::Rect,16> uiCleanup{};unsigned uiCleanupCount{};bool content{},preview{},pageTurn{};};
 class Shell final:public spike::OperationSink {
  friend struct StatusTestAccess;
  clockprefs::Setting timeSetting_;TimezoneView timezoneView_;void timezonePaint();bool timezoneFinger(int,int);
@@ -98,6 +98,7 @@ class Shell final:public spike::OperationSink {
  std::unique_ptr<tom::Panel> tom_;State tomReturn_{State::Picker};QJsonObject tomSource_;mutable tom::PresentationStamp tomPaintStamp_{};std::uint64_t tomEpochStamp_{},tomGestureStamp_{};
  QString tomDestinationNote_;QJsonObject tomDestinationBinding_;bool openTom(semantic::Selection={},QString note={});void tomClosed();void tomTick();void sourceTick();
  std::unique_ptr<notes::Panel> notes_;std::vector<notes::Indicator> noteIndicators_;QJsonObject noteSource_;bool notesReload_{},notesClosing_{};
+ bool notesRetiring_{},tomRetiring_{};bool trimInactivePanel(bool targetTom);
  bool openNotes(notes::Mode,semantic::Selection={},QString={},QJsonObject expectedNative={});void notesTick();QJsonObject pendingNativeOutput_;
  ToolsView::Snapshot toolsSnapshot()const;void toolsPaint();bool bindStyled();
  std::vector<std::uint32_t> clean_,chrome_;
@@ -175,6 +176,7 @@ public:
  const ib::Targets& menuTargets()const noexcept{return menuTargets_;}const DocumentControls& viewControls()const noexcept{return viewControls_;}const ToolsView& toolsView()const noexcept{return toolsView_;}
  const LibraryView& libraryView()const noexcept{return libraryView_;}const LibraryManage& libraryManage()const noexcept{return libraryManage_;}const NotebookView& notebookView()const noexcept{return notebook_;}bool menuOpen()const noexcept{return menu_;}
  bool selectMode()const noexcept{return selectMode_;}QString clipboard()const{return sharedClipboard();}QString notice()const{return notice_;}
+ std::span<std::uint32_t> pageComparisonScratch()noexcept{return styled_&&document_&&!document_->contact()&&!penSelect_.active&&!statusContact_?std::span<std::uint32_t>(engineScratch_):std::span<std::uint32_t>{};}
  bool reserve()noexcept override;bool append(const spike::Point&)noexcept override;void cancel()noexcept override;
  struct Shutdown {bool drained{},saved{},failed{};};
  void beginQuiesce()noexcept;Shutdown pollQuiesce()noexcept;

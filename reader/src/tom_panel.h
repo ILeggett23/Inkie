@@ -64,7 +64,7 @@ public:
  void presentationCovered(spike::Rect accepted,PresentationStamp)noexcept;
  bool renderSettled()const noexcept{return !reply_.busy()&&!view_.busy&&!commandPending_&&!canvas_.contact()&&!canvas_.pending()&&view_.error.isEmpty()&&canvasRevision_==view_.canvasRevision;}
  bool drained()const noexcept{return runtime_.drained()&&reply_.drained();}
- bool finish(unsigned ms=100)noexcept;bool retire()noexcept;View view()const{return view_;}QJsonObject source()const;
+ bool finish(unsigned ms=100)noexcept;bool retire(unsigned ms=2000)noexcept;View view()const{return view_;}QJsonObject source()const;
  QJsonObject takeNativeOutputRequest(){auto value=nativeOutputRequest_;nativeOutputRequest_={};return value;}
  QJsonObject takeSourceRequest(){auto value=sourceRequest_;sourceRequest_={};return value;}void sourceRejected(){notice_="Source unavailable, changed, or still saving";paint();mark();}
 };
