@@ -68,12 +68,19 @@ if state_path.exists():state=json.loads(state_path.read_text());assert state['ma
 else:
     state={'repo':REPO,'tag':TAG,'manifest_sha256':manifest_sha,'summary':summary,'pack_count':len(groups),'parts':{},'complete':False,'vm_deleted':False}
     save_json(state_path,state)
-release=gh(['api','repos/'+REPO+'/releases/tags/'+TAG],check=False)
-if release.returncode:
+def find_release():
+    pages=json.loads(gh(['api','repos/'+REPO+'/releases?per_page=100','--paginate','--slurp']).stdout)
+    found=[v for page in pages for v in page if v['tag_name']==TAG]
+    assert len(found)<=1, 'Ambiguous backup drafts; no original data changed'
+    return found[0] if found else None
+release=find_release()
+if release is None:
     notes=R/'release-notes-in-progress.md'
     notes.write_text('Encrypted backup of the dedicated Inkbound builder. This draft is incomplete until snapshot-index.json reports complete=true. The original VM remains intact during upload and verification. Current source is on main. SSH identities are excluded.\n')
     gh(['release','create',TAG,'--repo',REPO,'--target','main','--draft','--title','Inkbound builder backup — 2026-10-15','--notes-file',str(notes)])
-release_id=api('repos/'+REPO+'/releases/tags/'+TAG)['id'];state['release_id']=release_id;save_json(state_path,state)
+    release=find_release()
+assert release and release['draft'] is True
+release_id=release['id'];state['release_id']=release_id;save_json(state_path,state)
 
 def assets():
     pages=json.loads(gh(['api','repos/'+REPO+'/releases/'+str(release_id)+'/assets?per_page=100','--paginate','--slurp']).stdout)
