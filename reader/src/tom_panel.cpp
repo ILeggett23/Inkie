@@ -133,7 +133,7 @@ bool Panel::finger(int x,int y){if(open_&&!contact()&&replyZoom_.active()&&ib::r
  auto restore=[&](const QJsonArray& ink){canvas_.restore(ink,inline_?false:expanded_,lowerHalf_);reset_=true;};
  if(input_.active()){input_.finger(x,y);if(input_.done()){send({correcting_?Action::Correction:Action::Question,input_.text()});input_.acknowledge();}else if(input_.cancelled())input_.acknowledge();}
  else{const int id=targets_.find(x,y);if(picker_){auto style=canvas_.style();bool used=false;if(id==4000){picker_=false;used=true;}else if(id==4001){used=canvas_.setEraser(!canvas_.eraser());}else if(id>=ib::reader::PenBase&&id<ib::reader::PenBase+8){style.tool=styled::Tool(unsigned(id-ib::reader::PenBase));used=canvas_.setStyle(style);}else if(id>=ib::reader::WidthBase&&id<ib::reader::WidthBase+3){style.width=styled::Width(unsigned(id-ib::reader::WidthBase));used=canvas_.setStyle(style);}else if(id==ib::tom::InkTools||!ib::notes::notePicker(expanded_).contains(x,y)){picker_=false;used=true;}if(used){paint();mark();updateWriting();}return true;}const bool blocked=canvas_.unsaved()||view_.busy||commandPending_||failed();
-  if(id==Close){if(!canLeave())notice_="Save or cancel edits before closing — unsaved ink is kept";else{close_=true;return true;}}
+  if(id==Close){close_=true;if(!canLeave())notice_="Closing when your edits are saved";else return true;}
   // Presentation only (no request, no stored change), so allowed while a reply is still streaming.
   else if(id==InkDetail){detailedInk_=!detailedInk_;illustrationConfirmation_.clear();}
   else if(id==InkReply){outputPicker_=!outputPicker_;}
@@ -144,7 +144,7 @@ bool Panel::finger(int x,int y){if(open_&&!contact()&&replyZoom_.active()&&ib::r
   else if(id==AnswerDown){scroll_=std::min(scroll_+10,answerTotal_>answerRows_?answerTotal_-answerRows_:0);followReply_=scroll_+answerRows_>=answerTotal_;}
   else if(id==TypedView){typed_=!typed_;outputMode_=typed_?OutputMode::Typed:OutputMode::Handwritten;}
   else if(id==HandSize){handSize_=(handSize_+1)%3;scroll_=0;}
-  else if(id<0&&y<sheetTop()){if(canLeave()){close_=true;return true;}notice_="Wait until your question is saved";}
+  else if(id<0&&y<sheetTop()){close_=true;if(canLeave())return true;notice_="Closing when your edits are saved";}
   else if(blocked&&id!=Stop){if(id>=0)notice_=failed()?"Not saved — your original input is kept":"Wait for the current action to save";}
   else if(history_){
    if(id>=ThreadBase&&id<ThreadBase+100){int row=id-ThreadBase;if(row<view_.threads.size()){send({Action::OpenThread,view_.threads[row].toObject()["id"].toString()});history_=false;confirmDelete_=false;historyTurn_=-1;}}
