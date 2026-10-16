@@ -81,7 +81,7 @@ jobs:
           .ci-build/sustained-session-tests
           .ci-build/ui-damage-tests
           .ci-build/eink-refresh-tests
-          cmake --build .ci-build --parallel 2 --target styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests semantic-tests reader-experience1-prepare
+          cmake --build .ci-build --parallel 2 --target styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests semantic-tests reader-experience1-prepare refresh-extent-tests semantic-range-tests tom-auto-reply-tests companion-client-tests picture-panel-tests tom-runtime-tests
       - name: Native Linux fixture loader
         run: |
           mkdir -p .ci-sysroot/usr/lib
@@ -100,6 +100,12 @@ jobs:
           .ci-build/sustained-session-tests
           .ci-build/ui-damage-tests
           .ci-build/eink-refresh-tests
+          .ci-build/refresh-extent-tests
+          .ci-build/semantic-range-tests
+          .ci-build/tom-auto-reply-tests
+          .ci-build/companion-client-tests
+          .ci-build/picture-panel-tests "$PWD/reader"
+          .ci-build/tom-runtime-tests "$PWD/.ci-sysroot"
           .ci-build/styled-integration-tests
           .ci-build/styled-publication-tests
           .ci-build/tom-reply-ink-tests
@@ -115,3 +121,29 @@ jobs:
         with:
           path: .ci-ccache
           key: ${{ steps.compiler-cache.outputs.cache-primary-key }}
+
+  companion-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: companion/cloudflare/package-lock.json
+      - name: Isolated converter test environment
+        run: |
+          python3 -m venv companion/.venv
+          companion/.venv/bin/python -m pip install -r companion/requirements.txt
+      - name: Locked Worker runtime dependencies
+        working-directory: companion/cloudflare
+        run: npm ci
+      - name: Worker contract and real isolated runtime checks
+        working-directory: companion/cloudflare
+        run: npm test
+      - name: Compile deployable Worker bundle without deployment
+        working-directory: companion/cloudflare
+        run: npm run build

@@ -2,7 +2,7 @@ name: Verified Ferrari tablet build
 on:
   push:
     branches: [fix/ui-input-refresh]
-    paths: ['reader/tools/ci-tablet-build.sh', 'reader/tools/package-tablet-update.py', '.github/workflows/tablet-sdk-build.yml']
+    paths: ['reader/**', '.github/workflows/tablet-sdk-build.yml']
   workflow_dispatch:
 permissions:
   contents: read

@@ -8,7 +8,11 @@ bool Pixels::validFerrari()const noexcept{return data&&reinterpret_cast<std::uin
 bool Pixels::validFerrariMask()const noexcept{return data&&width==1620&&height==2160&&format==24&&stride==1632;}
 ScopedEraseMask::ScopedEraseMask(Pixels mask,std::span<const unsigned char> source,int stride,Rect region,std::span<unsigned char> saved)noexcept:mask_(mask),region_(region),saved_(saved){
  if(!mask.validFerrariMask()||stride!=1632||region.empty()||region.x0<0||region.y0<0||region.x1>1620||region.y1>2160||source.size()<std::size_t(1632)*2160||saved.size()<std::size_t(1632)*2160)return;
- for(int y=region.y0;y<region.y1;++y){const auto at=std::size_t(y)*1632+region.x0;const auto n=std::size_t(region.x1-region.x0);std::memcpy(saved.data()+at,mask.data+at,n);std::memcpy(mask.data+at,source.data()+at,n);}applied_=true;
+ region_=conversionFootprint(region);
+ // Aligned converter reads must see zero mask outside the requested damage,
+ // rather than mask bytes left by a previous operation. Restore every byte.
+ for(int y=region_.y0;y<region_.y1;++y){const auto at=std::size_t(y)*1632+region_.x0;const auto n=std::size_t(region_.x1-region_.x0);std::memcpy(saved.data()+at,mask.data+at,n);std::memset(mask.data+at,0,n);}
+ for(int y=region.y0;y<region.y1;++y){const auto at=std::size_t(y)*1632+region.x0;std::memcpy(mask.data+at,source.data()+at,std::size_t(region.x1-region.x0));}applied_=true;
 }
 ScopedEraseMask::~ScopedEraseMask(){if(applied_)for(int y=region_.y0;y<region_.y1;++y){const auto at=std::size_t(y)*1632+region_.x0;std::memcpy(mask_.data+at,saved_.data()+at,std::size_t(region_.x1-region_.x0));}}
 void CaptureTable::observe(Pixels p)noexcept{
@@ -55,9 +59,8 @@ Submit VendorDisplay::erase(Rect r)noexcept{if(!ready(r)||std::uint64_t(r.x1-r.x
 // Classify the composed, vendor-aligned footprint without changing pixels or
 // extent. These are pinned EPContentType values, not lower waveform numbers.
 int VendorDisplay::qualityContent(Rect r)const noexcept{
- const int left=r.x0&~3,top=r.y0&~1;
- const int right=std::min(pixels_.width,left+((((r.x1+3)&~3)-left+7)&~7));
- const int bottom=std::min(pixels_.height,(r.y1+1)&~1);
+ const auto footprint=conversionFootprint(r,pixels_.width,pixels_.height);
+ const int left=footprint.x0,top=footprint.y0,right=footprint.x1,bottom=footprint.y1;
  const auto* source=reinterpret_cast<const std::uint32_t*>(pixels_.data);bool gray=false;
  for(int y=top;y<bottom;++y)for(int x=left;x<right;++x){const auto p=source[std::size_t(y)*(pixels_.stride/4)+x];const auto red=(p>>16)&255u,green=(p>>8)&255u,blue=p&255u;if(red!=green||green!=blue)return ContentColor;if(red!=0&&red!=255)gray=true;}
  return gray?ContentGrayscale:ContentMono;

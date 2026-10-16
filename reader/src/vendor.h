@@ -2,6 +2,9 @@
 #pragma once
 #include "session.h"
 #include <span>
+#include <algorithm>
+// Pinned converter footprint; update geometry remains unchanged.
+namespace spike {inline Rect conversionFootprint(Rect r,int width=1620,int height=2160)noexcept{const int left=r.x0&~3,top=r.y0&~1;return {left,top,std::min(width,left+((((r.x1+3)&~3)-left+7)&~7)),std::min(height,(r.y1+1)&~1)};}}
 #include <vector>
 namespace spike {
 struct Pixels {unsigned char* data{};int width{},height{},format{};std::int64_t stride{};bool validFerrari()const noexcept;bool validFerrariMask()const noexcept;};
