@@ -17,7 +17,7 @@ Geometry extract(const std::filesystem::path& file,int index,const QByteArray& b
  if(metadata["schema"]==3){out["viewId"]=metadata["view_id"];out["visibleSourceRect"]=metadata["crop"];}
  out["transformId"]=QString::fromLatin1(underlay::digest(QJsonDocument(QJsonObject{{"matrix",out["transform"]},{"version",out["transformVersion"]}}).toJson(QJsonDocument::Compact)).toHex());
  auto begin=spike::monotonic();if(!textSource->ctx){textSource->ctx=fz_new_context(nullptr,nullptr,32*1024*1024);if(!textSource->ctx){textSource.reset();return std::make_shared<const TextGeometry>(out);}}
- fz_context* ctx=textSource->ctx;fz_document* doc=textSource->doc;fz_page* page=nullptr;fz_stext_page* text=nullptr;fz_var(doc);fz_var(page);fz_var(text);bool ok=true;
+ fz_context* ctx=textSource->ctx;fz_document* doc=textSource->doc;fz_page* page=nullptr;fz_stext_page* text=nullptr;fz_var(doc);fz_var(page);fz_var(text);bool ok=true;fz_var(ok);
  fz_try(ctx){if(!doc){fz_register_document_handlers(ctx);doc=fz_open_document(ctx,file.c_str());if(fz_is_document_reflowable(ctx,doc))fz_layout_document(ctx,doc,600,800,12);textSource->doc=doc;}if(index<0||index>=fz_count_pages(ctx,doc))fz_throw(ctx,FZ_ERROR_ARGUMENT,"page-index");page=fz_load_page(ctx,doc,index);fz_stext_options options{};text=fz_new_stext_page_from_page(ctx,page,&options);}
  fz_always(ctx){fz_drop_page(ctx,page);}
  fz_catch(ctx){if(doc&&doc!=textSource->doc)fz_drop_document(ctx,doc);ok=false;fz_report_error(ctx);}

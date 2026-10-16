@@ -33,6 +33,7 @@ int main(){try{
   std::vector<unsigned char> mask(1632*2160,23),next(1632*2160,0),backup(1632*2160);const auto original=mask;const spike::Rect r{1600,100,1620,103};next[std::size_t(101)*1632+1605]=255;
   spike::Pixels p{mask.data(),1620,2160,24,1632};check(p.validFerrariMask(),"mask shape");{spike::ScopedEraseMask scope(p,next,1632,r,backup);check(bool(scope),"mask scope admission");check(mask[std::size_t(101)*1632+1605]==255&&mask[std::size_t(101)*1632+1604]==0&&mask[std::size_t(101)*1632+1620]==23,"mask scope ROI/padding");}check(mask==original,"mask bytes not restored");
   {spike::ScopedEraseMask scope(p,next,1620,r,backup);check(!scope&&mask==original,"invalid mask stride mutated bytes");}{spike::ScopedEraseMask scope(p,next,1632,{-1,0,1,1},backup);check(!scope&&mask==original,"invalid mask bounds mutated bytes");}{spike::ScopedEraseMask scope(p,next,1632,r,std::span<unsigned char>(backup).first(10));check(!scope&&mask==original,"short backup mutated bytes");}
+  {const spike::Rect unaligned{101,801,105,803};next[std::size_t(801)*1632+102]=255;spike::ScopedEraseMask scope(p,next,1632,unaligned,backup);check(bool(scope),"unaligned mask admitted");check(mask[std::size_t(801)*1632+102]==255,"requested erase bit retained");check(mask[std::size_t(800)*1632+100]==0&&mask[std::size_t(803)*1632+107]==0,"converter alignment margin has no stale mask");check(mask[std::size_t(800)*1632+99]==23&&mask[std::size_t(804)*1632+100]==23,"mask outside converter footprint unchanged");}check(mask==original,"aligned mask margin restored exactly");
   spike::CaptureTable table;spike::Pixels selected;table.observe(p);check(table.selectMask(selected)&&selected.data==p.data,"separate mask capture failed");std::vector<unsigned char> other(mask.size());p.data=other.data();table.observe(p);check(!table.selectMask(selected),"ambiguous mask accepted");
  }
  Lease lease;Calls calls;spike::VendorDisplay display(calls);check(display.initialize(lease),"initialize");
@@ -58,7 +59,7 @@ int main(){try{
  const spike::Rect large{112,112,1510,1000};
  check(display.ui(large)==spike::Submit::Accepted&&same(calls.requests.back().effective,large),"large UI remains regional");
  const auto prior=calls.requests.size();check(display.submit(large)==spike::Submit::Failed&&calls.requests.size()==prior,"live area guard changed");
- check(ux::applyRefresh(display,local,ux::RefreshIntent::PageTransition)==spike::Submit::Accepted,"page transition");
+ check(ux::applyRefresh(display,local,ux::RefreshIntent::PageTransition,ux::FullRefreshReason::DocumentBinding)==spike::Submit::Accepted,"page transition");
  const auto& page=calls.requests.back();check(same(page.effective,{0,0,1620,2160})&&page.mode==3&&page.flags==1,"intentional full page changed");
  // Color and grayscale must retain the same local scope and source RGB.
  const spike::Rect aligned{101,801,105,803};

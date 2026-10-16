@@ -3,12 +3,17 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <cstdio>
 namespace spike {
 bool Pixels::validFerrari()const noexcept{return data&&reinterpret_cast<std::uintptr_t>(data)%4==0&&width==1620&&height==2160&&format==4&&stride==6528;}
 bool Pixels::validFerrariMask()const noexcept{return data&&width==1620&&height==2160&&format==24&&stride==1632;}
 ScopedEraseMask::ScopedEraseMask(Pixels mask,std::span<const unsigned char> source,int stride,Rect region,std::span<unsigned char> saved)noexcept:mask_(mask),region_(region),saved_(saved){
  if(!mask.validFerrariMask()||stride!=1632||region.empty()||region.x0<0||region.y0<0||region.x1>1620||region.y1>2160||source.size()<std::size_t(1632)*2160||saved.size()<std::size_t(1632)*2160)return;
- for(int y=region.y0;y<region.y1;++y){const auto at=std::size_t(y)*1632+region.x0;const auto n=std::size_t(region.x1-region.x0);std::memcpy(saved.data()+at,mask.data+at,n);std::memcpy(mask.data+at,source.data()+at,n);}applied_=true;
+ region_=conversionFootprint(region);
+ // Aligned converter reads must see zero mask outside the requested damage,
+ // rather than mask bytes left by a previous operation. Restore every byte.
+ for(int y=region_.y0;y<region_.y1;++y){const auto at=std::size_t(y)*1632+region_.x0;const auto n=std::size_t(region_.x1-region_.x0);std::memcpy(saved.data()+at,mask.data+at,n);std::memset(mask.data+at,0,n);}
+ for(int y=region.y0;y<region.y1;++y){const auto at=std::size_t(y)*1632+region.x0;std::memcpy(mask.data+at,source.data()+at,std::size_t(region.x1-region.x0));}applied_=true;
 }
 ScopedEraseMask::~ScopedEraseMask(){if(applied_)for(int y=region_.y0;y<region_.y1;++y){const auto at=std::size_t(y)*1632+region_.x0;std::memcpy(mask_.data+at,saved_.data()+at,std::size_t(region_.x1-region_.x0));}}
 void CaptureTable::observe(Pixels p)noexcept{
@@ -31,8 +36,8 @@ Surface VendorDisplay::surface()const noexcept {
 bool VendorDisplay::ready(Rect r)const noexcept{
  return active_&&!retired_&&!inside_&&lease_&&lease_->valid()&&!lease_->stopRequested()&&monotonic()<lease_->deadline()&&!r.empty()&&r.x0>=0&&r.y0>=0&&r.x1<=pixels_.width&&r.y1<=pixels_.height;
 }
-bool VendorDisplay::submitChecked(Rect r,int content,int mode,int flags)noexcept{
- if(!ready(r))return false;
+bool VendorDisplay::submitChecked(Rect r,int content,int mode,int flags,ux::FullRefreshReason reason)noexcept{
+ if(!ready(r)||((flags&1)&&!ux::completeRefreshAllowed(reason)))return false;
  auto area=std::uint64_t(r.x1-r.x0)*std::uint64_t(r.y1-r.y0);
  if(mode==ModePen&&area>1620ULL*2160/4)return false; // reject an excessive live (pen) region; no full-page live redraw
  // V1 bounded sessions keep the lifetime update budget. D2 user-ended (sustained) sessions have no
@@ -40,6 +45,7 @@ bool VendorDisplay::submitChecked(Rect r,int content,int mode,int flags)noexcept
  const bool sustained=lease_->sustained().enabled();
  if(!sustained&&(submissions_==MaxSubmissions||area>MaxArea-area_)){retired_=true;return false;}
  if(submissions_<UINT32_MAX)++submissions_;area_=area>UINT64_MAX-area_?UINT64_MAX:area_+area;inside_=true;
+ if(flags&1){auto& count=completeReasons_[unsigned(reason)-1];if(count!=UINT64_MAX)++count;std::fprintf(stderr,"REFRESH_COMPLETE_REQUEST reason=%s count=%llu\n",ux::fullRefreshReasonName(reason),(unsigned long long)count);}
  bool admitted=true;if(flags==2)admitted=calls_.eraseRegion(r,content,mode,flags,eraseMask_,1632);else calls_.region(r,content,mode,flags); // vendor swap remains void
  inside_=false;return admitted;
 }
@@ -47,7 +53,7 @@ bool VendorDisplay::initialPage()noexcept{
  Surface s=surface();if(!s.valid()||submissions_!=0)return false;
  // Initialize only visible pixels; padding is not handwriting or damage.
  for(int y=0;y<s.height;++y)std::fill_n(s.pixels.data()+std::size_t(y)*s.stridePixels,s.width,0xffffffffu);
- return submitChecked({0,0,s.width,s.height},ContentMono,ModeUi,1);
+ return submitChecked({0,0,s.width,s.height},ContentMono,ModeUi,1,ux::FullRefreshReason::Initialization);
 }
 Submit VendorDisplay::submit(Rect r)noexcept{return submitChecked(r,ContentMono,ModePen,0)?Submit::Accepted:Submit::Failed;}
 bool VendorDisplay::beginErase(Rect r)noexcept{eraseSnapshot_={};if(!ready(r)||beforeErase_.size()!=std::size_t(1632)*2160)return false;const auto* source=reinterpret_cast<const std::uint32_t*>(pixels_.data);for(int y=r.y0;y<r.y1;++y)std::copy_n(source+std::size_t(y)*1632+r.x0,r.x1-r.x0,beforeErase_.data()+std::size_t(y)*1632+r.x0);eraseSnapshot_=r;return true;}
@@ -55,9 +61,8 @@ Submit VendorDisplay::erase(Rect r)noexcept{if(!ready(r)||std::uint64_t(r.x1-r.x
 // Classify the composed, vendor-aligned footprint without changing pixels or
 // extent. These are pinned EPContentType values, not lower waveform numbers.
 int VendorDisplay::qualityContent(Rect r)const noexcept{
- const int left=r.x0&~3,top=r.y0&~1;
- const int right=std::min(pixels_.width,left+((((r.x1+3)&~3)-left+7)&~7));
- const int bottom=std::min(pixels_.height,(r.y1+1)&~1);
+ const auto footprint=conversionFootprint(r,pixels_.width,pixels_.height);
+ const int left=footprint.x0,top=footprint.y0,right=footprint.x1,bottom=footprint.y1;
  const auto* source=reinterpret_cast<const std::uint32_t*>(pixels_.data);bool gray=false;
  for(int y=top;y<bottom;++y)for(int x=left;x<right;++x){const auto p=source[std::size_t(y)*(pixels_.stride/4)+x];const auto red=(p>>16)&255u,green=(p>>8)&255u,blue=p&255u;if(red!=green||green!=blue)return ContentColor;if(red!=0&&red!=255)gray=true;}
  return gray?ContentGrayscale:ContentMono;
@@ -77,9 +82,9 @@ Submit VendorDisplay::ui(Rect r)noexcept{return clean(r);}
 bool VendorDisplay::initialPreparedPage(std::span<const std::uint32_t> prepared)noexcept{
  Surface s=surface();if(!s.valid()||submissions_!=0||prepared.size()!=s.pixels.size())return false;
  if(prepared.data()!=s.pixels.data())std::copy(prepared.begin(),prepared.end(),s.pixels.begin());
- return submitChecked({0,0,s.width,s.height},ContentMono,ModeUi,1);
+ return submitChecked({0,0,s.width,s.height},ContentMono,ModeUi,1,ux::FullRefreshReason::Initialization);
 }
-bool VendorDisplay::readerPage()noexcept{return submitChecked({0,0,pixels_.width,pixels_.height},ContentMono,ModeUi,1);}
+bool VendorDisplay::readerPage(ux::FullRefreshReason reason)noexcept{return submitChecked({0,0,pixels_.width,pixels_.height},ContentMono,ModeUi,1,reason);}
 void VendorDisplay::pump()noexcept{if(active_&&!retired_&&!inside_&&lease_->valid()&&!lease_->stopRequested()&&monotonic()<lease_->deadline()){inside_=true;calls_.events();inside_=false;}}
 void VendorDisplay::shutdown()noexcept{active_=false;retired_=true;pixels_={};lease_=nullptr;}
 }

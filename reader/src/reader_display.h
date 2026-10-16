@@ -19,7 +19,7 @@ public:
  void pageInstalled()noexcept override{reader_.installed();reader_.activate();}
  bool readerBoundary()noexcept override{
   try{if(drainTouch_){touch_.quiesce();drainTouch_=false;}auto a=touch_.poll(false);if(a!=Action::None)reader_.request(a);if(reader_.exiting())return false;
-   bool changed=reader_.tick();if(changed){composite();if(!vendor_.readerPage()){reader_.fail();return false;}loading_=false;}
+   bool changed=reader_.tick();if(changed){composite();if(!vendor_.readerPage(ux::FullRefreshReason::DocumentBinding)){reader_.fail();return false;}loading_=false;}
    else if(reader_.state()==State::Preparing&&!loading_){chrome(vendor_.surface(),reader_.page(),reader_.total(),true);if(vendor_.submit({0,underlay::Height-100,underlay::Width,underlay::Height})!=spike::Submit::Accepted){reader_.fail();return false;}loading_=true;}
    else if(loading_&&reader_.state()==State::Active){auto r=spike::Rect{0,underlay::Height-100,underlay::Width,underlay::Height};underlay::compose(vendor_.surface(),reader_.active().prepared.background,surface(),r);if(vendor_.submit(r)!=spike::Submit::Accepted){reader_.fail();return false;}loading_=false;}
    return true;

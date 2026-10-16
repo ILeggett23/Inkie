@@ -21,6 +21,14 @@ namespace T=ib::tom;
 static bool tap(tom::Panel& p,int id){auto r=p.targets().rect(id);if(r.empty())return false;return p.finger((r.x0+r.x1)/2,(r.y0+r.y1)/2);}
 static bool key(tom::Panel& p,int id){auto r=p.keyboardTargets().rect(id);if(r.empty())return false;return p.finger((r.x0+r.x1)/2,(r.y0+r.y1)/2);}
 int main(int argc,char** argv){QCoreApplication app(argc,argv);try{fixture.ready=fixture.editable=fixture.configured=fixture.saved=true;fixture.providerId="workers-ai";fixture.providerLabel="Fixture Workers AI";fixture.model="fixture-exact-model";fixture.maxOutputTokens=128;fixture.configFingerprint="reviewed-config";fixture.thread="thread-fixture";fixture.context={{"scope","general"}};fixture.threads=QJsonArray{QJsonObject{{"id","thread-fixture"},{"title","Saved chat"}}};fixture.turns=QJsonArray{QJsonObject{{"id","old-turn"},{"question","Old question"},{"answer","Saved answer"},{"context",QJsonObject{{"scope","general"}}},{"handwriting",QJsonArray{}}}};
+ // A Close tap is durable intent across transient helper work. Leaving still
+ // requires all edits saved; pending Close admits no new handwriting.
+ {tom::Panel panel("/fixture/app","/fixture/library");panel.open({});panel.tick();
+  forceBusy=true;++streamRevision;panel.tick();check(!panel.canLeave(),"close_fixture_has_transient_helper_work");
+  check(tap(panel,T::Close)&&panel.closeRequested(),"close_intent_survives_busy_helper");panel.closed();check(panel.active(),"busy_close_does_not_bypass_leave_guard");
+  forceBusy=false;forceCommitPending=true;++streamRevision;panel.tick();check(!panel.canLeave()&&!panel.writable(),"queued_close_waits_for_unsaved_commit");panel.closed();check(panel.active(),"queued_close_preserves_unsaved_work");
+  forceCommitPending=false;panel.tick();check(panel.canLeave()&&panel.closeRequested()&&!panel.reserve(),"queued_close_reaches_safe_leave_without_another_tap");panel.closed();check(!panel.active()&&!panel.closeRequested(),"deferred_close_completes_once");streamRevision=0;
+ }
  {tom::Panel panel("/fixture/app","/fixture/library");panel.open({});panel.tick();check(panel.active()&&panel.writable()&&panel.view().model=="fixture-exact-model"&&panel.view().maxOutputTokens==128,"open_composing");forceCommitPending=true;++streamRevision;panel.tick();check(!panel.writable(),"pending_completion_closes_admission");forceCommitPending=false;panel.tick();check(panel.writable(),"completion_without_view_revision_reopens_admission");streamRevision=0;panel.tick();
   // A compact sheet over the page: the compact writing area, with the book visible above the sheet.
   check(panel.inkDamage().y0==tom::WritingArea.y0&&tom::WritingArea.y0>ib::tom::SheetTop&&ib::tom::SheetTop>=900,"compact_writing_sheet");

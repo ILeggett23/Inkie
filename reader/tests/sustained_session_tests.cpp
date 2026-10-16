@@ -41,6 +41,26 @@ struct Rig {
 };
 struct WakeObserver final:SessionDisplay {unsigned wakes{};void wakeInput(const Sample& s)noexcept override{if(s.phase==Phase::Down)++wakes;}Submit submit(Rect)noexcept override{return Submit::Accepted;}bool initialize(const RecoveryLease&)noexcept override{return false;}Surface surface()const noexcept override{return {};}bool initialPage()noexcept override{return true;}void pump()noexcept override{}void shutdown()noexcept override{}};
 void wakeGate(){++cases;Rig r;TestLease lease;lease.end=far();InputGate gate;gate.open=false;WakeObserver observer;auto frame=[&](std::initializer_list<input_event> events){std::vector<input_event> v(events);v.push_back(ev(EV_SYN,SYN_REPORT,0));r.now+=Ms;return consumeEvents(v,r.assembler,r.engine,r.scheduler,r.stats,r.now,&lease,nullptr,&gate,&observer);};check(frame({ev(EV_KEY,BTN_TOOL_PEN,1),ev(EV_ABS,ABS_X,300),ev(EV_ABS,ABS_Y,400)}),"hover admitted to assembler");check(observer.wakes==0&&r.stats.samples==0,"hover never wakes or writes");check(frame({ev(EV_KEY,BTN_TOUCH,1)}),"sleeping down consumed");check(observer.wakes==1&&gate.blocked&&r.engine.points().empty(),"validated wake edge has no ink");gate.open=true;check(frame({ev(EV_ABS,ABS_X,330)})&&frame({ev(EV_KEY,BTN_TOUCH,0)}),"waking contact drains after gate reopens");check(!gate.blocked&&observer.wakes==1&&r.stats.contacts==0&&r.engine.points().empty(),"wake through release never counts a stroke");check(frame({ev(EV_KEY,BTN_TOUCH,1)})&&frame({ev(EV_KEY,BTN_TOUCH,0)}),"fresh contact after wake writes");check(r.stats.contacts==1&&r.stats.released==1&&!r.stats.failed&&observer.wakes==1,"fresh contact preserves admission");std::puts("WAKE_INPUT_GATE_PASS validated_tip_only=true wake_contact_consumed=true next_contact_accepted=true physical=NOT_RUN");}
+struct BusyOwner final:SessionDisplay,OperationSink {
+ bool open{true};unsigned reservations{},appends{},cancellations{};
+ bool admissionOpen()const noexcept override{return open;}
+ bool reserve()noexcept override{++reservations;return open;}
+ bool append(const Point& p)noexcept override{++appends;if(p.phase==Phase::Up)open=false;return true;}
+ void cancel()noexcept override{++cancellations;}
+ Submit submit(Rect)noexcept override{return Submit::Accepted;}
+ bool initialize(const RecoveryLease&)noexcept override{return false;}
+ Surface surface()const noexcept override{return {};}
+ bool initialPage()noexcept override{return true;}
+ void pump()noexcept override{}void shutdown()noexcept override{}
+};
+void batchAdmissionPressure(){++cases;Rig r;TestLease lease;lease.end=far();lease.policy={S,8,4096};InputGate gate;BusyOwner owner;
+ const input_event batch[]={ev(EV_KEY,BTN_TOOL_PEN,1),ev(EV_ABS,ABS_X,300),ev(EV_ABS,ABS_Y,400),ev(EV_KEY,BTN_TOUCH,1),ev(EV_SYN,SYN_REPORT,0),ev(EV_KEY,BTN_TOUCH,0),ev(EV_SYN,SYN_REPORT,0),ev(EV_KEY,BTN_TOUCH,1),ev(EV_SYN,SYN_REPORT,0),ev(EV_KEY,BTN_TOUCH,0),ev(EV_SYN,SYN_REPORT,0)};
+ check(consumeEvents(batch,r.assembler,r.engine,r.scheduler,r.stats,r.now,&lease,&owner,&gate,&owner),"save pressure inside a batch does not end the reader");
+ check(!r.stats.failed&&r.stats.contacts==1&&r.stats.released==1&&owner.reservations==1&&owner.appends==2&&!owner.cancellations&&gate.rejected==2&&!gate.blocked,"busy next contact drains without reservation or unsaved ink");
+ owner.open=gate.open=true;r.now+=Ms;const input_event next[]={ev(EV_KEY,BTN_TOUCH,1),ev(EV_SYN,SYN_REPORT,0),ev(EV_KEY,BTN_TOUCH,0),ev(EV_SYN,SYN_REPORT,0)};
+ check(consumeEvents(next,r.assembler,r.engine,r.scheduler,r.stats,r.now,&lease,&owner,&gate,&owner),"fresh contact works after saver capacity returns");
+ check(!r.stats.failed&&r.stats.contacts==2&&r.stats.released==2&&owner.reservations==2&&!owner.cancellations,"reader recovers from temporary admission pressure");
+ std::puts("BATCH_ADMISSION_PRESSURE_PASS old_contact_saved=true busy_contact_drained=true next_contact_accepted=true strict_limits=UNCHANGED physical=NOT_RUN");}
 void v1ContactCap(){++cases;
  Rig r;TestLease lease;lease.end=far();
  for(unsigned i=0;i<5;++i)check(r.contact(lease,2,false),"V1 accepts five contacts");
@@ -93,7 +113,7 @@ void policyValidity(){++cases;
 }
 }
 int main(){
- try{wakeGate();v1ContactCap();v1SampleCap();sustainedContacts();windowQuota();fixedMemory();retireContinuity();liveDeadline();policyValidity();
+ try{wakeGate();batchAdmissionPressure();v1ContactCap();v1SampleCap();sustainedContacts();windowQuota();fixedMemory();retireContinuity();liveDeadline();policyValidity();
   std::printf("SUSTAINED_SESSION_PASS cases=%u checks=%u v1_limits=UNCHANGED sustained=V2_ONLY physical=NOT_RUN\n",cases,checks);return 0;
  }catch(const std::exception& e){std::fprintf(stderr,"SUSTAINED_SESSION_FAIL %s checks=%u\n",e.what(),checks);return 1;}
 }

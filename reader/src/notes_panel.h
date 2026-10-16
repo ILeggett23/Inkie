@@ -56,6 +56,6 @@ public:
  bool takeReset(){bool reset=reset_;reset_=false;return reset;}unsigned takeDamage(std::array<spike::Rect,5>& out){out=damage_;auto n=damageCount_;damageCount_=0;return n;}bool takeDocumentChanged(){bool v=documentChanged_;documentChanged_=false;return v;}
  QJsonObject sourceRequest()const{return source_;}int sourceTarget()const noexcept{return sourceTarget_;}void sourceHandled(bool ok){source_={};if(ok)close_=true;else{notice_="Source unavailable, changed, or still saving";paint();mark();}}
  bool drained()const noexcept{return runtime_.drained();}
- bool finish(unsigned ms=100)noexcept;bool retire()noexcept;View view()const{auto current=view_;current.window.style=style_;if(pendingCommand_){current.busy=true;current.saved=false;current.status="UPDATING NOTE";}return current;}
+ bool finish(unsigned ms=100)noexcept;bool retire(unsigned ms=0)noexcept;View view()const{auto current=view_;current.window.style=style_;if(pendingCommand_){current.busy=true;current.saved=false;current.status="UPDATING NOTE";}return current;}
 };
 }

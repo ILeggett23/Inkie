@@ -15,3 +15,5 @@ test('scene version 5 adds exact #rrggbb colors to native drawings; version 4 st
  for(const bad of ['#3366cz','#36c','white']){const s=structuredClone(bar.scene);s.palette[0].color=bad;assert.throws(()=>validateSceneReply(reply(s),{},{version:5}),bad);}
  assert.deepEqual(validateSceneReply(reply(bar.scene),{},{version:5}).visual,validateSceneReply(reply(bar.scene)).visual); /* named colors read the same in both versions */
 });
+
+test('mixed scene prose uses an explicit capability and preserves all visual checks',()=>{const raw=JSON.stringify({mode:'visual',response:'These bars compare the supplied values.',visual:bar.scene});assert.throws(()=>validateSceneReply(raw));const checked=validateSceneReply(raw,{},{allowMixed:true});assert.equal(checked.response,'These bars compare the supplied values.');assert.deepEqual(checked.visual,bar.scene);const broken=structuredClone(bar.scene);broken.objects[0].bounds=[-1,0,10,10];assert.throws(()=>validateSceneReply(JSON.stringify({mode:'visual',response:'Explanation',visual:broken}),{},{allowMixed:true}));});
