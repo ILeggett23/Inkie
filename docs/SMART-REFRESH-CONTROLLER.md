@@ -11,7 +11,7 @@ This extends the installed QoL source `c16bafa174a2fafc34277b25c285e0c758b97a1b`
 | Whole UI scene replacement, library grid/list changes, page turns | Compare canonical pixels with the software-submitted scene; refresh only changed regions with local quality. Large area/region count/color does not authorize a complete refresh. |
 | Active pen/eraser or pending durable work | Retain scene/cleanup debt; defer cleanup. A valid prepared page retains the previous page-first bootstrap behavior without bypassing unsaved ink or contact checks. |
 | Initialization, document/layout binding, security, sleep/wake, recovery | Explicit complete request with a named reason. These preserve the existing justified restoration paths. |
-| Failed local cleanup | Preserve unsubmitted regions and the existing retry delay. Successfully submitted prefix regions are not repeated merely because a later region was refused. |
+| Failed local cleanup | Preserve unsubmitted regions and the existing retry delay. Successfully submitted prefix regions are not repeated merely because a later region was refused; an unavailable vendor source is not passed to the compositor. |
 
 `Change.full` now requests a canonical software scene replacement. It no longer means the vendor complete-update bit. Explicit complete requests carry `FullRefreshReason`; `VendorDisplay` rejects absent/invalid reasons and records `REFRESH_COMPLETE_REQUEST reason=... count=...`. This records application requests, not optical flashes or private vendor promotion.
 
