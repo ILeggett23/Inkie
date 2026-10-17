@@ -75,6 +75,7 @@ inline constexpr Type Heading{44,54};           // section headings, settings ti
 inline constexpr Type Subhead{38,46};           // sheet and popover titles, wordmark, key caps
 inline constexpr Type Body{34,50};              // definitions, Tom, typed notes, quotes, empty states, inputs
 inline constexpr Type Label{30,38};             // control labels, list titles, menu rows
+inline constexpr Type Control{28,36};           // labels inside width-fitted controls: selection strip, choice cells, steppers, text actions
 inline constexpr Type Meta{26,34};              // metadata: "12 items", "Page 43", notes and subtitles
 inline constexpr Type Caption{23,30};           // smallest permitted text
 inline constexpr int ScreenWidth=1620,ScreenHeight=2160,PageFitHeight=2060;

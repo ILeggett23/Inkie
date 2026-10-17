@@ -82,7 +82,7 @@ void settings(Canvas& c,Targets& tg,const Settings& m){
   if(!m.pdf){stepper(c,tg,{cx.x0,y,cx.x1,y+row},"Text size",std::to_string(m.fontSize)+" pt",FontLess,FontMore,!viewBlocked&&m.fontSize>6,!viewBlocked&&m.fontSize<72);y+=row;
    stepper(c,tg,{cx.x0,y,cx.x1,y+row},"Line width",std::to_string(m.lineWidth),LineLess,LineMore,!viewBlocked&&m.lineWidth>64,!viewBlocked&&m.lineWidth<4094);y+=row;
    // Native text-and-layout choices: three outlined cells, the chosen one black. "Book" keeps the publisher's choice.
-   auto choices=[&](std::string_view label,std::array<const char*,3> options,unsigned selected,int firstId){const Font cf{Face::Text,theme::Label.size};text::centeredLine(c,Label,{cx.x0,y,cx.x0+260,y+row},label,t::InkPrimary,Align::Left);
+   auto choices=[&](std::string_view label,std::array<const char*,3> options,unsigned selected,int firstId){const Font cf{Face::Text,theme::Control.size};text::centeredLine(c,Label,{cx.x0,y,cx.x0+260,y+row},label,t::InkPrimary,Align::Left);
     int x=cx.x1;for(int i=2;i>=0;--i){int w=int(text::measure(cf,options[std::size_t(i)]))+t::S4*2;Rect cell{x-w,y+16,x,y+row-16};x=cell.x0-8;const bool on=unsigned(i)==selected;
      if(on)c.fill(cell,t::ToolSelected);else c.hairline(cell,t::Border,2);text::centeredLine(c,cf,cell,options[std::size_t(i)],on?t::Paper:viewBlocked?t::Disabled:t::InkPrimary,Align::Center);if(!viewBlocked)tg.add(firstId+i,hitArea(cell));}
     divider(c,cx.x0,cx.x1,y+row);y+=row;};
@@ -183,7 +183,7 @@ Rect quickBrowse(Canvas& c,Targets& tg,const QuickBrowse& m){
  const int by=QuickTrackRect.y1+8,bh=t::MinTarget;
  if(m.start!=m.page)textAction(c,tg,QuickReturn,{x0,by,x0+460,by+bh},"Return to where you started");
  // Single-page steps for exact positioning (a tap on the track lands within a page or two).
- const Font step{Face::Text,theme::Label.size};const std::string label=std::to_string(m.page+1)+" of "+std::to_string(std::max(1,m.total));const int lw=int(text::measure(step,label))+t::S3*2;
+ const Font step{Face::Text,theme::Control.size};const std::string label=std::to_string(m.page+1)+" of "+std::to_string(std::max(1,m.total));const int lw=int(text::measure(step,label))+t::S3*2;
  iconButton(c,tg,QuickNext,{x1-t::MinTarget,by,x1,by+bh},Icon::ChevronRight,{false,m.page+1>=m.total},32);
  text::centeredLine(c,step,{x1-t::MinTarget-lw,by,x1-t::MinTarget,by+bh},label,t::InkPrimary,Align::Center);
  iconButton(c,tg,QuickPrevious,{x1-2*t::MinTarget-lw,by,x1-t::MinTarget-lw,by+bh},Icon::ChevronLeft,{false,m.page<=0},32);

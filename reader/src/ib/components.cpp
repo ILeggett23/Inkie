@@ -20,7 +20,7 @@ Rect primaryAction(Canvas& c,Targets& tg,int id,Rect r,std::string_view label,Ic
  if(leading!=Icon::Count){int mid=(r.y0+r.y1)/2;icon(c,leading,{x,mid-15,x+30,mid+15},t::Paper);x+=44;}
  text::centeredLine(c,f,{x,r.y0,r.x1,r.y1},label,t::Paper,Align::Left);if(!disabled)tg.add(id,hitArea(r));return r;}
 Rect textAction(Canvas& c,Targets& tg,int id,Rect r,std::string_view label,bool underline,bool disabled,Align a){
- const Font f{underline?Face::TextSemibold:Face::Text,theme::Label.size};std::uint32_t ink=disabled?t::Disabled:t::InkPrimary;text::centeredLine(c,f,r,label,ink,a);
+ const Font f{underline?Face::TextSemibold:Face::Text,theme::Control.size};std::uint32_t ink=disabled?t::Disabled:t::InkPrimary;text::centeredLine(c,f,r,label,ink,a);
  if(underline){float w=text::measure(f,label);int x0=a==Align::Right?r.x1-int(w):r.x0;c.hline(x0,x0+int(w),(r.y0+r.y1)/2+22,ink,2);}
  if(!disabled)tg.add(id,hitArea(r));return r;}
 Rect hitArea(Rect v,int m)noexcept{int w=std::max(width(v),m),h=std::max(height(v),m);int cx=(v.x0+v.x1)/2,cy=(v.y0+v.y1)/2;return {cx-w/2,cy-h/2,cx-w/2+w,cy-h/2+h};}

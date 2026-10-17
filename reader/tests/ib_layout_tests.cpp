@@ -59,7 +59,7 @@ int main(int argc,char** argv){try{
   for(Rect r:{z.content,z.footer,z.toolbar,z.close,z.palette,z.strip,z.sheet,z.reservedTop,z.reservedStatus,z.reservedBottom})check(inside(r,z.screen),"landscape zone on screen");
   check(!overlaps(z.toolbar,z.sheet)&&!overlaps(z.toolbar,z.strip)&&inside(z.palette,z.content),"landscape zones disjoint where they must be");}
  // 3. Every role size is at least the smallest permitted text.
- for(auto r:{t::Code,t::Display,t::Title,t::Heading,t::Subhead,t::Body,t::Label,t::Meta,t::Caption})check(r.size>=t::Caption.size&&r.line>r.size,"role sizes");
+ for(auto r:{t::Code,t::Display,t::Title,t::Heading,t::Subhead,t::Body,t::Label,t::Control,t::Meta,t::Caption})check(r.size>=t::Caption.size&&r.line>r.size,"role sizes");
  // 4. Cursive roles: the face swap is resolved in the shared text path, sizes stay legible, widths stay close.
  for(Font f:{type::Voice,type::ScriptHeading,type::ScriptTitle,type::ScriptEmpty}){
   check(f.face==Face::Script&&f.size>=type::ScriptMinimumRole,"cursive role size");
@@ -84,8 +84,10 @@ int main(int argc,char** argv){try{
  {Frame a,b;auto ca=a.canvas(),cb=b.canvas();tom::Model m;m.showAnswer=true;m.answer=Answer;text::setPlainScript(false);tom::paint(ca,a.tg,m);text::setPlainScript(true);tom::paint(cb,b.tg,m);text::setPlainScript(false);check(a.px==b.px,"stroke handwriting unaffected by plain text");}
  // Only cursive roles change: a surface without them is pixel-identical in both modes.
  {Frame a,b;auto ca=a.canvas(),cb=b.canvas();reader::Tools tools;text::setPlainScript(false);reader::toolbar(ca,a.tg,tools);reader::penPanel(ca,a.tg,tools);text::setPlainScript(true);reader::toolbar(cb,b.tg,tools);reader::penPanel(cb,b.tg,tools);text::setPlainScript(false);check(a.px==b.px,"controls never cursive");}
- // 6. The settings row exists and its target is a full-size control.
- {Frame f;auto c=f.canvas();settings::Model m;m.page=settings::Page::Accessibility;settings::paint(c,f.tg,m);const Rect r=f.tg.rect(settings::PlainText);check(!r.empty()&&width(r)>=t::MinTarget&&height(r)>=t::MinTarget,"plain text toggle is a full target");}
+ // 6. The settings row exists, is a full-size control, and sits below every existing Accessibility row (none moved:
+ //    High contrast and Reduce motion keep the positions they had before the row was added).
+ {Frame f;auto c=f.canvas();settings::Model m;m.page=settings::Page::Accessibility;settings::paint(c,f.tg,m);const Rect r=f.tg.rect(settings::PlainText);check(!r.empty()&&width(r)>=t::MinTarget&&height(r)>=t::MinTarget,"plain text toggle is a full target");
+  const Rect hc=f.tg.rect(settings::HighContrast),rm=f.tg.rect(settings::ReduceMotion);check(r.y0>=rm.y1&&hc.y0==374&&rm.y0==666,"existing accessibility rows unmoved (base: 374 and 666)");}
  // 7. The highlight detail sheet shares the lower-sheet geometry: its close sits where Note's does.
  {Frame a,b;auto ca=a.canvas(),cb=b.canvas();notes::HighlightDetail h;h.excerpt="It was the best of times";notes::highlight(ca,a.tg,h);notes::Note n;n.editable=true;notes::note(cb,b.tg,n);check(same(a.tg.rect(notes::HlClose),b.tg.rect(notes::NoteDone)),"one close position for lower sheets");}
  std::printf("IB_LAYOUT_PASS checks=%u\n",checks);return 0;

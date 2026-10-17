@@ -96,7 +96,7 @@ Rect selectionToolbar(Canvas& c,Targets& tg,const SelectionBar& m,Rect bounds){
  if(m.highlight)items[n++]={SelHighlight,m.highlighted?"Color":"Highlight",Icon::Highlight,true};
  if(m.note)items[n++]={SelNote,"Note",Icon::Note,false};if(m.tom)items[n++]={SelTom,"Tom",Icon::Tom,false};
  if(m.copy)items[n++]={SelCopy,"Copy",Icon::Copy,false};if(m.more)items[n++]={SelMore,"",Icon::More,false};
- const Font f{Face::Text,theme::Label.size};const int h=98,pad=t::S3+4,glyph=31,gap=14;std::array<int,6> ws{};int w=0;
+ const Font f{Face::Text,theme::Control.size};const int h=98,pad=t::S3+4,glyph=31,gap=14;std::array<int,6> ws{};int w=0;
  for(unsigned i=0;i<n;++i){ws[i]=items[i].label[0]?int(text::measure(f,items[i].label))+glyph+gap+pad*2:t::MinTarget;w+=ws[i];}
  // Prefer above the passage so the text being read stays visible.
  Rect r;int x=std::clamp((m.anchor.x0+m.anchor.x1)/2-w/2,bounds.x0+t::S3,bounds.x1-t::S3-w);
@@ -122,7 +122,7 @@ Rect highlightColors(Canvas& c,Targets& tg,Rect bar,Rect passage,unsigned select
 }
 Rect definitionCard(Canvas& c,Targets& tg,Rect anchor,const Definition& d,Rect bounds){
  const int w=d.expanded?940:710,pad=40,lh=46;
- const Font word{Face::SerifSemibold,theme::Heading.size},pos{Face::Text,theme::Label.size},body{Face::Serif,theme::Body.size},src{Face::Text,theme::Meta.size};
+ const Font word{Face::SerifSemibold,theme::Heading.size},pos{Face::Text,theme::Control.size},body{Face::Serif,theme::Body.size},src{Face::Text,theme::Meta.size};
  const bool none=!d.loading&&d.senses.empty();
  std::string tag=d.pronunciation.empty()?(!d.partOfSpeech.empty()?d.partOfSpeech:!d.senses.empty()?d.senses[0].partOfSpeech:""):d.pronunciation;
  std::vector<std::string> all,compact;bool truncated=false;

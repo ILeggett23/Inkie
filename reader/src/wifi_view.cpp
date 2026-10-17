@@ -39,7 +39,7 @@ void WifiView::paint(spike::Surface s)const{
  c.fill({0,0,1620,2160},t::Paper);
  ib::text::draw(c,{ib::Face::Subhead,ib::theme::Title.size},70.f,150.f,"Wi-Fi",t::InkPrimary);ib::iconLabelButton(c,tg,1,CloseBox,ib::Icon::Close,"Close");
  ib::text::draw(c,{ib::Face::Serif,ib::theme::Body.size},70.f,270.f,status(),t::InkPrimary);
- if(!message_.isEmpty()){auto m=message_;const bool named=m.startsWith("CONNECTING TO ");ib::text::draw(c,{ib::Face::TextItalic,ib::theme::Label.size},70.f,340.f,named?"Connecting to "+u(m.mid(14)):sentence(m),t::InkSecondary);}
+ if(!message_.isEmpty()){auto m=message_;const bool named=m.startsWith("CONNECTING TO ");ib::text::draw(c,{ib::Face::TextItalic,ib::theme::Control.size},70.f,340.f,named?"Connecting to "+u(m.mid(14)):sentence(m),t::InkSecondary);}
  for(int n=0;n<int(networks_.size());++n){const auto& net=networks_[std::size_t(n)];const auto r=row(n);const bool usable=!net.current&&supported(net);
   c.fillRound(r,t::RadiusMedium,net.current?t::SurfaceSelected:t::Surface);c.strokeRound(r,t::RadiusMedium,2,usable||net.current?t::BorderStrong:t::Border);
   ib::text::draw(c,{ib::Face::Text,ib::theme::Subhead.size},100.f,float(r.y0+66),u(shown(net.ssid)),usable||net.current?t::InkPrimary:t::InkTertiary);

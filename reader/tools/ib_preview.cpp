@@ -6,6 +6,8 @@
 //   ib-preview <reader-dir> <out-dir>                       every surface, zone maps, the Caveat cursive sheet
 //   ib-preview <reader-dir> <out-dir> --script-sheet <name>  only the cursive sheet, for whatever Caveat.ttf the
 //                                                            font directory holds (candidate comparison)
+//   ib-preview <reader-dir> <out-dir> --targets              every surface's registered targets (id and rect) as
+//                                                            text, to diff two trees: a moved control shows up
 #include "ib/library_screen.h"
 #include "ib/notes_screen.h"
 #include "ib/reader_screen.h"
@@ -139,10 +141,14 @@ void scriptSheet(Image& im,std::string_view name){
 #endif
 }
 int main(int argc,char** argv){
- const bool sheetOnly=argc==5&&std::string_view(argv[3])=="--script-sheet";
- if(argc!=3&&!sheetOnly){std::fprintf(stderr,"usage: ib-preview <reader-dir> <out-dir> [--script-sheet <name>]\n");return 2;}
+ const bool sheetOnly=argc==5&&std::string_view(argv[3])=="--script-sheet",targetsOnly=argc==4&&std::string_view(argv[3])=="--targets";
+ if(argc!=3&&!sheetOnly&&!targetsOnly){std::fprintf(stderr,"usage: ib-preview <reader-dir> <out-dir> [--script-sheet <name>]\n");return 2;}
  const std::filesystem::path reader=argv[1],out=argv[2];if(!text::load(reader/"assets/fonts")){std::fprintf(stderr,"fonts missing\n");return 2;}
  std::filesystem::create_directories(out);unsigned written=0;
+ if(targetsOnly){std::ofstream list(out/"targets.txt");
+  for(const auto& s:surfaces())for(auto side:{reader::Side::Left,reader::Side::Right}){if(!s.sided&&side==reader::Side::Right)continue;reader::setToolbarSide(side);
+   Image im;auto c=im.canvas();Targets tg;s.paint(c,tg);for(unsigned i=0;i<tg.size();++i){const auto& x=tg[i];list<<s.name<<(side==reader::Side::Left?"":"-left-handed")<<' '<<x.id<<' '<<x.rect.x0<<' '<<x.rect.y0<<' '<<x.rect.x1<<' '<<x.rect.y1<<'\n';}}
+  std::printf("IB_PREVIEW_TARGETS written\n");return 0;}
  auto save=[&](const Image& im,const std::string& name){if(!png(out/(name+".png"),im)){std::fprintf(stderr,"write failed %s\n",name.c_str());std::exit(1);}++written;};
 #ifdef IB_PREVIEW_SCRIPT
  {Image im;scriptSheet(im,sheetOnly?argv[4]:"Caveat");save(im,std::string("cursive-sheet-")+(sheetOnly?argv[4]:"Caveat"));}
