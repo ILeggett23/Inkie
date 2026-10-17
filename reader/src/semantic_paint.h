@@ -34,7 +34,7 @@ inline int menuBand(const Controller& c,int x,int initial){auto g=c.geometry();i
 inline std::string utf8(const QString& v){auto b=v.toUtf8();return std::string(b.constData(),std::size_t(b.size()));}
 inline std::string attribution(const QJsonObject& d){auto p=d["provider"].toString();if(p=="princeton-wordnet-3.0")return "WordNet 3.0 \xC2\xB7 Princeton University";if(p=="inkbound-authored-test-v1")return "Test dictionary \xE2\x80\x94 eight entries";return utf8(d["attribution"].toString());}
 inline Visual transient(spike::Surface overlay,const Controller& c,std::span<const std::uint32_t> backdrop={},TransientOptions o={}){probe(Work::Layout);Visual v;if(c.view()==View::None)return v; /* nothing composited without regions: skip the 14 MB clear on every page turn */ std::fill(overlay.pixels.begin(),overlay.pixels.end(),0u);
- ib::Canvas canvas(overlay);spike::Rect available{0,0,1620,2060};if(!o.excluded.empty()){if(o.excluded.x0==0)available.x0=o.excluded.x1;else if(o.excluded.x1==1620)available.x1=o.excluded.x0;}
+ ib::Canvas canvas(overlay);const spike::Rect available=ib::layout::popoverBounds(o.excluded);
  auto add=[&](spike::Rect r,bool multiply){r=clip(r);if(r.empty())return;const int rows=multiply?std::max(1,int(1620ULL*2160/4)/std::max(1,r.x1-r.x0)):2160;for(int y=r.y0;y<r.y1&&v.count<v.regions.size();y+=rows){v.regions[v.count]={r.x0,y,r.x1,std::min(r.y1,y+rows)};v.multiply[v.count++]=multiply;}};
  // Panels are painted twice: once to learn their rect, then over the page pixels.
  auto panel=[&](auto&& paint){ib::Targets scratch;spike::Rect r=paint(scratch);r=clip(ib::outset(r,4));
