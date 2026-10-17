@@ -9,18 +9,18 @@ const Font LabelFont{Face::Text,float(t::Label.size)},MetaFont{Face::Text,float(
 void popover(Canvas& c,Rect r){c.fill(r,t::Surface);c.hairline(r,t::PopoverBorder,2);}
 void contextSheet(Canvas& c,int top){c.fill({0,top,t::ScreenWidth,t::ScreenHeight},t::Surface);c.hline(0,t::ScreenWidth,top,t::PopoverBorder,2);}
 void sheetTitle(Canvas& c,Targets& tg,int top,int h,std::string_view title,std::string_view subtitle,int subtitleId,int rightEdge){
- const Font tf{Face::Text,38},sf{Face::Text,27};text::draw(c,tf,70.f,float(top+62),title,t::InkPrimary);
+ const Font tf{Face::Text,theme::Subhead.size},sf{Face::Text,theme::Meta.size};text::draw(c,tf,70.f,float(top+62),title,t::InkPrimary);
  if(!subtitle.empty()){Rect s{70,top+76,rightEdge-t::S3,top+h-16};text::centeredLine(c,sf,s,text::fit(sf,subtitle,float(width(s))),t::InkSecondary,Align::Left);if(subtitleId>=0)tg.add(subtitleId,s);}
 }
-void sheetQuote(Canvas& c,Rect r,std::string_view s,std::uint32_t rule){const Font qf{Face::Serif,30};c.fill({r.x0+40,r.y0+6,r.x0+44,r.y1-6},rule);
+void sheetQuote(Canvas& c,Rect r,std::string_view s,std::uint32_t rule){const Font qf{Face::Serif,theme::Label.size};c.fill({r.x0+40,r.y0+6,r.x0+44,r.y1-6},rule);
  Rect q{r.x0+68,r.y0,r.x1,r.y1};text::centeredLine(c,qf,q,text::fit(qf,s,float(width(q))),0xff505050u,Align::Left);}
 void ruledPaper(Canvas& c,Rect a,int gap){for(int y=a.y0+gap-6;y<a.y1-8;y+=gap)c.hline(a.x0,a.x1,y,0xffe2e2e2u,1);}
 Rect primaryAction(Canvas& c,Targets& tg,int id,Rect r,std::string_view label,Icon leading,bool disabled){
- c.fill(r,disabled?t::Disabled:t::ToolSelected);const Font f{Face::Text,30};float w=text::measure(f,label)+(leading!=Icon::Count?30+14:0);int x=int(r.x0+(width(r)-w)/2);
+ c.fill(r,disabled?t::Disabled:t::ToolSelected);const Font f{Face::Text,theme::Label.size};float w=text::measure(f,label)+(leading!=Icon::Count?30+14:0);int x=int(r.x0+(width(r)-w)/2);
  if(leading!=Icon::Count){int mid=(r.y0+r.y1)/2;icon(c,leading,{x,mid-15,x+30,mid+15},t::Paper);x+=44;}
  text::centeredLine(c,f,{x,r.y0,r.x1,r.y1},label,t::Paper,Align::Left);if(!disabled)tg.add(id,hitArea(r));return r;}
 Rect textAction(Canvas& c,Targets& tg,int id,Rect r,std::string_view label,bool underline,bool disabled,Align a){
- const Font f{underline?Face::TextSemibold:Face::Text,28};std::uint32_t ink=disabled?t::Disabled:t::InkPrimary;text::centeredLine(c,f,r,label,ink,a);
+ const Font f{underline?Face::TextSemibold:Face::Text,theme::Label.size};std::uint32_t ink=disabled?t::Disabled:t::InkPrimary;text::centeredLine(c,f,r,label,ink,a);
  if(underline){float w=text::measure(f,label);int x0=a==Align::Right?r.x1-int(w):r.x0;c.hline(x0,x0+int(w),(r.y0+r.y1)/2+22,ink,2);}
  if(!disabled)tg.add(id,hitArea(r));return r;}
 Rect hitArea(Rect v,int m)noexcept{int w=std::max(width(v),m),h=std::max(height(v),m);int cx=(v.x0+v.x1)/2,cy=(v.y0+v.y1)/2;return {cx-w/2,cy-h/2,cx-w/2+w,cy-h/2+h};}
@@ -55,7 +55,7 @@ SheetFrame sheet(Canvas& c,Targets& tg,Rect r,std::string_view title,const Sheet
  if(o.close){iconButton(c,tg,o.closeId,{right-t::MinTarget,header.y0+4,right,header.y1-4},Icon::Close);right-=t::MinTarget;}
  if(o.done){iconButton(c,tg,o.doneId,{right-t::MinTarget,header.y0+4,right,header.y1-4},Icon::Check);right-=t::MinTarget;}
  if(o.more){iconButton(c,tg,o.moreId,{right-t::MinTarget,header.y0+4,right,header.y1-4},Icon::More);right-=t::MinTarget;}
- Font f{Face::TextSemibold,34};
+ Font f{Face::TextSemibold,theme::Body.size};
  if(o.subtitle.empty())text::centeredLine(c,f,{x,header.y0,right-t::S2,header.y1},title,t::InkPrimary,Align::Left);
  else{text::draw(c,f,float(x),float(header.y0+58),text::fit(f,title,float(right-x-t::S2)),t::InkPrimary);text::draw(c,CaptionFont,float(x),float(header.y0+94),text::fit(CaptionFont,o.subtitle,float(right-x-t::S2)),t::InkSecondary);}
  return {header,{r.x0+t::S4,header.y1,r.x1-t::S4,r.y1-t::S4}};
@@ -93,7 +93,7 @@ Rect row(Canvas& c,Targets& tg,int id,Rect r,std::string_view label,std::string_
  if(rule)divider(c,r.x0,r.x1,r.y1);if(id>=0)tg.add(id,r);return r;
 }
 int quote(Canvas& c,Rect r,std::string_view caption,std::string_view body,int maxLines){
- Font q{Face::SerifItalic,float(t::Body.size)-2};int y=r.y0+t::S3;int lh=t::Body.line-4;
+ Font q{Face::SerifItalic,float(t::Body.size)};int y=r.y0+t::S3;int lh=t::Body.line-4;
  auto lines=text::wrap(q,body,float(width(r)-t::S5-t::S3),maxLines);int h=t::S3*2+int(lines.size())*lh+(caption.empty()?0:t::Meta.line+t::S1);
  Rect box{r.x0,r.y0,r.x1,r.y0+h};c.fillRound(box,t::RadiusSmall,t::SurfaceSunken);
  if(!caption.empty()){text::draw(c,CaptionFont,float(r.x0+t::S4),float(y+t::Caption.size),text::fit(CaptionFont,caption,float(width(r)-t::S5)),t::InkSecondary);y+=t::Meta.line+t::S1;}

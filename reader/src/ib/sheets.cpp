@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 #include "ib/sheets.h"
 #include "ib/library_screen.h"
+#include "ib/type.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -33,7 +34,7 @@ void layers(Canvas& c,Targets& tg,const Layers& m){
   iconButton(c,tg,EyeBase+int(m.offset+i),{row.x0,row.y0,row.x0+t::MinTarget,row.y1},l.visible?Icon::Eye:Icon::EyeOff,{false,m.busy},40);
   thumb({row.x0+t::MinTarget+t::S2,row.y0+t::S3,row.x0+t::MinTarget+t::S2+140,row.y1-t::S3},l);
   int tx=row.x0+t::MinTarget+t::S2+140+t::S4;
-  text::draw(c,{l.active?Face::SerifSemibold:Face::Serif,34},float(tx),float(row.y0+64),text::fit({Face::Serif,34},l.name,float(row.x1-tx-t::MinTarget-60)),l.visible?t::InkPrimary:t::InkSecondary);
+  text::draw(c,{l.active?Face::SerifSemibold:Face::Serif,theme::Body.size},float(tx),float(row.y0+64),text::fit({Face::Serif,theme::Body.size},l.name,float(row.x1-tx-t::MinTarget-60)),l.visible?t::InkPrimary:t::InkSecondary);
   std::string meta=l.active?"Writing here":std::to_string(l.items)+(l.items==1?" item":" items");if(l.locked)meta+="  \xC2\xB7  Locked";if(!l.visible)meta+="  \xC2\xB7  Hidden";
   text::draw(c,Meta,float(tx),float(row.y0+108),meta,t::InkSecondary);
   if(l.locked)icon(c,Icon::Lock,{row.x1-t::MinTarget-44,row.y0+55,row.x1-t::MinTarget-8,row.y0+91},t::InkSecondary);
@@ -43,7 +44,7 @@ void layers(Canvas& c,Targets& tg,const Layers& m){
  // Protected document background, always at the bottom.
  Rect bg{content.x0,y,content.x1,y+rowH};icon(c,Icon::Lock,{bg.x0+30,bg.y0+57,bg.x0+66,bg.y0+93},t::InkTertiary);
  Rect bt{bg.x0+t::MinTarget+t::S2,bg.y0+t::S3,bg.x0+t::MinTarget+t::S2+140,bg.y1-t::S3};c.fillRound(bt,6,t::SurfaceSunken);for(int k=0;k<5;++k)c.hline(bt.x0+14,bt.x1-14-(k%2)*30,bt.y0+18+k*16,t::Border,3);
- int tx=bt.x1+t::S4;text::draw(c,{Face::Serif,34},float(tx),float(bg.y0+64),m.background,t::InkSecondary);text::draw(c,Meta,float(tx),float(bg.y0+108),"Original \xC2\xB7 protected",t::InkTertiary);
+ int tx=bt.x1+t::S4;text::draw(c,{Face::Serif,theme::Body.size},float(tx),float(bg.y0+64),m.background,t::InkSecondary);text::draw(c,Meta,float(tx),float(bg.y0+108),"Original \xC2\xB7 protected",t::InkTertiary);
  y+=rowH+t::S3;
  if(m.layers.size()>LayerPageSize){iconButton(c,tg,LayersPrev,{content.x0,y,content.x0+t::MinTarget,y+t::MinTarget},Icon::ChevronUp,{false,m.offset==0});iconButton(c,tg,LayersNext,{content.x0+t::MinTarget,y,content.x0+2*t::MinTarget,y+t::MinTarget},Icon::ChevronDown,{false,m.offset+LayerPageSize>=m.layers.size()});}
  button(c,tg,LayerAdd,{content.x1-360,y,content.x1,y+92},"New layer",ButtonKind::Secondary,m.busy,Icon::Plus);
@@ -61,7 +62,7 @@ void settings(Canvas& c,Targets& tg,const Settings& m){
  tabs(c,tg,TabBase,{cx.x0,cx.y0,cx.x1,cx.y0+84},names,unsigned(m.tab));
  int y=cx.y0+84+t::S4;const int row=110;bool viewBlocked=m.busy||m.pinned||m.pending||m.contact;
  if(m.tab==Tab::View){
-  if(!m.pdf){text::block(c,{Face::SerifItalic,32},{cx.x0,y,cx.x1,y+200},"EPUB pages reflow to the screen. Text size and line width are in Reading.",t::InkSecondary,46,4);}
+  if(!m.pdf){text::block(c,{Face::SerifItalic,theme::Body.size},{cx.x0,y,cx.x1,y+200},"EPUB pages reflow to the screen. Text size and line width are in Reading.",t::InkSecondary,46,4);}
   else{
    text::centeredLine(c,Label,{cx.x0,y,cx.x0+300,y+row},"Zoom",t::InkPrimary,Align::Left);
    button(c,tg,FitWidth,{cx.x1-780,y+12,cx.x1-580,y+row-12},"Fit width",ButtonKind::Secondary,viewBlocked);
@@ -81,7 +82,7 @@ void settings(Canvas& c,Targets& tg,const Settings& m){
   if(!m.pdf){stepper(c,tg,{cx.x0,y,cx.x1,y+row},"Text size",std::to_string(m.fontSize)+" pt",FontLess,FontMore,!viewBlocked&&m.fontSize>6,!viewBlocked&&m.fontSize<72);y+=row;
    stepper(c,tg,{cx.x0,y,cx.x1,y+row},"Line width",std::to_string(m.lineWidth),LineLess,LineMore,!viewBlocked&&m.lineWidth>64,!viewBlocked&&m.lineWidth<4094);y+=row;
    // Native text-and-layout choices: three outlined cells, the chosen one black. "Book" keeps the publisher's choice.
-   auto choices=[&](std::string_view label,std::array<const char*,3> options,unsigned selected,int firstId){const Font cf{Face::Text,28};text::centeredLine(c,Label,{cx.x0,y,cx.x0+260,y+row},label,t::InkPrimary,Align::Left);
+   auto choices=[&](std::string_view label,std::array<const char*,3> options,unsigned selected,int firstId){const Font cf{Face::Text,theme::Label.size};text::centeredLine(c,Label,{cx.x0,y,cx.x0+260,y+row},label,t::InkPrimary,Align::Left);
     int x=cx.x1;for(int i=2;i>=0;--i){int w=int(text::measure(cf,options[std::size_t(i)]))+t::S4*2;Rect cell{x-w,y+16,x,y+row-16};x=cell.x0-8;const bool on=unsigned(i)==selected;
      if(on)c.fill(cell,t::ToolSelected);else c.hairline(cell,t::Border,2);text::centeredLine(c,cf,cell,options[std::size_t(i)],on?t::Paper:viewBlocked?t::Disabled:t::InkPrimary,Align::Center);if(!viewBlocked)tg.add(firstId+i,hitArea(cell));}
     divider(c,cx.x0,cx.x1,y+row);y+=row;};
@@ -141,7 +142,7 @@ void newNotebook(Canvas& c,Targets& tg,const NewNotebook& m){
   text::centeredLine(c,Meta,{card.x0,card.y1+t::S1,card.x1,card.y1+56},templateName(Template(i)),sel?t::InkPrimary:t::InkSecondary);tg.add(TemplateBase+int(i),{card.x0,card.y0,card.x1,card.y1+56});}
  y+=cw*4/3+56+t::S4;
  auto field=[&](int id,std::string_view label,std::string_view value,std::string_view placeholder,Icon trailing){Rect f{cx.x0,y,cx.x1,y+110};c.strokeRound(f,t::RadiusSmall,t::Hairline,t::Border);
-  text::centeredLine(c,Label,{f.x0+t::S4,f.y0,f.x0+260,f.y1},label,t::InkSecondary,Align::Left);text::centeredLine(c,{Face::Serif,34},{f.x0+260,f.y0,f.x1-80,f.y1},value.empty()?placeholder:value,value.empty()?t::InkTertiary:t::InkPrimary,Align::Left);
+  text::centeredLine(c,Label,{f.x0+t::S4,f.y0,f.x0+260,f.y1},label,t::InkSecondary,Align::Left);text::centeredLine(c,{Face::Serif,theme::Body.size},{f.x0+260,f.y0,f.x1-80,f.y1},value.empty()?placeholder:value,value.empty()?t::InkTertiary:t::InkPrimary,Align::Left);
   icon(c,trailing,{f.x1-64,f.y0+37,f.x1-28,f.y0+73},t::InkSecondary);tg.add(id,f);y+=110+t::S3;};
  field(NewTitle,"Title",m.title,"Untitled notebook",Icon::Note);field(NewFolder,"Folder",m.folder,"My files",Icon::ChevronDown);
  Rect pr{cx.x0,y,cx.x1,y+110};stepper(c,tg,pr,"Pages",std::to_string(m.pages),NewPagesLess,NewPagesMore,!m.busy&&m.pages>1,!m.busy&&m.pages<64,false);y+=110+t::S4;
@@ -159,7 +160,7 @@ Rect menu(Canvas& c,Targets& tg,Rect anchor,const std::vector<MenuItem>& items,i
 Rect documentMenu(Canvas& c,Targets& tg,Rect tile,std::string_view title,const std::vector<MenuItem>& items,std::size_t separator){
  const int pad=30,head=78,sep=separator<items.size()?24:0;const int h=25+head+int(items.size())*DocumentMenuRow+sep+25;
  const bool left=tile.x0<t::ScreenWidth/2;int x0=left?tile.x1-2:tile.x0-DocumentMenuWidth+2;int y0=std::clamp(tile.y0,t::S2,t::PageFitHeight-t::S2-h);
- Rect r{x0,y0,x0+DocumentMenuWidth,y0+h};popover(c,r);const Font titleFont{Face::TextSemibold,32},rowFont{Face::Text,29};
+ Rect r{x0,y0,x0+DocumentMenuWidth,y0+h};popover(c,r);const Font titleFont{Face::TextSemibold,theme::Body.size},rowFont{Face::Text,theme::Label.size};
  text::centeredLine(c,titleFont,{r.x0+pad,r.y0+25,r.x1-pad,r.y0+25+head-16},text::fit(titleFont,title,float(width(r)-pad*2)),t::InkPrimary,Align::Left);
  int y=r.y0+25+head;
  for(std::size_t i=0;i<items.size();++i){const auto& it=items[i];if(i==separator&&sep){c.hline(r.x0+pad,r.x1-pad,y+sep/2,t::Border,2);y+=sep;}
@@ -172,8 +173,8 @@ Rect documentMenu(Canvas& c,Targets& tg,Rect tile,std::string_view title,const s
 }
 Rect quickBrowse(Canvas& c,Targets& tg,const QuickBrowse& m){
  const Rect r=QuickBrowseRect;c.fill(r,t::Surface);c.hline(0,t::ScreenWidth,r.y0,t::PopoverBorder,2);const int x0=QuickTrackRect.x0,x1=QuickTrackRect.x1;
- text::draw(c,{Face::Text,33},float(x0),float(r.y0+44+33),"Quick browse",t::InkPrimary);
- const Font meta{Face::Text,27};text::centeredLine(c,meta,{x0,r.y0+100,x1-300,r.y0+150},text::fit(meta,m.title,float(x1-300-x0)),t::InkSecondary,Align::Left);
+ text::draw(c,{Face::Text,theme::Body.size},float(x0),float(r.y0+44+33),"Quick browse",t::InkPrimary);
+ const Font meta{Face::Text,theme::Meta.size};text::centeredLine(c,meta,{x0,r.y0+100,x1-300,r.y0+150},text::fit(meta,m.title,float(x1-300-x0)),t::InkSecondary,Align::Left);
  text::centeredLine(c,meta,{x1-300,r.y0+100,x1,r.y0+150},m.position,t::InkSecondary,Align::Right);
  // The track: the start point (small dot) and the current page (knob), placed by page.
  const int ty=(QuickTrackRect.y0+QuickTrackRect.y1)/2;c.hline(x0,x1,ty-2,0xffbababau,4);const int last=std::max(1,m.total-1);
@@ -182,16 +183,16 @@ Rect quickBrowse(Canvas& c,Targets& tg,const QuickBrowse& m){
  const int by=QuickTrackRect.y1+8,bh=t::MinTarget;
  if(m.start!=m.page)textAction(c,tg,QuickReturn,{x0,by,x0+460,by+bh},"Return to where you started");
  // Single-page steps for exact positioning (a tap on the track lands within a page or two).
- const Font step{Face::Text,28};const std::string label=std::to_string(m.page+1)+" of "+std::to_string(std::max(1,m.total));const int lw=int(text::measure(step,label))+t::S3*2;
+ const Font step{Face::Text,theme::Label.size};const std::string label=std::to_string(m.page+1)+" of "+std::to_string(std::max(1,m.total));const int lw=int(text::measure(step,label))+t::S3*2;
  iconButton(c,tg,QuickNext,{x1-t::MinTarget,by,x1,by+bh},Icon::ChevronRight,{false,m.page+1>=m.total},32);
  text::centeredLine(c,step,{x1-t::MinTarget-lw,by,x1-t::MinTarget,by+bh},label,t::InkPrimary,Align::Center);
  iconButton(c,tg,QuickPrevious,{x1-2*t::MinTarget-lw,by,x1-t::MinTarget-lw,by+bh},Icon::ChevronLeft,{false,m.page<=0},32);
  return r;
 }
 Rect notice(Canvas& c,Targets& tg,const Notice& n,Rect bounds){
- int w=900;auto lines=text::wrap({Face::Serif,34},n.body,float(w-2*t::S5),6);int h=t::S5+56+t::S3+int(lines.size())*48+t::S4+(n.actions.empty()?0:96+t::S3)+t::S4;
- Rect r=centered(bounds,w,h);panel(c,r,t::RadiusLarge);int y=r.y0+t::S5;text::draw(c,{Face::SerifSemibold,40},float(r.x0+t::S5),float(y+40),n.title,t::InkPrimary);y+=56+t::S3;
- for(auto& l:lines){text::draw(c,{Face::Serif,34},float(r.x0+t::S5),float(y+36),l,t::InkPrimary);y+=48;}y+=t::S4;
+ int w=900;auto lines=text::wrap({Face::Serif,theme::Body.size},n.body,float(w-2*t::S5),6);int h=t::S5+56+t::S3+int(lines.size())*48+t::S4+(n.actions.empty()?0:96+t::S3)+t::S4;
+ Rect r=centered(bounds,w,h);panel(c,r,t::RadiusLarge);int y=r.y0+t::S5;text::draw(c,{Face::SerifSemibold,theme::Subhead.size},float(r.x0+t::S5),float(y+40),n.title,t::InkPrimary);y+=56+t::S3;
+ for(auto& l:lines){text::draw(c,{Face::Serif,theme::Body.size},float(r.x0+t::S5),float(y+36),l,t::InkPrimary);y+=48;}y+=t::S4;
  int bw=n.actions.empty()?0:(w-2*t::S5-(int(n.actions.size())-1)*t::S3)/int(n.actions.size());int x=r.x0+t::S5;
  for(std::size_t i=0;i<n.actions.size();++i){const auto& a=n.actions[i];button(c,tg,a.id,{x,y,x+bw,y+96},a.label,i+1==n.actions.size()?(a.destructive?ButtonKind::Destructive:ButtonKind::Primary):ButtonKind::Secondary,a.disabled);x+=bw+t::S3;}
  return r;
@@ -203,10 +204,10 @@ Rect recents(Canvas& c,Targets& tg,std::span<const RecentBook> books){
  const int n=int(std::min<std::size_t>(books.size(),5)),cw=220,gap=(theme::ScreenWidth-t::Gutter*2-5*cw)/4,y=140;
  for(int i=0;i<n;++i){const auto& b=books[std::size_t(i)];Rect cell{t::Gutter+i*(cw+gap),y,t::Gutter+i*(cw+gap)+cw,y+380};Rect cover{cell.x0+20,cell.y0,cell.x1-20,cell.y0+240};
   ib::library::placeholderCover(c,cover,b.title,b.format);if(b.current)c.strokeRound(outset(cover,6),t::RadiusSmall,t::StrokeStrong,t::InkPrimary);
-  auto lines=text::wrap({Face::Text,26},b.title,float(cw),2);for(std::size_t k=0;k<lines.size();++k)text::draw(c,{Face::Text,26},float(cell.x0),float(cover.y1+40+int(k)*34),lines[k],t::InkPrimary);
+  auto lines=text::wrap({Face::Text,theme::Meta.size},b.title,float(cw),2);for(std::size_t k=0;k<lines.size();++k)text::draw(c,{Face::Text,theme::Meta.size},float(cell.x0),float(cover.y1+40+int(k)*34),lines[k],t::InkPrimary);
   text::draw(c,Caption,float(cell.x0),float(cover.y1+40+int(lines.size())*34+4),text::fit(Caption,b.meta,float(cw)),t::InkTertiary);
   tg.add(RecentBase+i,cell);}
- if(n==0)text::draw(c,{Face::SerifItalic,32},float(t::Gutter),260.f,"Books you open appear here.",t::InkTertiary);
+ if(n==0)text::draw(c,type::ScriptEmpty,float(t::Gutter),260.f,"Books you open appear here.",t::InkTertiary);
  return r;
 }
 }

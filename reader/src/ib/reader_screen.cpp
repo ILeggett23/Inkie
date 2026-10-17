@@ -18,10 +18,10 @@ Rect closeRect()noexcept{return side_==Side::Left?Rect{t::ScreenWidth-ToolbarIte
 Rect topRect()noexcept{return {0,0,t::ScreenWidth,ToolbarItem};}
 Rect toolHandleRect()noexcept{return toolbarSlot(SlotHandle);}
 void closeButton(Canvas& c,Targets& tg){Rect r=closeRect();c.fill(r,t::Paper);icon(c,Icon::CloseCircle,centered(r,48,48),t::InkPrimary);tg.add(Back,r);}
-void zoomBadge(Canvas& c,Targets& tg,int percent){const Rect r=ZoomBadgeRect;c.fill(r,t::Paper);c.hline(r.x0,r.x1,r.y0,t::InkPrimary,3);c.hline(r.x0,r.x1,r.y1-3,t::InkPrimary,3);c.vline(r.x0,r.y0,r.y1,t::InkPrimary,3);c.vline(r.x1-3,r.y0,r.y1,t::InkPrimary,3);text::centeredLine(c,{Face::Text,29},r,std::to_string(percent)+"%",t::InkPrimary,Align::Center);tg.add(ZoomBadge,r);}
+void zoomBadge(Canvas& c,Targets& tg,int percent){const Rect r=ZoomBadgeRect;c.fill(r,t::Paper);c.hline(r.x0,r.x1,r.y0,t::InkPrimary,3);c.hline(r.x0,r.x1,r.y1-3,t::InkPrimary,3);c.vline(r.x0,r.y0,r.y1,t::InkPrimary,3);c.vline(r.x1-3,r.y0,r.y1,t::InkPrimary,3);text::centeredLine(c,{Face::Text,theme::Label.size},r,std::to_string(percent)+"%",t::InkPrimary,Align::Center);tg.add(ZoomBadge,r);}
 void footer(Canvas& c,Targets& tg,const Chrome& m){
  // Quiet metadata under the page, as in the native reader: title or chapter left, position right.
- Rect r=FooterRect;c.fill(r,t::Paper);Rect text{FooterInset,r.y0,r.x1-FooterInset,r.y1};const Font f{Face::Text,25};
+ Rect r=FooterRect;c.fill(r,t::Paper);Rect text{FooterInset,r.y0,r.x1-FooterInset,r.y1};const Font f{Face::Text,theme::Meta.size};
  if(!m.status.empty()){text::centeredLine(c,Caption,text,text::fit(Caption,text::quiet(m.status),float(width(text))),t::InkSecondary,Align::Center);tg.add(Footer,r);return;}
  // Reading progress off: no chapter or position (notices above still show; the menu mark stays the way to the tools).
  if(!m.progress&&!m.loading){if(m.menuMark){int mid=(r.y0+r.y1)/2;icon(c,Icon::Menu,{text.x1-t::IconSmall,mid-t::IconSmall/2,text.x1,mid+t::IconSmall/2},t::InkSecondary);}tg.add(Footer,r);return;}
@@ -66,7 +66,7 @@ void toolbar(Canvas& c,Targets& tg,const Tools& m){
 void toolHandle(Canvas& c,Targets& tg,const Tools&){Rect r=toolHandleRect();c.fill(r,t::Paper);icon(c,Icon::ToolbarHandle,centered(r,HandleGlyph,HandleGlyph),t::InkPrimary);tg.add(ToolHandle,r);}
 void penPanel(Canvas& c,Targets& tg,const Tools& m,Rect at){
  Rect r=at;if(!m.colors)r.y1=r.y0+PenPanelCompactHeight;popover(c,r);
- const Font title{Face::Text,31},label{Face::Text,26};
+ const Font title{Face::Text,theme::Label.size},label{Face::Text,theme::Meta.size};
  const char* name=m.eraser?"Eraser":instrumentName(m.highlighter?Instrument::Highlighter:m.pen);
  text::centeredLine(c,title,{r.x0+30,r.y0,r.x1-30,r.y0+PaletteTitle},name,t::InkPrimary,Align::Left);
  if(!m.status.empty())text::centeredLine(c,Caption,{r.x0+200,r.y0,r.x1-24,r.y0+PaletteTitle},text::fit(Caption,text::quiet(m.status),float(width(r)-224)),t::InkSecondary,Align::Right);
@@ -96,13 +96,13 @@ Rect selectionToolbar(Canvas& c,Targets& tg,const SelectionBar& m,Rect bounds){
  if(m.highlight)items[n++]={SelHighlight,m.highlighted?"Color":"Highlight",Icon::Highlight,true};
  if(m.note)items[n++]={SelNote,"Note",Icon::Note,false};if(m.tom)items[n++]={SelTom,"Tom",Icon::Tom,false};
  if(m.copy)items[n++]={SelCopy,"Copy",Icon::Copy,false};if(m.more)items[n++]={SelMore,"",Icon::More,false};
- const Font f{Face::Text,28};const int h=98,pad=t::S3+4,glyph=31,gap=14;std::array<int,6> ws{};int w=0;
+ const Font f{Face::Text,theme::Label.size};const int h=98,pad=t::S3+4,glyph=31,gap=14;std::array<int,6> ws{};int w=0;
  for(unsigned i=0;i<n;++i){ws[i]=items[i].label[0]?int(text::measure(f,items[i].label))+glyph+gap+pad*2:t::MinTarget;w+=ws[i];}
  // Prefer above the passage so the text being read stays visible.
  Rect r;int x=std::clamp((m.anchor.x0+m.anchor.x1)/2-w/2,bounds.x0+t::S3,bounds.x1-t::S3-w);
- if(m.anchor.y0-t::S3-h>=bounds.y0+ToolbarItem)r={x,m.anchor.y0-t::S3-h,x+w,m.anchor.y0-t::S3};else r=placeNear(m.anchor,w,h,bounds,t::S3);
+ if(m.anchor.y0-t::S3-h>=std::max(bounds.y0,layout::TopRow))r={x,m.anchor.y0-t::S3-h,x+w,m.anchor.y0-t::S3};else r=placeNear(m.anchor,w,h,bounds,t::S3);
  popover(c,r);
- int cx=r.x0;for(unsigned i=0;i<n;++i){Rect seg{cx,r.y0,cx+ws[i],r.y1};cx=seg.x1;if(i)c.vline(seg.x0,r.y0+2,r.y1-2,t::Border,1);
+ int cx=r.x0;for(unsigned i=0;i<n;++i){Rect seg{cx,r.y0,cx+ws[i],r.y1};cx=seg.x1;if(i)c.vline(seg.x0,r.y0+2,r.y1-2,t::Border,t::Hairline);
   const std::uint32_t ink=items[i].id==SelHighlight&&m.highlighted?t::InkSecondary:t::InkPrimary;
   if(!items[i].label[0]){icon(c,items[i].icon,centered(seg,34,34),ink);tg.add(items[i].id,hitArea(seg));continue;}
   int gx=seg.x0+pad,mid=(r.y0+r.y1)/2;Rect g{gx,mid-glyph/2,gx+glyph,mid+glyph/2};if(items[i].nib)nibGlyph(c,Instrument::Highlighter,g,ink);else icon(c,items[i].icon,g,ink);
@@ -122,7 +122,7 @@ Rect highlightColors(Canvas& c,Targets& tg,Rect bar,Rect passage,unsigned select
 }
 Rect definitionCard(Canvas& c,Targets& tg,Rect anchor,const Definition& d,Rect bounds){
  const int w=d.expanded?940:710,pad=40,lh=46;
- const Font word{Face::SerifSemibold,46},pos{Face::Text,28},body{Face::Serif,32},src{Face::Text,25};
+ const Font word{Face::SerifSemibold,theme::Heading.size},pos{Face::Text,theme::Label.size},body{Face::Serif,theme::Body.size},src{Face::Text,theme::Meta.size};
  const bool none=!d.loading&&d.senses.empty();
  std::string tag=d.pronunciation.empty()?(!d.partOfSpeech.empty()?d.partOfSpeech:!d.senses.empty()?d.senses[0].partOfSpeech:""):d.pronunciation;
  std::vector<std::string> all,compact;bool truncated=false;
@@ -150,7 +150,7 @@ Rect definitionCard(Canvas& c,Targets& tg,Rect anchor,const Definition& d,Rect b
  if(!source.empty()){text::draw(c,src,float(r.x0+pad),float(y+28),text::fit(src,source,float(w-pad*2)),t::InkSecondary);y+=50;}
  if(controls){textAction(c,tg,DefMore,{r.x0+pad,y,r.x0+pad+200,y+72},d.expanded?"Collapse":"Expand",false,false);
   if(d.expanded){textAction(c,tg,DefPrevious,{r.x1-pad-360,y,r.x1-pad-180,y+72},"Previous",false,start==0);textAction(c,tg,DefNext,{r.x1-pad-180,y,r.x1-pad,y+72},"Next",false,start+count>=all.size());}y+=72;}
- if(d.actions){y=r.y1-100;c.hline(r.x0+pad,r.x1-pad,y,t::Border,1);textAction(c,tg,DefWriteNote,{r.x0+pad,y,r.x0+pad+260,r.y1},"Write note",false,d.loading);textAction(c,tg,DefWriteTom,{r.x0+pad+280,y,r.x0+pad+520,r.y1},"Ask Tom",false,d.loading);}
+ if(d.actions){y=r.y1-100;c.hline(r.x0+pad,r.x1-pad,y,t::Border,t::Hairline);textAction(c,tg,DefWriteNote,{r.x0+pad,y,r.x0+pad+260,r.y1},"Write note",false,d.loading);textAction(c,tg,DefWriteTom,{r.x0+pad+280,y,r.x0+pad+520,r.y1},"Ask Tom",false,d.loading);}
  return r;
 }
 void selectionWash(Canvas& c,std::span<const Rect> lines){

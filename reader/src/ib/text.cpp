@@ -24,13 +24,13 @@ constexpr std::array<const char*,std::size_t(Face::Count)> Files{
  // No Source Sans italic ships, so TextItalic keeps the small-text serif italic.
  "SourceSans3-Regular.ttf","SourceSerif4SmText-It.ttf","SourceSans3-Semibold.ttf",
  "SourceSerif4Subhead-Regular.ttf","SourceSerif4Display-Regular.ttf",
- "SourceSans3-Regular.ttf","SourceSans3-Medium.ttf","SourceSans3-Semibold.ttf","Caveat.ttf"};
+ "SourceSans3-Regular.ttf","SourceSans3-Medium.ttf","SourceSans3-Semibold.ttf","Caveat.ttf","Caveat.ttf"};
 struct Loaded {std::vector<unsigned char> bytes;stbtt_fontinfo info{};bool ok{};int ascent{},descent{},gap{};};
 struct Glyph {std::vector<std::uint8_t> alpha;int w{},h{},x{},y{};};
 struct Key {unsigned face;unsigned size;char32_t cp;unsigned sub;bool operator==(const Key&)const=default;};
 struct KeyHash {std::size_t operator()(const Key& k)const noexcept{return (std::size_t(k.face)*1000003u)^(std::size_t(k.size)*7919u)^(std::size_t(k.cp)*31u)^k.sub;}};
 struct State {
- std::array<Loaded,std::size_t(Face::Count)> fonts;std::unordered_map<Key,std::shared_ptr<const Glyph>,KeyHash> cache;std::mutex lock;float gain{1.12f};bool ready{};
+ std::array<Loaded,std::size_t(Face::Count)> fonts;std::unordered_map<Key,std::shared_ptr<const Glyph>,KeyHash> cache;std::mutex lock;float gain{1.12f};bool ready{};bool plain{};
 };
 State& state(){static State s;return s;}
 bool readFile(const std::filesystem::path& path,std::vector<unsigned char>& out){
@@ -38,7 +38,7 @@ bool readFile(const std::filesystem::path& path,std::vector<unsigned char>& out)
  if(std::fseek(f.get(),0,SEEK_END))return false;long n=std::ftell(f.get());if(n<=0||std::size_t(n)>MaxFontBytes||std::fseek(f.get(),0,SEEK_SET))return false;
  out.resize(std::size_t(n));return std::fread(out.data(),1,out.size(),f.get())==out.size();
 }
-Face fallbackFor(Face f){switch(f){case Face::Hand:return Face::SerifItalic;case Face::Display:case Face::Subhead:return Face::Serif;case Face::TextItalic:return Face::SerifItalic;case Face::TextSemibold:return Face::SerifSemibold;case Face::Text:return Face::Serif;default:return f;}}
+Face fallbackFor(Face f){switch(f){case Face::Hand:case Face::Script:return Face::SerifItalic;case Face::Display:case Face::Subhead:return Face::Serif;case Face::TextItalic:return Face::SerifItalic;case Face::TextSemibold:return Face::SerifSemibold;case Face::Text:return Face::Serif;default:return f;}}
 Loaded& fontFor(Face f){auto& s=state();auto& l=s.fonts[unsigned(f)];if(l.ok)return l;auto& b=s.fonts[unsigned(fallbackFor(f))];if(b.ok)return b;return s.fonts[unsigned(Face::Serif)];}
 // Decodes one code point; invalid sequences become U+FFFD and advance one byte.
 char32_t next(std::string_view s,std::size_t& i){
@@ -66,19 +66,23 @@ std::shared_ptr<const Glyph> raster(Loaded& l,unsigned faceKey,float size,char32
  else out->w=out->h=0;
  std::lock_guard g(s.lock);if(s.cache.size()>=MaxGlyphs)s.cache.clear();s.cache.emplace(key,out);return out;
 }
-struct Run {Loaded* font;int glyph;char32_t cp;};
+struct Run {Loaded* font;int glyph;char32_t cp;float size;};
+// font is already resolved. A code point Caveat lacks falls back to a plain face at the role size, not the cursive size.
 template<class F>float walk(Font font,std::string_view str,F&& visit){
- float x=0;int previous=0;Loaded* previousFont=nullptr;
+ float x=0;int previous=0;Loaded* previousFont=nullptr;const Loaded* script=font.face==Face::Script?&state().fonts[unsigned(Face::Script)]:nullptr;
  for(std::size_t i=0;i<str.size();){char32_t cp=next(str,i);if(cp=='\n'||cp=='\r'||cp=='\t')cp=' ';int glyph=0;Loaded* l=carrier(font.face,cp,glyph);if(!l)continue;
-  float sc=scale(*l,font.size);if(previous&&previousFont==l)x+=sc*stbtt_GetGlyphKernAdvance(&l->info,previous,glyph);
-  int advance,bearing;stbtt_GetGlyphHMetrics(&l->info,glyph,&advance,&bearing);visit(Run{l,glyph,cp},x);x+=sc*advance+font.tracking;previous=glyph;previousFont=l;}
+  const float size=script&&l!=script?font.size/ScriptScale:font.size;
+  float sc=scale(*l,size);if(previous&&previousFont==l)x+=sc*stbtt_GetGlyphKernAdvance(&l->info,previous,glyph);
+  int advance,bearing;stbtt_GetGlyphHMetrics(&l->info,glyph,&advance,&bearing);visit(Run{l,glyph,cp,size},x);x+=sc*advance+font.tracking;previous=glyph;previousFont=l;}
  return x;
 }
 }
 bool load(const std::filesystem::path& dir,const std::filesystem::path& fixtureDir){
  auto& s=state();std::lock_guard g(s.lock);s.cache.clear();
- for(unsigned f=0;f<unsigned(Face::Count);++f){auto& l=s.fonts[f];if(l.ok)continue;auto base=dir; // Hand (Caveat, Tom's handwriting) is bundled; previews may also supply it as a fixture
-  if(Face(f)==Face::Hand&&!std::filesystem::exists(dir/"Caveat.ttf"))base=fixtureDir;if(base.empty())continue;
+ for(unsigned f=0;f<unsigned(Face::Count);++f){auto& l=s.fonts[f];if(l.ok)continue;auto base=dir;
+  // Script is the same Caveat file as Hand: share its bytes (the font info points into Hand's buffer, which stays put).
+  if(Face(f)==Face::Script&&s.fonts[unsigned(Face::Hand)].ok){const auto& hand=s.fonts[unsigned(Face::Hand)];l.info=hand.info;l.ascent=hand.ascent;l.descent=hand.descent;l.gap=hand.gap;l.ok=true;continue;} // Hand (Caveat, Tom's handwriting) is bundled; previews may also supply it as a fixture
+  if((Face(f)==Face::Hand||Face(f)==Face::Script)&&!std::filesystem::exists(dir/"Caveat.ttf"))base=fixtureDir;if(base.empty())continue;
   if(!readFile(base/Files[f],l.bytes))continue;int offset=stbtt_GetFontOffsetForIndex(l.bytes.data(),0);
   if(offset<0||!stbtt_InitFont(&l.info,l.bytes.data(),offset)){l.bytes.clear();continue;}
   stbtt_GetFontVMetrics(&l.info,&l.ascent,&l.descent,&l.gap);l.ok=true;}
@@ -86,15 +90,19 @@ bool load(const std::filesystem::path& dir,const std::filesystem::path& fixtureD
 }
 bool ready()noexcept{return state().ready;}
 void setGain(float g)noexcept{state().gain=std::clamp(g,0.5f,2.f);}
-float ascent(Font f){auto& l=fontFor(f.face);return l.ok?l.ascent*scale(l,f.size):f.size*.8f;}
-float descent(Font f){auto& l=fontFor(f.face);return l.ok?-l.descent*scale(l,f.size):f.size*.2f;}
-float capHeight(Font f){auto& l=fontFor(f.face);if(!l.ok)return f.size*.66f;int x0,y0,x1,y1;if(!stbtt_GetCodepointBox(&l.info,'H',&x0,&y0,&x1,&y1))return f.size*.66f;return y1*scale(l,f.size);}
+void setPlainScript(bool on)noexcept{state().plain=on;}
+bool plainScript()noexcept{return state().plain;}
+// Resolved once at each leaf (measure, metrics, draw); composite helpers pass the role font through unchanged.
+Font resolved(Font f)noexcept{if(f.face!=Face::Script)return f;auto& s=state();if(s.plain||!s.fonts[unsigned(Face::Script)].ok)return {f.plain,f.size,f.tracking,f.plain};return {Face::Script,f.size*ScriptScale,f.tracking,f.plain};}
+float ascent(Font f){f=resolved(f);auto& l=fontFor(f.face);return l.ok?l.ascent*scale(l,f.size):f.size*.8f;}
+float descent(Font f){f=resolved(f);auto& l=fontFor(f.face);return l.ok?-l.descent*scale(l,f.size):f.size*.2f;}
+float capHeight(Font f){f=resolved(f);auto& l=fontFor(f.face);if(!l.ok)return f.size*.66f;int x0,y0,x1,y1;if(!stbtt_GetCodepointBox(&l.info,'H',&x0,&y0,&x1,&y1))return f.size*.66f;return y1*scale(l,f.size);}
 // Without fonts (never on a packaged device) keep layout stable with an approximate advance.
-float measure(Font f,std::string_view s){if(!ready()){float n=0;for(std::size_t i=0;i<s.size();){next(s,i);n+=1;}return n*f.size*0.5f;}return walk(f,s,[](Run,float){});}
+float measure(Font f,std::string_view s){f=resolved(f);if(!ready()){float n=0;for(std::size_t i=0;i<s.size();){next(s,i);n+=1;}return n*f.size*0.5f;}return walk(f,s,[](Run,float){});}
 float draw(Canvas& c,Font f,float x,float baseline,std::string_view s,std::uint32_t color){
- if(!ready())return 0;float gain=state().gain;
+ if(!ready())return 0;f=resolved(f);float gain=state().gain;
  return walk(f,s,[&](Run r,float at){if(r.cp==' ')return;float px=x+at;int ix=int(std::floor(px));unsigned sub=unsigned((px-ix)*4)&3;
-  auto g=raster(*r.font,unsigned(r.font-&state().fonts[0]),f.size,r.cp,r.glyph,sub);if(g->w)c.mask(ix+g->x,int(std::lround(baseline))+g->y,g->alpha.data(),g->w,g->h,g->w,color,gain);});
+  auto g=raster(*r.font,unsigned(r.font-&state().fonts[0]),r.size,r.cp,r.glyph,sub);if(g->w)c.mask(ix+g->x,int(std::lround(baseline))+g->y,g->alpha.data(),g->w,g->h,g->w,color,gain);});
 }
 float drawAligned(Canvas& c,Font f,Rect box,float baseline,std::string_view s,std::uint32_t color,Align a){
  float w=measure(f,s);float x=a==Align::Left?box.x0:a==Align::Right?box.x1-w:box.x0+(width(box)-w)/2;return draw(c,f,x,baseline,s,color);

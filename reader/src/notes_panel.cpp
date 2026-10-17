@@ -46,7 +46,7 @@ void Panel::paint(){
    e.excerpt=utf8(note["anchor"].toObject()["excerpt"].toString().simplified().left(300));e.body=utf8(note["text"].toString().simplified().left(300));e.linked=linked;e.handwriting=!note["strokes"].toArray().isEmpty();e.tom=isTom(note);
    e.color=t::Ink[color(note["color"].toString())];e.favorite=starred(note);e.unresolved=target<0;e.source=target>=0?utf8(QString("p. %1 · %2").arg(target+1).arg(bookTitle)):"";hub.entries.push_back(std::move(e));}
   hub.page=int(hubOffset_)/ib::notes::HubPageSize;hub.pages=std::max(1,int((rows.size()+ib::notes::HubPageSize-1)/ib::notes::HubPageSize));ib::notes::hub(c,targets_,hub);}
- else if(mode_==Mode::Highlight){sheetTop_=1220;ib::notes::HighlightDetail d;d.excerpt=utf8(view_.highlight["anchor"].toObject()["excerpt"].toString().simplified());
+ else if(mode_==Mode::Highlight){sheetTop_=ib::layout::SheetTop;ib::notes::HighlightDetail d;d.excerpt=utf8(view_.highlight["anchor"].toObject()["excerpt"].toString().simplified());
   int target=sourcePage(view_.highlight["anchor"].toObject(),page_);d.source=utf8(target>=0?QString("%1 · p. %2").arg(bookTitle).arg(target+1):bookTitle);d.color=color(view_.highlight["color"].toString());d.confirmDelete=confirmDelete_;d.busy=view_.busy||pendingCommand_;d.status=utf8(status);ib::notes::highlight(c,targets_,d);}
  else{const auto note=view_.note;bool expanded=note["expanded"].toBool();sheetTop_=expanded?ib::notes::NoteExpandedTop:ib::notes::NoteSheetTop;
   ib::notes::Note m;int target=sourcePage(note["anchor"].toObject(),page_);m.heading=utf8(target>=0?QString("Note — Page %1").arg(target+1):QString("Note"));m.subtitle=utf8(bookTitle);

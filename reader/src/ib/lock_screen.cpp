@@ -7,7 +7,7 @@ namespace ib::lock {
 namespace t=ib::theme;
 void paint(Canvas& c,Targets& tg,const Model& m){
  c.fill(c.clip(),t::Paper);
- const Font brand{Face::SerifSemibold,44},prompt{Face::Text,40},key{Face::Sans,52},small{Face::Text,30};
+ const Font brand{Face::SerifSemibold,theme::Heading.size},prompt{Face::Text,theme::Subhead.size},key{Face::Sans,theme::Title.size},small{Face::Text,theme::Label.size};
  text::centeredLine(c,brand,{0,300,1620,400},"Inkbound",t::InkPrimary,Align::Center);
  text::centeredLine(c,prompt,{0,480,1620,580},m.prompt,t::InkPrimary,Align::Center);
  // One dot per digit: filled once entered.

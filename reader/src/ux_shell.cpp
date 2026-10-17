@@ -292,7 +292,7 @@ void Shell::libraryRefresh(){
 }
 void Shell::libraryPaint(){libraryView_.setCoverSource([this](const QString& id,const QString& source){return covers_.find(id,source);});if(wifiView_.active()){wifiPaint();return;}libraryView_.setTimeZone(semantic::utf8(clockprefs::label(timeSetting_)));libraryView_.setClock(statusModel_.clock,statusModel_.zone);libraryView_.setBattery(battery_.percent.value_or(-1),battery_.charging(),wifiLink_.value_or(false));libraryView_.setDevice(battery_,wifiLink_,storage_,firmware_);libraryView_.setFavorites(favorites_);libraryView_.setEnvironment(libraryEffects_,companionEnabled_,true,userEnded_);{const auto& sleep=sleepSettings();libraryView_.setSleep(sleep.cover,sleep.idleMinutes);}libraryView_.setToolHandle(toolHandleShown());libraryView_.setLeftHanded(leftHanded());libraryView_.setReading(readingProgress(),snapHighlights());
  {const auto state=companionStatus_["state"].toString();const int companion=!companionEnabled_?-1:state=="paired"||state=="transferring"||state=="transfer-error"?2:state=="pairing"?1:state=="unpaired"?0:3;
-  libraryView_.setPreferences(passcodeSet(),companion,prefs_.highContrast,prefs_.reduceMotion,prefs_.tomTyped,prefs_.tomHand,prefs_.tomReveal,tomNetworkEnabled_?1:0);}
+  libraryView_.setPreferences(passcodeSet(),companion,prefs_.highContrast,prefs_.reduceMotion,prefs_.tomTyped,prefs_.tomHand,prefs_.tomReveal,tomNetworkEnabled_?1:0,prefs_.plainText);}
  if(libraryView_.notice().isEmpty())try{auto failures=QJsonDocument::fromJson(underlay::readBounded(data_/"import-errors.json",16384)).array();if(!failures.isEmpty())setLibraryNotice("Some files were rejected — your originals are kept");}catch(...){}
  libraryView_.paint({chrome_,underlay::Width,underlay::Height,underlay::Stride},books_,data_);}
 // Library-wide notes, read-only: verified feature stores of each book; never creates a store.
@@ -396,6 +396,7 @@ bool Shell::finger(int x,int y,bool longPress,bool markerContact){if(lock_!=Lock
   case LA::TomHand:prefs_.tomHand=unsigned(std::clamp(hit.index,0,2));savePrefs();libraryRefresh();return true;
   case LA::TomReveal:if(!prefs_.reduceMotion){prefs_.tomReveal=!prefs_.tomReveal;savePrefs();}libraryRefresh();return true;
   case LA::HighContrast:prefs_.highContrast=!prefs_.highContrast;applyPrefs();savePrefs();libraryRefresh();return true;
+  case LA::PlainText:prefs_.plainText=!prefs_.plainText;applyPrefs();savePrefs();libraryRefresh();return true; /* glyphs change inside unchanged rects: the same regional diff */
   case LA::ReduceMotion:prefs_.reduceMotion=!prefs_.reduceMotion;applyPrefs();savePrefs();libraryRefresh();return true;
   case LA::PasscodeSet:lockThenChoose_=passcodeSet();beginLock(lockThenChoose_?Lock::Verify:Lock::Choose);return true;
   case LA::PasscodeOff:if(passcodeSet()){lockThenChoose_=false;beginLock(Lock::Verify);}return true;
@@ -590,7 +591,7 @@ bool Shell::tick(){if((tom_&&tom_->contact())||(document_&&document_->contact())
 void Shell::installed(){recovery::v2::e2::mark("reader:nav-installed",unsigned(std::max(0,page())));presentationAccepted();if(document_){document_->installed();if(document_->state()==reader::State::Ready)document_->activate();}
  if(navigationActiveOperation_&&page()==navigationSubmitted_){recovery::v2::e2::mark("ui:nav-software-submit",(navigationActiveOperation_<<10)|unsigned(page()));if(navigationIntent_==page()){if(navigationOperation_!=navigationActiveOperation_)recovery::v2::e2::mark("ui:nav-satisfied",(navigationOperation_<<10)|unsigned(page()));navigationIntent_=-1;navigationOperation_=0;}navigationSubmitted_=-1;navigationActiveOperation_=0;}}
 // ---- Settings > Tom, Accessibility (ui-prefs.json) -------------------------------------------------------------------
-void Shell::applyPrefs(){ib::theme::setHighContrast(prefs_.highContrast);reducedMotion_=prefs_.reduceMotion;if(prefs_.reduceMotion)libraryEffects_=false;}
+void Shell::applyPrefs(){ib::theme::setHighContrast(prefs_.highContrast);ib::text::setPlainScript(prefs_.plainText);reducedMotion_=prefs_.reduceMotion;if(prefs_.reduceMotion)libraryEffects_=false;}
 void Shell::savePrefs(){try{prefs_.save(data_);}catch(...){setLibraryNotice("Setting not saved");}}
 // ---- Settings > Security: the passcode screen ----------------------------------------------------------------------
 void Shell::beginLock(Lock mode){lock_=mode;lockEntry_.clear();if(mode==Lock::Choose||mode==Lock::Unlock)lockFirst_.clear();if(mode!=Lock::Confirm)lockMessage_.clear();toolsView_={};menu_=false;lockPaint(true);}

@@ -39,7 +39,7 @@ void LibraryManage::paint(spike::Surface s){if(!active())return;ib::Canvas c(s);
   spike::Rect anchor{ib::library::ContentLeft,520,ib::library::ContentRight,560};
   // Title card above the menu so it is clear which book is being managed.
   spike::Rect head{anchor.x1-640,anchor.y0-150,anchor.x1,anchor.y0-10};ib::panel(c,head,t::RadiusMedium);
-  ib::text::draw(c,{ib::Face::Serif,36},float(head.x0+t::S4),float(head.y0+62),ib::text::fit({ib::Face::Serif,36},utf8(document_.title),float(ib::width(head)-t::S5-t::MinTarget)),t::InkPrimary);
+  ib::text::draw(c,{ib::Face::Serif,ib::theme::Body.size},float(head.x0+t::S4),float(head.y0+62),ib::text::fit({ib::Face::Serif,ib::theme::Body.size},utf8(document_.title),float(ib::width(head)-t::S5-t::MinTarget)),t::InkPrimary);
   ib::text::draw(c,{ib::Face::Text,float(t::Caption.size)},float(head.x0+t::S4),float(head.y0+104),document_.folder.isEmpty()?"My files":utf8("My files / "+document_.folder),t::InkSecondary);
   ib::iconButton(c,targets_,Close,{head.x1-t::MinTarget,head.y0+20,head.x1,head.y1-20},ib::Icon::Close);
   ib::sheets::menu(c,targets_,{anchor.x1-640,anchor.y0-10,anchor.x1,anchor.y0},items,640);return;}

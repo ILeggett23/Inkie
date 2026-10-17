@@ -47,7 +47,9 @@ inline std::uint32_t wash(std::uint32_t c,int strength=96)noexcept{auto ch=[&](i
 // Spacing scale
 inline constexpr int S1=8,S2=16,S3=24,S4=32,S5=48,S6=64,S7=96;
 inline constexpr int Gutter=48;                 // screen side margin
-// Shape
+// Shape. Native surfaces (toolbar, palettes, popovers, sheets, buttons) are square; radii are for wells, chips,
+// cards and pills only. UI rules are one weight (Hairline); StrokeStrong marks the current item. Writing guides on
+// ruled paper (ruledPaper, 1 px) are paper, not UI.
 inline constexpr float RadiusSmall=10,RadiusMedium=18,RadiusLarge=28,RadiusPill=999;
 inline constexpr int Hairline=2,StrokeStrong=3;
 // Touch: visual size is separate from hit area. Finger and Marker share it.
@@ -62,15 +64,18 @@ inline constexpr int TopBar=104;                // thin reader/library top bar
 inline constexpr int Footer=100;                // reader progress strip (outside 2060px page fit)
 inline constexpr int SidebarWidth=300;
 inline constexpr int RailWidth=112; // full-height rail column (MinTarget 96 + margins)
-// Typography roles (pixel size, line height). Faces are chosen in ib/text.h.
+// Typography roles (pixel size, line height). Every text size in Inkbound is one of these; faces are chosen at the
+// call site from ib/text.h (Source Sans 3 for UI, Source Serif 4 for book text and quotes) and the cursive roles in
+// ib/type.h. Sizes are device pixels at 229 ppi: 23 px is 2.6 mm, 34 px 3.8 mm.
 struct Type {int size,line;};
-inline constexpr Type Display{72,84};           // Inkbound wordmark on the library
-inline constexpr Type Title{58,70};             // "My files", "Notes"
-inline constexpr Type Heading{44,54};           // sheet titles, definition word
-inline constexpr Type Subhead{36,46};           // section titles
-inline constexpr Type Body{35,50};              // definitions, Tom, quotes
-inline constexpr Type Label{30,38};             // control labels, list titles
-inline constexpr Type Meta{26,34};              // metadata: "12 items", "Page 43"
+inline constexpr Type Code{110,120};            // pairing code numerals
+inline constexpr Type Display{72,84};           // reserved: full-screen states
+inline constexpr Type Title{58,70};             // full-screen page titles (Wi-Fi, Companion), sleep screen
+inline constexpr Type Heading{44,54};           // section headings, settings titles, definition word, dialog titles
+inline constexpr Type Subhead{38,46};           // sheet and popover titles, wordmark, key caps
+inline constexpr Type Body{34,50};              // definitions, Tom, typed notes, quotes, empty states, inputs
+inline constexpr Type Label{30,38};             // control labels, list titles, menu rows
+inline constexpr Type Meta{26,34};              // metadata: "12 items", "Page 43", notes and subtitles
 inline constexpr Type Caption{23,30};           // smallest permitted text
 inline constexpr int ScreenWidth=1620,ScreenHeight=2160,PageFitHeight=2060;
 }

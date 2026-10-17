@@ -2,13 +2,14 @@
 #include "ib/settings_screen.h"
 #include "ib/text.h"
 #include "ib/theme.h"
+#include "ib/type.h"
 #include <algorithm>
 #include <array>
 #include <cctype>
 #include <cstdio>
 namespace ib::settings {namespace {
 namespace t=ib::theme;
-const Font Title{Face::Text,44},Row{Face::Text,31},Value{Face::Text,31},Group{Face::Text,25,3},Note{Face::Text,27},Nav{Face::Text,31};
+const Font Title{Face::Text,theme::Heading.size},Row{Face::Text,theme::Label.size},Value{Face::Text,theme::Label.size},Group{Face::Text,theme::Meta.size,3},Note{Face::Text,theme::Meta.size},Nav{Face::Text,theme::Label.size};
 constexpr int RowH=108;
 std::string caps(std::string s){for(auto& ch:s)ch=char(std::toupper(static_cast<unsigned char>(ch)));return s;}
 // Pane cursor: group labels, rows (label left, value or control right, hairline under), captions.
@@ -20,7 +21,7 @@ struct Pane {
  void toggleRow(std::string_view label,int id,bool on){Rect r=row(label);toggle(c,tg,id,{r.x1-120,r.y0,r.x1,r.y1},on);}
  // Native choice cells: outlined, the chosen one black. ids[i]<0: no target (already chosen, or no action).
  void choices(std::string_view label,const std::vector<std::string>& options,std::size_t chosen,const std::vector<int>& ids){
-  Rect r=row(label);const Font f{Face::Text,28};int x=r.x1;
+  Rect r=row(label);const Font f{Face::Text,theme::Label.size};int x=r.x1;
   for(int i=int(options.size())-1;i>=0;--i){const int w=std::max(120,int(text::measure(f,options[std::size_t(i)]))+t::S4*2);Rect cell{x-w,r.y0+18,x,r.y1-18};x=cell.x0-8;const bool on=std::size_t(i)==chosen;
    if(on)c.fill(cell,t::ToolSelected);else c.hairline(cell,t::Border,2);text::centeredLine(c,f,cell,options[std::size_t(i)],on?t::Paper:t::InkPrimary,Align::Center);
    if(ids[std::size_t(i)]>=0)tg.add(ids[std::size_t(i)],hitArea(cell));}}
@@ -31,7 +32,7 @@ const char* pageName(Page p)noexcept{static constexpr std::array<const char*,uns
 std::string size(std::int64_t bytes){char out[32];if(bytes<0)return {};if(bytes<1000000000)std::snprintf(out,sizeof out,"%lld MB",static_cast<long long>((bytes+500000)/1000000));else std::snprintf(out,sizeof out,"%.1f GB",double(bytes)/1e9);return out;}
 void paint(Canvas& c,Targets& tg,const Model& m){
  // Left: the title and the page list (the chosen page black, as in the mockup); a hairline divides it from the pane.
- text::centeredLine(c,Title,{NavRect.x0,PaneRect.y0,NavRect.x1,PaneRect.y0+90},"Settings",t::InkPrimary,Align::Left);
+ text::centeredLine(c,type::ScriptHeading,{NavRect.x0,PaneRect.y0,NavRect.x1,PaneRect.y0+90},"Settings",t::InkPrimary,Align::Left);
  c.vline(420,PaneRect.y0,PaneRect.y1,t::Border,2);
  for(unsigned i=0;i<unsigned(Page::Count);++i){Rect r{NavRect.x0,NavRect.y0+int(i)*100,NavRect.x1,NavRect.y0+int(i)*100+100};const bool on=Page(i)==m.page;
   if(on)c.fill(r,t::ToolSelected);text::centeredLine(c,Nav,{r.x0+24,r.y0,r.x1-12,r.y1},pageName(Page(i)),on?t::Paper:t::InkPrimary,Align::Left);tg.add(PageBase+int(i),r);}
@@ -47,14 +48,14 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   p.note("Snapped highlights follow the words your highlighter crosses; turn it off to keep freehand highlighter marks. Page turn effects add a short settle after page changes; off keeps refreshes minimal.",3);
   p.group("Power");
   p.toggleRow("Sleep when cover closes",SleepCover,m.sleepCover);
-  {Rect r=p.row("Auto sleep");const Font f{Face::Text,27};const int n=int(m.idleChoices.size());int x=r.x1;
+  {Rect r=p.row("Auto sleep");const Font f{Face::Text,theme::Meta.size};const int n=int(m.idleChoices.size());int x=r.x1;
    for(int i=n-1;i>=0;--i){const int minutes=m.idleChoices[std::size_t(i)];const std::string label=minutes==0?std::string("Never"):std::to_string(minutes)+" min";const int w=std::max(96,int(text::measure(f,label))+t::S3*2);
     Rect cell{x-w,r.y0+18,x,r.y1-18};x=cell.x0-6;const bool on=minutes==m.sleepIdle;if(on)c.fill(cell,t::ToolSelected);else c.hairline(cell,t::Border,2);
     text::centeredLine(c,f,cell,label,on?t::Paper:t::InkPrimary,Align::Center);tg.add(IdleBase+i,hitArea(cell));}}
   p.note("Inkbound saves your work and lets the tablet sleep. Open the cover or press power to wake.");
   break;}
  case Page::General:
-  p.group("Date and time");{Rect r=p.row("Time zone");button(c,tg,TimeZone,{r.x1-580,r.y0+14,r.x1,r.y1-14},text::fit({Face::Text,28},m.timeZone,540),ButtonKind::Secondary);}
+  p.group("Date and time");{Rect r=p.row("Time zone");button(c,tg,TimeZone,{r.x1-580,r.y0+14,r.x1,r.y1-14},text::fit({Face::Text,theme::Label.size},m.timeZone,540),ButtonKind::Secondary);}
   p.note("Choose the time zone Inkbound uses for its clock. Daylight saving time follows the chosen zone.",2);
   if(m.userEnded){p.group("Session");p.note("This session ends with the power button.",1);}
   else{p.group("Session");Rect r=p.row("Return to the reMarkable home screen");button(c,tg,Leave,{r.x1-300,r.y0+14,r.x1,r.y1-14},"Leave",ButtonKind::Secondary);
@@ -101,6 +102,8 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   p.group("Display");
   p.toggleRow("High contrast",HighContrast,m.highContrast);
   p.note("Darker secondary text, lines and controls throughout Inkbound.",1);
+  p.toggleRow("Plain text instead of cursive",PlainText,m.plainText);
+  p.note("Headings, note titles, empty pages and Tom's typed replies use Source Sans and Source Serif instead of cursive.",2);
   p.group("Motion");
   p.toggleRow("Reduce motion",ReduceMotion,m.reduceMotion);
   p.note("Tom's replies appear all at once instead of line by line, and page turn effects stay off.",1);
