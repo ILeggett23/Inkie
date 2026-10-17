@@ -1,6 +1,6 @@
 # Inkie — notes for Claude Code
 
-Private archive and active source of the Inkbound reader for the reMarkable Paper Pro (C++20/Qt6, direct display, no
+Private archive and active source of the Inkie reader (formerly Inkbound) for the reMarkable Paper Pro (C++20/Qt6, direct display, no
 DOM/QML). The tablet runs the build from `fix/ui-input-refresh` (PR #1). `main` is the archived 21b baseline.
 
 ## Layout
@@ -23,8 +23,13 @@ DOM/QML). The tablet runs the build from `fix/ui-input-refresh` (PR #1). `main` 
 - Queue-only test modes may run locally. Never weaken timing or settled-state checks to make a test pass.
 
 ## Rules for UI work
-- Sizes from the role table, rects from `ib/layout.h` zones, faces from `ib/text.h`/`ib/type.h`; no per-screen values.
-- Cursive (`Face::Script`) only through `ib/type.h` roles; it must switch off with the Plain-text preference.
+- The product is **Inkie** (design: `docs/INKIE-DESIGN.md`). Internal names (binaries, app id, storage paths,
+  Companion pairing name, provider prompts) keep "Inkbound"/`inkbound`; only user-visible text says Inkie.
+- Sizes from the role table, rects from `ib/layout.h` zones, colours from `theme.h` pops (flat, ink-outlined; never
+  coloured small text), faces from `ib/text.h`/`ib/type.h`; no per-screen values.
+- UI text is cursive (text.cpp resolves UI faces to Caveat); SerifItalic is the book's voice, `Literal` for exact
+  codes. Plain text must restore every face; size label-fitted controls with `text::span` so no target moves.
+- Bubbles draw their shadow inside their own rect; nothing paints outside the bounds it reports for damage.
 - Refresh: regional damage only (`docs/UI-REFRESH-REFACTOR.md`). Opening/closing a panel damages old∪new bounds; no new
   full-update flags, waveform constants or timers; complete updates only for real scene transitions with a reason.
 

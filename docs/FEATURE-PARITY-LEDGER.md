@@ -128,6 +128,15 @@ changed), **Moved** (location changed; justified), **New**. There are no **Remov
 | Companion pairing view | Full screen | Same | Kept |
 | Status bar battery percentage | Mast | Same; now shows "73%" instead of the truncated "7…" (fix) | Kept, fixed |
 
+## Inkie redesign (2026-10-17)
+
+Every row above keeps its capability and location. The redesign restyles every surface (`docs/INKIE-DESIGN.md`):
+**Kept, restyled** for all of them. Target diff against the shipping base: 434 of 488 targets identical. The changed
+ones are label-fitted controls that grew for cursive labels: the wordmark hit area (+36 px), Notes filter chips
+(≤ 42 px), Settings choice cells (≤ 64 px), document-settings choices (≤ 18 px), the Quick Browse stepper (24 px) and
+selection-strip segments (≤ 7 px). No target moves between cursive and plain text. Renamed: "Inkbound" → "Inkie" in
+every user-visible string ("Leave Inkie", wordmark, lock and sleep screens, Settings copy). New: none.
+
 ## Unsupported or deferred (no control added)
 
 In-book search, one-gesture Quick Note, manual clean refresh, density preference, Type Folio shortcuts, landscape layout.
