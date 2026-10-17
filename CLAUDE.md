@@ -25,11 +25,13 @@ DOM/QML). The tablet runs the build from `fix/ui-input-refresh` (PR #1). `main` 
 ## Rules for UI work
 - The product is **Inkie** (design: `docs/INKIE-DESIGN.md`). Internal names (binaries, app id, storage paths,
   Companion pairing name, provider prompts) keep "Inkbound"/`inkbound`; only user-visible text says Inkie.
-- Sizes from the role table, rects from `ib/layout.h` zones, colours from `theme.h` pops (flat, ink-outlined; never
-  coloured small text), faces from `ib/text.h`/`ib/type.h`; no per-screen values.
-- UI text is cursive (text.cpp resolves UI faces to Caveat); SerifItalic is the book's voice, `Literal` for exact
-  codes. Plain text must restore every face; size label-fitted controls with `text::span` so no target moves.
-- Bubbles draw their shadow inside their own rect; nothing paints outside the bounds it reports for damage.
+- Sizes from the role table, rects from `ib/layout.h` zones, faces from `ib/text.h`/`ib/type.h`; no per-screen values.
+- Gallery 3 colour rules (`docs/INKIE-DESIGN.md` §1–2): only the six clean pops (C, M, Y, R, G, B); colour is identity
+  (places, books, sheet edges), state is ink (selected, on, progress); colour areas ≥ `EdgeBand` and met by an ink rule;
+  no grey fills or grey text, no coloured text or thin coloured lines, dividers dotted ink, no shadows.
+- Words written, data printed: UI faces ≥ 30 px draw in Caveat; smaller text, `Serif` reading text, `SerifItalic` (the
+  book's words) and `Literal` (exact characters) stay printed. Plain text must restore every face; size label-fitted
+  controls with `text::span` so no target moves. Nothing paints outside the bounds it reports for damage.
 - Refresh: regional damage only (`docs/UI-REFRESH-REFACTOR.md`). Opening/closing a panel damages old∪new bounds; no new
   full-update flags, waveform constants or timers; complete updates only for real scene transitions with a reason.
 

@@ -100,7 +100,7 @@ stored strokes, and header (136) plus quoted passage need the remaining 320 px. 
 
 ## 3. Grid, shape and rule
 
-> **Inkie redesign (2026-10-17):** shapes are now bubbles (rounded surfaces, 3 px ink outline, a pop shadow drawn inside each rect) and radii are 16/28/40; see `docs/INKIE-DESIGN.md` §3. Spacing, zones and targets below are unchanged.
+> **Inkie redesign (2026-10-17, v2):** cards have radius 12 and one 2 px ink rule with no shadow; lower sheets stay square with a 10 px coloured top edge; radii are 8/12/16; dividers are dotted ink. See `docs/INKIE-DESIGN.md` §3. Spacing, zones and targets below are unchanged.
 
 **Spacing** (`theme.h`, device px): S1 8, S2 16, S3 24, S4 32, S5 48, S6 64, S7 96. Gutter 48 (screen sides);
 `layout::SheetMargin` 70 (sheet content); library content 96–1524; `layout::TopRow` 112 (top chrome row, = toolbar item).
@@ -117,7 +117,7 @@ definition-card action rule, Tom's footer rule, the pill divider, the ink-action
 
 ## 4. Type roles
 
-> **Inkie redesign:** role sizes are unchanged, but every UI face now draws in Caveat (role × 1.25, never under 38 px; ScriptBold for semibold), italic serif keeps the book's voice and `Literal` keeps codes exact. Plain text restores the faces listed here. See `docs/INKIE-DESIGN.md` §4.
+> **Inkie redesign (v2):** role sizes are unchanged. From `Label` (30 px) up, UI faces draw in Caveat at role × 1.25 (ScriptBold for semibold); `Control`, `Meta` and `Caption` stay printed, as do `Serif` reading text, italic serif (the book's voice) and `Literal`. Plain text restores the faces listed here. See `docs/INKIE-DESIGN.md` §4.
 
 Every text size is a role from `theme.h`; about 45 literal sizes were mapped to the nearest role (all within 2 px, except
 the passcode keypad 52→58 and the sleep title 54→58). Checked against the base tree with `ib-preview --targets` (every
@@ -140,7 +140,7 @@ left: their 27 px labels now use the 28 px Control role).
 
 ## 5. Cursive roles
 
-> **Inkie redesign:** cursive is no longer limited to the roles below; it is Inkie's voice everywhere. The roles remain the places whose plain-text face differs, and Tom's typed reply still follows his pen sizes. The candidate and legibility work below is what set the 38 px floor.
+> **Inkie redesign:** cursive is no longer limited to the roles below: every word from `Label` up is written. The roles remain the places whose plain-text face differs, and Tom's typed reply still follows his pen sizes. The candidate and legibility work below set the smallest script size (30 px role → 37.5 px).
 
 Cursive is a face (`Face::Script`, Caveat) used only through the roles in `ib/type.h`. Each names its plain face; `text.cpp`
 resolves the face once at the leaves (measure, metrics, draw), so wrap/fit/block and every painter are unchanged. Caveat is

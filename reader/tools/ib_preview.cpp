@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Deterministic host previews of the Inkbound presentation kit (src/ib). Every surface is painted by the same
+// Deterministic host previews of the Inkie presentation kit (src/ib). Every surface is painted by the same
 // painters the device uses, into a 1620x2160 RGB32 buffer, and written as PNG. Painter-level only: the shell's
 // compositing, refresh scheduling and the e-ink panel are not simulated (see docs/LAYOUT-ARCHITECTURE.md).
 // Builds against older trees too: layout zones and the cursive role are used only when their headers exist.
@@ -27,6 +27,7 @@
 #define IB_PREVIEW_SCRIPT 1
 #endif
 #include <zlib.h>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
@@ -48,6 +49,23 @@ bool png(const std::filesystem::path& path,const Image& im){
  uLongf n=compressBound(uLong(raw.size()));std::string z(n,'\0');if(compress2(reinterpret_cast<Bytef*>(z.data()),&n,reinterpret_cast<const Bytef*>(raw.data()),uLong(raw.size()),6)!=Z_OK)return false;z.resize(n);
  std::ofstream out(path,std::ios::binary);out<<"\x89PNG\r\n\x1a\n";std::string ihdr;be32(ihdr,std::uint32_t(im.w));be32(ihdr,std::uint32_t(im.h));ihdr+=std::string("\x08\x02\x00\x00\x00",5);
  chunk(out,"IHDR",ihdr);chunk(out,"IDAT",z);chunk(out,"IEND","");return bool(out);}
+// Rough Gallery 3 view (-panel previews). An approximation for spotting problems, not a measurement: the panel has
+// no black particle or grey, so every pixel becomes one of its eight clean states, error-diffused, and the states are
+// drawn muted as the panel shows them (paper is a light warm grey, red reads brick, green olive). Values are
+// estimates from published reviews and photographs and a third-party exporter's palette (rmc), not from a device.
+Image panelView(const Image& in){
+ static constexpr std::array<std::array<int,3>,8> State{{{228,226,216},{34,34,38},{60,140,180},{180,60,120},{222,200,70},{178,72,60},{84,140,84},{62,80,150}}};
+ // Nearest state by the source colour each one stands for (white, black, C, M, Y, R, G, B), so a pure source
+ // colour maps to its own state; the drawn value is then the muted estimate.
+ static constexpr std::array<std::array<int,3>,8> Ideal{{{255,255,255},{10,10,10},{0,168,232},{230,0,126},{255,225,0},{232,32,42},{0,166,80},{30,80,220}}};
+ Image out(in.w,in.h);std::vector<std::array<float,3>> err(std::size_t(in.w+2)*2);
+ for(int y=0;y<in.h;++y){auto* cur=&err[std::size_t(y%2)*(in.w+2)];auto* nxt=&err[std::size_t((y+1)%2)*(in.w+2)];for(int x=0;x<in.w+2;++x)nxt[x]={0,0,0};
+  for(int x=0;x<in.w;++x){const auto p=in.px[std::size_t(y)*in.w+x];float c[3]={float(p>>16&255)+cur[x+1][0],float(p>>8&255)+cur[x+1][1],float(p&255)+cur[x+1][2]};
+   int best=0;float bd=1e30f;for(int k=0;k<8;++k){float d=0;for(int j=0;j<3;++j){const float e=c[j]-float(Ideal[std::size_t(k)][std::size_t(j)]);d+=e*e;}if(d<bd){bd=d;best=k;}}
+   const auto& o=State[std::size_t(best)];out.px[std::size_t(y)*in.w+x]=0xff000000u|std::uint32_t(o[0])<<16|std::uint32_t(o[1])<<8|std::uint32_t(o[2]);
+   for(int j=0;j<3;++j){const float e=(c[j]-float(Ideal[std::size_t(best)][std::size_t(j)]))/16.f;cur[x+2][j]+=e*7;nxt[x][j]+=e*3;nxt[x+1][j]+=e*5;nxt[x+2][j]+=e;}}}
+ auto c=out.canvas();const Font f{Face::Literal,22};text::draw(c,f,12.f,float(in.h-10),"Gallery 3 approximation \xE2\x80\x94 host simulation, not a device photograph",0xffb4463cu);
+ return out;}
 // A book page under the chrome: serif body text at the reader's measure.
 void page(Canvas& c){
  c.fill({0,0,W,t::PageFitHeight},t::Paper);
@@ -64,7 +82,7 @@ void page(Canvas& c){
 std::vector<library::Document> books(){std::vector<library::Document> d;const char* titles[]{"A Tale of Two Cities","Middlemarch","The Origin of Species","Field Notes","Quarterly report","Walden"};const char* fmt[]{"epub","epub","epub","pdf","pdf","epub"};
  for(int i=0;i<6;++i)d.push_back({titles[i],std::string("Opened ")+std::to_string(i+1)+" d ago \xC2\xB7 "+std::to_string(12+i*7)+"%",fmt[i],{},i==1});return d;}
 library::Model libraryModel(){library::Model m;m.battery=73;m.wifi=true;m.clock="9:41";m.folders={{"Reading",12},{"Research",4},{"Notebooks",7}};m.documents=books();m.pages=3;
- m.createItems={{900,Icon::Note,"Notebook","Lined, grid, dot or blank pages"}};m.drawerExtras={{901,Icon::Back,"Leave Inkbound",{}}};return m;}
+ m.createItems={{900,Icon::Note,"Notebook","Lined, grid, dot or blank pages"}};m.drawerExtras={{901,Icon::Back,"Leave Inkie",{}}};return m;}
 tom::Model tomModel(){tom::Model m;m.contextLine="A Tale of Two Cities \xC2\xB7 page 12";m.excerpt="It was the best of times, it was the worst of times";m.hasSource=true;m.writable=true;m.empty=true;m.canSend=false;
  m.disclosure="Tom sees this passage and your question.";return m;}
 const char* Answer="Dickens opens with paired opposites to show a society pulled two ways at once. The rhythm makes the reader feel the instability of 1775 before any character appears.";
@@ -189,7 +207,8 @@ int main(int argc,char** argv){
   text::setPlainScript(v.plain);
 #endif
   for(const auto& s:surfaces())for(auto side:{reader::Side::Left,reader::Side::Right}){if(!s.sided&&side==reader::Side::Right)continue;reader::setToolbarSide(side);
-   Image im;auto c=im.canvas();Targets tg;s.paint(c,tg);save(im,s.name+(s.sided?(side==reader::Side::Left?"-right-handed":"-left-handed"):"")+v.suffix);}}
+   Image im;auto c=im.canvas();Targets tg;s.paint(c,tg);const std::string name=s.name+(s.sided?(side==reader::Side::Left?"-right-handed":"-left-handed"):"");save(im,name+v.suffix);
+   if(v.suffix.empty())save(panelView(im),name+"-panel");}}
  t::setHighContrast(false);reader::setToolbarSide(reader::Side::Left);
 #if __has_include("ib/type.h")
  text::setPlainScript(false);

@@ -23,11 +23,10 @@ void hub(Canvas& c,Targets& tg,const Hub& m){const int o=m.idOffset;
  else y=library::NoticeRect.y1; /* embedded in My Files: the library draws the "Notes" heading */
  std::size_t filters=m.favorites?Filters.size():Filters.size()-1;std::vector<std::string_view> labels(Filters.begin(),Filters.end());if(!m.favorites)labels.erase(labels.begin()+3);
  chips(c,tg,FilterBase+o,{x0,y,x1,y+64},std::span(labels.data(),filters),m.favorites||unsigned(m.filter)<3?unsigned(m.filter):unsigned(m.filter)-1);y+=64+t::S4;
- c.hline(x0,x1,y,t::Border);
  if(m.entries.empty())text::draw(c,type::ScriptEmpty,float(x0),float(y+90),m.filter==Filter::All?"Notes you write while reading appear here.":"No notes in this view.",t::InkSecondary);
  const int rowH=250;
  for(std::size_t i=0;i<m.entries.size()&&i<std::size_t(HubPageSize);++i){const auto& e=m.entries[i];Rect r{x0,y+int(i)*rowH,x1,y+int(i+1)*rowH};
-  Rect thumb{r.x0,r.y0+t::S4,r.x0+128,r.y1-t::S4};c.fillRound(thumb,t::RadiusMedium,t::SurfaceSunken);c.strokeRound(thumb,t::RadiusMedium,float(t::Outline),t::InkPrimary);{const Rect tab{thumb.x0-6,thumb.y0+t::S3,thumb.x0+10,thumb.y1-t::S3};c.fillRound(tab,8,e.color);c.strokeRound(tab,8,2.f,t::InkPrimary);}
+  Rect thumb{r.x0,r.y0+t::S4,r.x0+128,r.y1-t::S4};c.fillRound(thumb,t::RadiusMedium,t::Surface);c.strokeRound(thumb,t::RadiusMedium,float(t::Outline),t::InkPrimary);{const Rect tab{thumb.x0,thumb.y0+t::S3,thumb.x0+14,thumb.y1-t::S3};c.fill(tab,e.color);c.hairline(tab,t::InkPrimary,t::Outline);}
   if(!e.preview.empty())c.image(inset(thumb,10),e.preview.pixels,e.preview.width,e.preview.height,e.preview.stride);
   else icon(c,e.tom?Icon::Tom:e.handwriting?Icon::Handwrite:e.linked?Icon::Highlight:Icon::Notes,centered(thumb,48,48),t::InkSecondary);
   int tx=thumb.x1+t::S4,tr=r.x1-t::MinTarget;int ty=r.y0+t::S4+36;
@@ -65,9 +64,9 @@ void note(Canvas& c,Targets& tg,const Note& m){
  else{ruledPaper(c,area);if(m.editable&&!m.busy&&m.empty)text::draw(c,{Face::SerifItalic,theme::Body.size},float(area.x0+t::S3),float(area.y0+60),"Write a note\xE2\x80\xA6",t::InkTertiary);}
  if(!m.editable&&!m.busy)text::centeredLine(c,{Face::SerifItalic,theme::Label.size},{area.x0,area.y1-80,area.x1,area.y1-20},"This layer is hidden or locked \xE2\x80\x94 open Layers to write",t::InkTertiary);
  // Footer: pen, undo, redo, keyboard, scroll; the save state; Done.
- const int ry=t::ScreenHeight-NoteToolRow;c.hline(70,1550,ry-8,t::Border,t::Hairline);
- auto tool=[&](int id,int k,bool selected,bool enabled,auto&& draw){Rect cell{70+k*t::MinTarget,ry+4,70+(k+1)*t::MinTarget,ry+4+t::MinTarget};if(selected){const float cx=(cell.x0+cell.x1)/2.f,cy=(cell.y0+cell.y1)/2.f;c.fillCircle(cx,cy,42,t::NoteAccent);c.strokeCircle(cx,cy,40.5f,float(t::Outline),t::InkPrimary);}
-  draw(centered(cell,40,40),selected?t::onPop(t::NoteAccent):enabled?t::InkPrimary:t::Disabled);tg.add(id,cell);};
+ const int ry=t::ScreenHeight-NoteToolRow;divider(c,70,1550,ry-8);
+ auto tool=[&](int id,int k,bool selected,bool enabled,auto&& draw){Rect cell{70+k*t::MinTarget,ry+4,70+(k+1)*t::MinTarget,ry+4+t::MinTarget};if(selected)c.fillRound(centered(cell,80,80),t::RadiusMedium,t::ToolSelected);
+  draw(centered(cell,40,40),selected?t::OnSelected:enabled?t::InkPrimary:t::Disabled);tg.add(id,cell);};
  tool(NoteInk,0,m.picker,m.editable,[&](Rect b,std::uint32_t col){if(m.eraser)icon(c,Icon::NativeEraser,b,col);else nibGlyph(c,m.pen,b,col);});
  tool(NoteUndo,1,false,m.canUndo&&!m.busy,[&](Rect b,std::uint32_t col){icon(c,Icon::NativeUndo,b,col);});
  tool(NoteRedo,2,false,m.canRedo&&!m.busy,[&](Rect b,std::uint32_t col){icon(c,Icon::NativeRedo,b,col);});

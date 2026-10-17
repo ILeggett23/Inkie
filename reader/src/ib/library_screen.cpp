@@ -19,7 +19,7 @@ std::string upper(std::string_view v){std::string s(v);for(auto& ch:s)ch=char(st
 // Native file-type treatment: ebooks get a spine on the left, PDFs a folded top-right corner.
 void thumbnail(Canvas& c,Rect r,const Document& d){
  const bool epub=d.format=="epub";Rect page=r; // the page the spine and the fold belong to
- if(d.cover.empty()){placeholderCover(c,r,d.title,d.format);if(epub)c.fillRound({r.x0+3,r.y0+3,r.x0+15,r.y1-3},4,t::InkPrimary);}
+ if(d.cover.empty()){placeholderCover(c,r,d.title,d.format);if(epub){c.fillRound({r.x0,r.y0,r.x0+14,r.y1},t::RadiusSmall,t::InkPrimary);c.fill({r.x0+7,r.y0,r.x0+14,r.y1},t::InkPrimary);}}
  else{
   // A real cover is shown whole (never cropped), standing in the tile at full height, with the spine on its left.
   c.fill(r,t::Paper);int h=height(r),w=std::min(width(r),int(std::lround(double(d.cover.width)*h/std::max(1,d.cover.height))));Rect book{r.x0+(width(r)-w)/2,r.y0,r.x0+(width(r)-w)/2+w,r.y1};
@@ -34,13 +34,18 @@ int folderCapacity()noexcept{return FolderCols*FolderRows;}
 int capacity(bool grid,int folders)noexcept{int top=documentsTop(folders);return grid?std::max(1,(BottomLimit-top+GridGapY)/(GridRowH+GridGapY))*GridCols:std::max(1,(BottomLimit-top)/ListRowH);}
 Rect createMenuRect(std::size_t rows)noexcept{int h=36+56+int(rows)*120+20;return {CreateRect.x0,CreateRect.y1-h,CreateRect.x1,CreateRect.y1};}
 void placeholderCover(Canvas& c,Rect r,std::string_view title,std::string_view format){
- // A pop cover: a flat colour picked from the title (so a book keeps its colour), the title in cursive, the format
- // on a small white pill. Solid fills with an ink outline stay sharp on the colour panel.
- unsigned hash=2166136261u;for(unsigned char ch:title)hash=(hash^ch)*16777619u;const std::uint32_t pop=t::Pop[hash%t::Pop.size()],ink=t::onPop(pop);
- c.fill(r,t::Paper);c.fillRound(r,t::RadiusSmall,pop);c.strokeRound(r,t::RadiusSmall,float(t::Outline),t::InkPrimary);Rect inner=inset(r,t::S4);
- Font f{Face::SerifSemibold,float(std::clamp(width(r)/11,20,40))};text::block(c,f,{inner.x0,inner.y0+height(r)/7,inner.x1,inner.y1-t::S6},title,ink,int(text::resolved(f).size*1.05f),4,Align::Center);
- Font m{Face::Literal,float(std::clamp(width(r)/18,14,25)),2};const std::string fmt=upper(format);const int fw=int(text::measure(m,fmt))+t::S3,fh=int(m.size)+t::S2;
- if(width(r)>fw+t::S3){const Rect tag{(r.x0+r.x1-fw)/2,inner.y1-fh,(r.x0+r.x1+fw)/2,inner.y1};c.fillRound(tag,fh/2.f,t::Surface);c.strokeRound(tag,fh/2.f,2.f,t::InkPrimary);text::centeredLine(c,m,tag,fmt,t::InkPrimary,Align::Center);}
+ // A clothbound cover: flat cloth in one of the panel's clean colours (picked from the title, so a book keeps its
+ // colour), a paper label plate with the title, and the format printed on the cloth. Every colour edge meets ink.
+ unsigned hash=2166136261u;for(unsigned char ch:title)hash=(hash^ch)*16777619u;const std::uint32_t cloth=t::Pop[hash%t::Pop.size()],ink=t::onPop(cloth);
+ c.fill(r,t::Paper);c.fillRound(r,t::RadiusSmall,cloth);c.strokeRound(r,t::RadiusSmall,float(t::Outline),t::InkPrimary);
+ const int w=width(r),h=height(r),side=std::max(t::S2,w/9)+6;
+ const Rect plate{r.x0+side,r.y0+h*16/100,r.x1-side+6,r.y0+h*60/100};c.fillRound(plate,4,t::Paper);c.strokeRound(plate,4,float(t::Outline),t::InkPrimary);
+ const Font f{Face::SerifSemibold,float(std::clamp(w/10,20,40))};const int lh=int(text::resolved(f).size*1.02f);const Rect in=inset(plate,std::max(6,w/28));
+ const int rows=std::max(1,std::min(4,height(in)/std::max(1,lh)));const auto lines=text::wrap(f,title,float(width(in)),rows);
+ const float asc=text::capHeight(f);float y=in.y0+(height(in)-float(int(lines.size())*lh))/2.f+(lh+asc)/2.f;
+ for(const auto& line:lines){text::drawAligned(c,f,in,y,line,t::InkPrimary,Align::Center);y+=lh;}
+ Font m{Face::Literal,float(std::clamp(w/18,14,25)),2};const std::string fmt=upper(format);
+ if(int(text::measure(m,fmt))<w-2*side)text::drawAligned(c,m,{plate.x0,plate.y1,plate.x1,r.y1},float(r.y1-(r.y1-plate.y1)/2+text::capHeight(m)/2),fmt,ink,Align::Center);
 }
 void base(Canvas& c,Targets& tg,const Model& m){
  tg.clear();c.fill(c.clip(),t::Paper);
@@ -54,7 +59,7 @@ void base(Canvas& c,Targets& tg,const Model& m){
   iconButton(c,tg,ClearSearch,{field.x1-t::MinTarget,field.y0-4,field.x1,field.y1+4},Icon::Close);}
  else if(m.section!=Section::Settings){ /* Settings draws its own titles (ib/settings_screen) */
   int titleX=ContentX;if(!m.crumb.empty()){iconButton(c,tg,Up,{ContentX-t::S4,HeadingTop,ContentX-t::S4+t::MinTarget,HeadingBottom},Icon::ChevronLeft);titleX+=t::MinTarget-t::S4;}
-  // The section heading sits on a marker swash in the section's own colour.
+  // The section heading sits on a highlighter swash in the section's own colour.
   const Font h=type::ScriptHeading;swash(c,h,float(titleX),HeadingTop+(HeadingBottom-HeadingTop+text::capHeight(h))/2.f,text::fit(h,m.heading,float(ContentR-420-titleX)),t::SectionColor[std::min(unsigned(m.section),7u)]);
   int right=ContentR;if(m.section==Section::MyFiles||m.section==Section::Favorites||m.section==Section::Recents||m.section==Section::Trash){iconButton(c,tg,ViewMode,{right-t::MinTarget+t::S3,HeadingTop,right+t::S3,HeadingBottom},m.grid?Icon::List:Icon::Grid);right-=t::MinTarget;}
   if(!m.sortLabel.empty()){const Font f{Face::Text,theme::Label.size};float w=text::span(f,m.sortLabel);Rect sort{right-int(w)-t::IconSmall-t::S2-t::S2-12,HeadingTop,right-t::S2,HeadingBottom};
@@ -65,7 +70,7 @@ void base(Canvas& c,Targets& tg,const Model& m){
  // Folders: an inline icon and name, three per row.
  int shown=std::min(int(m.folders.size()),folderCapacity());int fw=(ContentR-ContentX-(FolderCols-1)*FolderGap)/FolderCols;
  for(int i=0;i<shown;++i){int col=i%FolderCols,row=i/FolderCols;Rect r{ContentX+col*(fw+FolderGap),FolderTop+row*FolderH,0,0};r.x1=r.x0+fw;r.y1=r.y0+FolderH;
-  int mid=(r.y0+r.y1)/2;dot(c,{r.x0-4,mid-25,r.x0+46,mid+25},Icon::Folder,t::Pop[std::size_t(i)%t::Pop.size()]);
+  int mid=(r.y0+r.y1)/2;icon(c,Icon::Folder,{r.x0,mid-22,r.x0+44,mid+22},t::InkPrimary);
   text::centeredLine(c,Label,{r.x0+60,r.y0,r.x1,r.y1},text::fit(Label,m.folders[std::size_t(i)].name,float(fw-70)),t::InkPrimary,Align::Left);tg.add(FolderBase+i,r);}
  int top=documentsTop(shown);
  // Documents
@@ -82,7 +87,7 @@ void base(Canvas& c,Targets& tg,const Model& m){
    text::centeredLine(c,{Face::Text,theme::Label.size},{x,r.y0+30,r.x1-80,r.y0+86},text::fit({Face::Text,theme::Label.size},d.title,float(r.x1-80-x)),t::InkPrimary,Align::Left);
    text::centeredLine(c,{Face::Text,theme::Meta.size},{x,r.y0+90,r.x1-80,r.y0+136},text::fit({Face::Text,theme::Meta.size},upper(d.format)+" \xC2\xB7 "+d.meta,float(r.x1-80-x)),t::InkSecondary,Align::Left);
    if(d.favorite)icon(c,Icon::Star,{r.x1-40,r.y0+70,r.x1-8,r.y0+102},t::InkPrimary);
-   c.hline(r.x0,r.x1,r.y1-t::Hairline,t::Border,t::Hairline);tg.add(DocumentBase+i,r);}
+   divider(c,r.x0,r.x1,r.y1-t::Hairline);tg.add(DocumentBase+i,r);}
  }
  // Pager (e-ink pages instead of scrolling; swipes page too), right of the pill.
  if(m.pages>1&&m.section!=Section::Notes&&m.section!=Section::Settings){Rect p{1160,PillRect.y0,ContentR,PillRect.y1};std::string label=std::to_string(m.page+1)+" of "+std::to_string(m.pages);
@@ -91,26 +96,29 @@ void base(Canvas& c,Targets& tg,const Model& m){
 }
 void overlays(Canvas& c,Targets& tg,const Model& m){
  // Bottom pill: search | create, as on the native My Files (not on Settings, mockup 25).
- if(m.section!=Section::Settings){Rect p=PillRect;const float R=float(height(p)/2);int mid=(p.x0+p.x1)/2;Rect sr{p.x0,p.y0,mid,p.y1},cr{mid,p.y0,p.x1,p.y1};
-  // Two halves of one bubble: search in cyan (darker while searching), create in magenta.
-  c.fillRound(p,R,t::PopMagenta);c.fillRound({p.x0,p.y0,mid+int(R),p.y1},R,m.searching?t::PopBlue:t::PopCyan);c.fill({mid,p.y0+3,mid+int(R),p.y1-3},t::PopMagenta);
-  c.strokeRound(p,R,float(t::Outline),t::InkPrimary);c.vline(mid-1,p.y0,p.y1,t::InkPrimary,t::Outline);
-  icon(c,Icon::Search,centered(sr,40,40),t::onPop(m.searching?t::PopBlue:t::PopCyan));icon(c,Icon::Plus,centered(cr,40,40),t::onPop(t::PopMagenta));tg.add(Search,sr);tg.add(Create,cr);}
+ if(m.section!=Section::Settings){Rect p=PillRect;int mid=(p.x0+p.x1)/2;Rect sr{p.x0,p.y0,mid,p.y1},cr{mid,p.y0,p.x1,p.y1};
+  // One outlined control in two halves: search (an ink half while searching) and create.
+  const Rect v=inset(p,8);c.fillRound(v,t::RadiusMedium,t::Surface);
+  if(m.searching){c.fillRound({v.x0,v.y0,mid+int(t::RadiusMedium),v.y1},t::RadiusMedium,t::ToolSelected);c.fill({mid,v.y0,mid+int(t::RadiusMedium)+1,v.y1},t::Surface);}
+  c.strokeRound(v,t::RadiusMedium,float(t::Outline),t::InkPrimary);c.fill({mid-1,v.y0,mid+1,v.y1},t::InkPrimary);
+  icon(c,Icon::Search,centered(sr,40,40),m.searching?t::OnSelected:t::InkPrimary);icon(c,Icon::Plus,centered(cr,40,40),t::InkPrimary);tg.add(Search,sr);tg.add(Create,cr);}
  if(m.create){Rect r=createMenuRect(m.createItems.size());popover(c,r);text::draw(c,{Face::TextSemibold,theme::Body.size},float(r.x0+36),float(r.y0+36+32),"Create new",t::InkPrimary);int y=r.y0+36+56;
-  for(const auto& it:m.createItems){Rect row{r.x0,y,r.x1,y+120};dot(c,{row.x0+30,row.y0+34,row.x0+82,row.y0+86},it.icon,t::PopMagenta);
+  for(const auto& it:m.createItems){Rect row{r.x0,y,r.x1,y+120};icon(c,it.icon,{row.x0+34,row.y0+38,row.x0+78,row.y0+82},t::InkPrimary);
    text::draw(c,Label,float(row.x0+36+40+28),float(row.y0+54),it.label,t::InkPrimary);if(!it.detail.empty())text::draw(c,{Face::Text,theme::Meta.size},float(row.x0+36+40+28),float(row.y0+94),it.detail,t::InkSecondary);tg.add(it.id,row);y+=120;}}
  if(m.drawer){Rect r=DrawerRect;c.fill(r,t::Paper);c.vline(r.x1-t::Outline,r.y0,r.y1,t::InkPrimary,t::Outline);
   iconButton(c,tg,Menu,{r.x0+40,38,r.x0+152,180},Icon::Menu);text::centeredLine(c,{Face::Text,theme::Label.size},{r.x0+40+112+t::S1,38,r.x1-40,180},"Menu",t::InkPrimary,Align::Left);
-  // Each place wears its colour: a pop dot always, and the whole row as a pop pill while it is the current place.
+  // Each place has an index tab in its colour at the drawer's edge, as a divided notebook; the current place is an ink
+  // row. Places without a colour (Settings, extras) have no tab.
   auto row=[&](int id,Icon ic,std::string_view label,int y,bool active,std::uint32_t pop){Rect q{r.x0+40,y,r.x1-40,y+100};std::uint32_t ink=t::InkPrimary;
-   if(active){const Rect b=inset(q,6);c.fillRound(b,height(b)/2.f,pop);c.strokeRound(b,height(b)/2.f,float(t::Outline),t::InkPrimary);ink=t::onPop(pop);}
-   dot(c,{q.x0+20,q.y0+24,q.x0+72,q.y0+76},ic,active?t::Surface:pop);text::centeredLine(c,{Face::Text,theme::Label.size},{q.x0+28+35+26,q.y0,q.x1,q.y1},label,ink,Align::Left);tg.add(id,q);};
+   if(pop!=t::InkPrimary){const Rect tab{r.x0,q.y0+14,r.x0+18,q.y1-14};c.fill(tab,pop);c.hairline(tab,t::InkPrimary,t::Outline);}
+   if(active){c.fillRound(inset(q,6),t::RadiusMedium,t::ToolSelected);ink=t::OnSelected;}
+   icon(c,ic,{q.x0+24,q.y0+28,q.x0+68,q.y0+72},ink);text::centeredLine(c,{Face::Text,theme::Label.size},{q.x0+28+35+26,q.y0,q.x1,q.y1},label,ink,Align::Left);tg.add(id,q);};
   int y=180;for(Section s:{Section::MyFiles,Section::Notes,Section::Favorites,Section::Recents}){row(NavBase+int(s),NavIcons[unsigned(s)],sectionName(s),y,s==m.section,t::SectionColor[unsigned(s)]);y+=100;}
-  y+=24;c.hline(r.x0+40,r.x1-40,y,t::Border,t::Hairline);y+=24;
+  y+=24;divider(c,r.x0+40,r.x1-40,y);y+=24;
   if(m.tomAvailable){row(NavBase+int(Section::Tom),Icon::Tom,"Tom",y,false,t::SectionColor[unsigned(Section::Tom)]);y+=100;}
   if(m.sharedAvailable){row(NavBase+int(Section::Shared),Icon::Shared,"Shared",y,false,t::SectionColor[unsigned(Section::Shared)]);y+=100;}
   int by=r.y1-70-int(2+m.drawerExtras.size())*100;
-  for(const auto& it:m.drawerExtras){row(it.id,it.icon,it.label,by,false,t::PopCyan);by+=100;}
+  for(const auto& it:m.drawerExtras){row(it.id,it.icon,it.label,by,false,t::InkPrimary);by+=100;}
   row(NavBase+int(Section::Trash),Icon::Trash,"Trash",by,m.section==Section::Trash,t::SectionColor[unsigned(Section::Trash)]);by+=100;row(NavBase+int(Section::Settings),Icon::Settings,"Settings",by,m.section==Section::Settings,t::SectionColor[unsigned(Section::Settings)]);}
 }
 void paint(Canvas& c,Targets& tg,const Model& m){base(c,tg,m);overlays(c,tg,m);}

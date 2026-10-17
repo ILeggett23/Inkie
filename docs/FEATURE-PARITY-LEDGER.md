@@ -131,10 +131,10 @@ changed), **Moved** (location changed; justified), **New**. There are no **Remov
 ## Inkie redesign (2026-10-17)
 
 Every row above keeps its capability and location. The redesign restyles every surface (`docs/INKIE-DESIGN.md`):
-**Kept, restyled** for all of them. Target diff against the shipping base: 434 of 488 targets identical. The changed
-ones are label-fitted controls that grew for cursive labels: the wordmark hit area (+36 px), Notes filter chips
-(≤ 42 px), Settings choice cells (≤ 64 px), document-settings choices (≤ 18 px), the Quick Browse stepper (24 px) and
-selection-strip segments (≤ 7 px). No target moves between cursive and plain text. Renamed: "Inkbound" → "Inkie" in
+**Kept, restyled** for all of them. Target diff against the shipping base: 471 of 488 targets identical. The changed
+ones: the wordmark hit area follows the shorter name (127 × 112 px, above `MinTarget`), and the six Auto-sleep choice
+cells move by ≤ 12 px (printed `Control` labels). Toggles are now checkboxes and filter chips underlined tabs, both in
+the same rects. No target moves between cursive and plain text. Renamed: "Inkbound" → "Inkie" in
 every user-visible string ("Leave Inkie", wordmark, lock and sleep screens, Settings copy). New: none.
 
 ## Unsupported or deferred (no control added)

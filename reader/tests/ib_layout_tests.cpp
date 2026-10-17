@@ -74,8 +74,10 @@ int main(int argc,char** argv){try{
  // Tom's typed reply follows the handwriting-size preference and lands on Tom's pen sizes (Small within 0.5 px).
  {const float pen[]{42.5f,50,60};for(unsigned i=0;i<3;++i){check(text::resolved(type::voice(i)).size==pen[i]&&type::voiceLine(i)>=int(type::voice(i).size*1.5f),"typed cursive follows hand size");}check(type::voice(0).size==type::Voice.size,"Small is the Voice role");}
  // 5. Switching cursive off changes glyphs inside unchanged rects: every surface registers identical targets.
- auto both=[&](const char* name,auto paint){Frame a,b;auto ca=a.canvas(),cb=b.canvas();text::setPlainScript(false);paint(ca,a.tg);text::setPlainScript(true);paint(cb,b.tg);text::setPlainScript(false);
-  check(sameTargets(a.tg,b.tg),name);check(a.px!=b.px,"cursive is visible on the surface");};
+ // Words are written and data printed (text.h ScriptFrom): a surface with only small control labels (the selection
+ // strip) prints the same in both modes; every other surface shows its cursive.
+ auto both=[&](const char* name,auto paint,bool printed=false){Frame a,b;auto ca=a.canvas(),cb=b.canvas();text::setPlainScript(false);paint(ca,a.tg);text::setPlainScript(true);paint(cb,b.tg);text::setPlainScript(false);
+  check(sameTargets(a.tg,b.tg),name);check(printed?a.px==b.px:a.px!=b.px,printed?"printed surface is identical in both modes":"cursive is visible on the surface");};
  both("library heading targets unchanged",[](Canvas& c,Targets& tg){library::paint(c,tg,libraryModel());});
  both("empty library targets unchanged",[](Canvas& c,Targets& tg){auto m=libraryModel();m.documents.clear();library::paint(c,tg,m);});
  both("settings targets unchanged",[](Canvas& c,Targets& tg){settings::Model m;m.page=settings::Page::Accessibility;settings::paint(c,tg,m);});
@@ -89,7 +91,7 @@ int main(int argc,char** argv){try{
  // The toolbar carries no text: pixel-identical in both modes. The palette's labels change face, never its targets.
  {Frame a,b;auto ca=a.canvas(),cb=b.canvas();reader::Tools tools;text::setPlainScript(false);reader::toolbar(ca,a.tg,tools);text::setPlainScript(true);reader::toolbar(cb,b.tg,tools);text::setPlainScript(false);check(a.px==b.px,"toolbar identical in both modes");}
  both("pen palette targets unchanged",[](Canvas& c,Targets& tg){reader::Tools tools;reader::penPanel(c,tg,tools);});
- both("selection strip targets unchanged",[](Canvas& c,Targets& tg){reader::SelectionBar bar;bar.anchor={300,900,1200,960};bar.define=true;reader::selectionToolbar(c,tg,bar);});
+ both("selection strip targets unchanged",[](Canvas& c,Targets& tg){reader::SelectionBar bar;bar.anchor={300,900,1200,960};bar.define=true;reader::selectionToolbar(c,tg,bar);},true);
  both("document settings targets unchanged",[](Canvas& c,Targets& tg){sheets::Settings st;st.pdf=false;st.tab=sheets::Tab::Reading;sheets::settings(c,tg,st);});
  // 6. The settings row exists, is a full-size control, and sits below every existing Accessibility row (none moved:
  //    High contrast and Reduce motion keep the positions they had before the row was added).

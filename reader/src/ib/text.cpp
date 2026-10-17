@@ -108,12 +108,12 @@ namespace {Font resolvedAs(Font f,bool plain)noexcept{
  Face to=Face::Count;
  switch(f.face){
  case Face::Script:if(!cursive)return {f.plain,f.size,f.tracking,f.plain};to=Face::Script;break;
- case Face::Text:case Face::TextItalic:case Face::Sans:case Face::Serif:case Face::Subhead:case Face::Display:to=Face::Script;break;
- case Face::TextSemibold:case Face::SansMedium:case Face::SansSemibold:case Face::SerifSemibold:to=Face::ScriptBold;break;
- default:return f; // SerifItalic (the book's words), Literal (exact characters), Hand (Tom's pen source)
+ case Face::Text:case Face::TextItalic:case Face::Sans:case Face::Subhead:case Face::Display:to=f.size>=ScriptFrom?Face::Script:Face::Count;break;
+ case Face::TextSemibold:case Face::SansMedium:case Face::SansSemibold:case Face::SerifSemibold:to=f.size>=ScriptFrom?Face::ScriptBold:Face::Count;break;
+ default:return f; // Serif (reading text), SerifItalic (the book's words), Literal (exact characters), Hand (Tom's pen source)
  }
- if(!cursive)return f;
- return {to,std::max(f.size*ScriptScale,ScriptFloor),f.tracking,f.face==Face::Script?f.plain:f.face};}}
+ if(!cursive||to==Face::Count)return f;
+ return {to,f.size*ScriptScale,f.tracking,f.face==Face::Script?f.plain:f.face};}}
 float span(Font f,std::string_view s){if(!ready())return measure(f,s);return std::max(walk(resolvedAs(f,false),s,[](Run,float){}),walk(resolvedAs(f,true),s,[](Run,float){}));}
 float ascent(Font f){f=resolved(f);auto& l=fontFor(f.face);return l.ok?l.ascent*scale(l,f.size):f.size*.8f;}
 float descent(Font f){f=resolved(f);auto& l=fontFor(f.face);return l.ok?-l.descent*scale(l,f.size):f.size*.2f;}

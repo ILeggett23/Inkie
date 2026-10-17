@@ -30,11 +30,11 @@ void layers(Canvas& c,Targets& tg,const Layers& m){
   if(l.items>0){for(int k=0;k<std::min(3,l.items);++k)c.line(float(b.x0+14),float(b.y0+22+k*20),float(b.x1-14-k*12),float(b.y0+18+k*20),3,l.visible?t::InkSecondary:t::Disabled);}
   else text::centeredLine(c,Caption,b,"empty",t::InkTertiary);};
  for(unsigned i=0;i<LayerPageSize&&m.offset+i<m.layers.size();++i){const auto& l=m.layers[m.offset+i];Rect row{content.x0,y,content.x1,y+rowH};
-  if(l.selected)c.fillRound(inset(row,4),t::RadiusSmall,t::SurfaceSunken);
+  if(l.selected)c.strokeRound(inset(row,4),t::RadiusMedium,float(t::StrokeStrong),t::InkPrimary); // the chosen row is ringed in ink
   iconButton(c,tg,EyeBase+int(m.offset+i),{row.x0,row.y0,row.x0+t::MinTarget,row.y1},l.visible?Icon::Eye:Icon::EyeOff,{false,m.busy},40);
   thumb({row.x0+t::MinTarget+t::S2,row.y0+t::S3,row.x0+t::MinTarget+t::S2+140,row.y1-t::S3},l);
   int tx=row.x0+t::MinTarget+t::S2+140+t::S4;
-  text::draw(c,{l.active?Face::SerifSemibold:Face::Serif,theme::Body.size},float(tx),float(row.y0+64),text::fit({Face::Serif,theme::Body.size},l.name,float(row.x1-tx-t::MinTarget-60)),l.visible?t::InkPrimary:t::InkSecondary);
+  const Font name{l.active?Face::TextSemibold:Face::Text,theme::Body.size};text::draw(c,name,float(tx),float(row.y0+64),text::fit(name,l.name,float(row.x1-tx-t::MinTarget-60)),l.visible?t::InkPrimary:t::InkSecondary);
   std::string meta=l.active?"Writing here":std::to_string(l.items)+(l.items==1?" item":" items");if(l.locked)meta+="  \xC2\xB7  Locked";if(!l.visible)meta+="  \xC2\xB7  Hidden";
   text::draw(c,Meta,float(tx),float(row.y0+108),meta,t::InkSecondary);
   if(l.locked)icon(c,Icon::Lock,{row.x1-t::MinTarget-44,row.y0+55,row.x1-t::MinTarget-8,row.y0+91},t::InkSecondary);
@@ -43,8 +43,8 @@ void layers(Canvas& c,Targets& tg,const Layers& m){
   divider(c,row.x0,row.x1,row.y1);y+=rowH;}
  // Protected document background, always at the bottom.
  Rect bg{content.x0,y,content.x1,y+rowH};icon(c,Icon::Lock,{bg.x0+30,bg.y0+57,bg.x0+66,bg.y0+93},t::InkTertiary);
- Rect bt{bg.x0+t::MinTarget+t::S2,bg.y0+t::S3,bg.x0+t::MinTarget+t::S2+140,bg.y1-t::S3};c.fillRound(bt,6,t::SurfaceSunken);for(int k=0;k<5;++k)c.hline(bt.x0+14,bt.x1-14-(k%2)*30,bt.y0+18+k*16,t::Border,3);
- int tx=bt.x1+t::S4;text::draw(c,{Face::Serif,theme::Body.size},float(tx),float(bg.y0+64),m.background,t::InkSecondary);text::draw(c,Meta,float(tx),float(bg.y0+108),"Original \xC2\xB7 protected",t::InkTertiary);
+ Rect bt{bg.x0+t::MinTarget+t::S2,bg.y0+t::S3,bg.x0+t::MinTarget+t::S2+140,bg.y1-t::S3};c.fillRound(bt,6,t::Surface);c.strokeRound(bt,6,2,t::Border);for(int k=0;k<5;++k)c.hline(bt.x0+14,bt.x1-14-(k%2)*30,bt.y0+18+k*16,t::Border,3);
+ int tx=bt.x1+t::S4;text::draw(c,{Face::Text,theme::Body.size},float(tx),float(bg.y0+64),m.background,t::InkSecondary);text::draw(c,Meta,float(tx),float(bg.y0+108),"Original \xC2\xB7 protected",t::InkTertiary);
  y+=rowH+t::S3;
  if(m.layers.size()>LayerPageSize){iconButton(c,tg,LayersPrev,{content.x0,y,content.x0+t::MinTarget,y+t::MinTarget},Icon::ChevronUp,{false,m.offset==0});iconButton(c,tg,LayersNext,{content.x0+t::MinTarget,y,content.x0+2*t::MinTarget,y+t::MinTarget},Icon::ChevronDown,{false,m.offset+LayerPageSize>=m.layers.size()});}
  button(c,tg,LayerAdd,{content.x1-360,y,content.x1,y+92},"New layer",ButtonKind::Secondary,m.busy,Icon::Plus);
@@ -84,7 +84,7 @@ void settings(Canvas& c,Targets& tg,const Settings& m){
    // Native text-and-layout choices: three outlined cells, the chosen one black. "Book" keeps the publisher's choice.
    auto choices=[&](std::string_view label,std::array<const char*,3> options,unsigned selected,int firstId){const Font cf{Face::Text,theme::Control.size};text::centeredLine(c,Label,{cx.x0,y,cx.x0+260,y+row},label,t::InkPrimary,Align::Left);
     int x=cx.x1;for(int i=2;i>=0;--i){int w=int(text::span(cf,options[std::size_t(i)]))+t::S4*2;Rect cell{x-w,y+16,x,y+row-16};x=cell.x0-8;const bool on=unsigned(i)==selected;
-     c.fillRound(cell,height(cell)/2.f,on?t::ToolSelected:t::Surface);c.strokeRound(cell,height(cell)/2.f,on?float(t::Outline):float(t::Hairline),viewBlocked?t::Disabled:t::InkPrimary);text::centeredLine(c,cf,cell,options[std::size_t(i)],on?t::OnSelected:viewBlocked?t::Disabled:t::InkPrimary,Align::Center);if(!viewBlocked)tg.add(firstId+i,hitArea(cell));}
+     c.fillRound(cell,t::RadiusMedium,on?t::ToolSelected:t::Surface);c.strokeRound(cell,t::RadiusMedium,float(t::Outline),viewBlocked?t::Disabled:t::InkPrimary);text::centeredLine(c,cf,cell,options[std::size_t(i)],on?t::OnSelected:viewBlocked?t::Disabled:t::InkPrimary,Align::Center);if(!viewBlocked)tg.add(firstId+i,hitArea(cell));}
     divider(c,cx.x0,cx.x1,y+row);y+=row;};
    choices("Font",{"Book","Serif","Sans"},m.family,FamilyBase);choices("Line spacing",{"Small","Medium","Large"},m.spacing,SpacingBase);
    choices("Margins",{"Small","Medium","Large"},m.margins,MarginBase);choices("Justification",{"Book","Left","Justified"},m.alignment,AlignBase);}
@@ -101,7 +101,7 @@ void settings(Canvas& c,Targets& tg,const Settings& m){
    if(!image.empty()){shown=c.grayImage(frame,image.gray,image.width,image.height,image.width,t::Paper);if(shown.empty())shown=frame;}
    else c.fill(frame,t::Paper);
    c.hairline(shown,t::InkPrimary,t::Hairline);
-   if(page==m.selectedPage)c.strokeRound(outset(shown,10),t::RadiusSmall,5.f,t::PopMagenta);
+   if(page==m.selectedPage)c.strokeRound(outset(shown,10),t::RadiusSmall,5.f,t::InkPrimary);
    if(std::any_of(m.bookmarks.begin(),m.bookmarks.end(),[&](const auto& b){return b.first==page;}))icon(c,Icon::BookmarkFilled,{shown.x1-12-t::IconSmall,shown.y0,shown.x1-12,shown.y0+t::IconSmall},t::InkPrimary);
    const Rect number{frame.x0,frame.y1+t::S1,frame.x1,frame.y1+numberH};const bool here=page==m.currentPage;
    text::centeredLine(c,here?Font{Face::SansSemibold,Numbers.size}:Numbers,number,std::to_string(page+1),t::InkPrimary);
@@ -176,13 +176,13 @@ Rect quickBrowse(Canvas& c,Targets& tg,const QuickBrowse& m){
  text::draw(c,{Face::Text,theme::Body.size},float(x0),float(r.y0+44+33),"Quick browse",t::InkPrimary);
  const Font meta{Face::Text,theme::Meta.size};text::centeredLine(c,meta,{x0,r.y0+100,x1-300,r.y0+150},text::fit(meta,m.title,float(x1-300-x0)),t::InkSecondary,Align::Left);
  text::centeredLine(c,meta,{x1-300,r.y0+100,x1,r.y0+150},m.position,t::InkSecondary,Align::Right);
- // The track: the start point (small dot) and the current page (knob), placed by page.
- // A thick bubble track filled cyan up to this page, the start point as a small dot, this page as a magenta bubble.
+ // The track: a dotted rule, solid ink up to this page; the start point a small open ring, this page an ink knob.
+ // Ink, not colour: the knob moves on every step, which the fast monochrome pass serves without a colour ghost.
  const int ty=(QuickTrackRect.y0+QuickTrackRect.y1)/2;const int last=std::max(1,m.total-1);
  auto at=[&](int page){return float(x0)+float(x1-x0)*float(std::clamp(page,0,last))/float(last);};
- {const Rect track{x0,ty-9,x1,ty+9};c.fillRound(track,9,t::SurfaceSunken);const int fill=int(at(m.page));if(fill>x0+18)c.fillRound({x0,track.y0,fill,track.y1},9,t::PopCyan);c.strokeRound(track,9,2.5f,t::InkPrimary);}
- if(m.start!=m.page){c.fillCircle(at(m.start),float(ty),10,t::PopYellow);c.strokeCircle(at(m.start),float(ty),9,2.5f,t::InkPrimary);}
- c.fillCircle(at(m.page),float(ty),22,t::PopMagenta);c.strokeCircle(at(m.page),float(ty),20.5f,float(t::Outline),t::InkPrimary);tg.add(QuickTrack,QuickTrackRect);
+ {divider(c,x0,x1,ty-1);c.fill({x0,ty-3,int(at(m.page)),ty+3},t::InkPrimary);}
+ if(m.start!=m.page){c.fillCircle(at(m.start),float(ty),12,t::Paper);c.strokeCircle(at(m.start),float(ty),11,float(t::StrokeStrong),t::InkPrimary);}
+ c.fillCircle(at(m.page),float(ty),20,t::InkPrimary);tg.add(QuickTrack,QuickTrackRect);
  const int by=QuickTrackRect.y1+8,bh=t::MinTarget;
  if(m.start!=m.page)textAction(c,tg,QuickReturn,{x0,by,x0+460,by+bh},"Return to where you started");
  // Single-page steps for exact positioning (a tap on the track lands within a page or two).
@@ -201,7 +201,8 @@ Rect notice(Canvas& c,Targets& tg,const Notice& n,Rect bounds){
  return r;
 }
 Rect recents(Canvas& c,Targets& tg,std::span<const RecentBook> books){
- const Rect r{0,0,theme::ScreenWidth,RecentsHeight};c.fill(r,t::Paper);{const float R=t::RadiusLarge;const Rect s{0,-int(R)-8,theme::ScreenWidth,r.y1};c.fill(r,t::Paper);c.strokeRound(s,R,float(t::Outline),t::InkPrimary);c.fillRound(centered({0,r.y1-30,theme::ScreenWidth,r.y1-10},140,16),8,t::SectionColor[3]);c.strokeRound(centered({0,r.y1-30,theme::ScreenWidth,r.y1-10},140,16),8,2.f,t::InkPrimary);}
+ // A sheet from the top edge: square paper, its colour along the lower edge closed by an ink rule (contextSheet upside down).
+ const Rect r{0,0,theme::ScreenWidth,RecentsHeight};c.fill(r,t::Paper);c.fill({0,r.y1-t::EdgeBand,r.x1,r.y1},t::SectionColor[3]);c.fill({0,r.y1-t::EdgeBand-t::Hairline,r.x1,r.y1-t::EdgeBand},t::InkPrimary);
  text::draw(c,{Face::Text,float(t::Label.size)},float(t::Gutter),72.f,"Recent",t::InkPrimary);
  button(c,tg,RecentsLibrary,{theme::ScreenWidth-t::Gutter-300,24,theme::ScreenWidth-t::Gutter,24+t::MinTarget},"All books",ButtonKind::Quiet,false,Icon::Books);
  const int n=int(std::min<std::size_t>(books.size(),5)),cw=220,gap=(theme::ScreenWidth-t::Gutter*2-5*cw)/4,y=140;

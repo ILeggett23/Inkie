@@ -1,115 +1,139 @@
-# Inkie — design concept, 2026-10-17
+# Inkie — design, 2026-10-17 (v2, "stationery")
 
-Inkbound is now **Inkie**: bubbly, vibrant and written in cursive, made for the reMarkable Paper Pro's colour panel
-(E Ink Gallery 3). This document records the concept and the reasons behind each decision. The spatial system (zones,
-rects, gesture bands, sheet geometry) is unchanged and lives in `docs/LAYOUT-ARCHITECTURE.md`; the tokens live in
-`reader/src/ib/theme.h`, the type rules in `reader/src/ib/text.h` and `type.h`.
+Inkbound is now **Inkie**. This document records the design and the reason for each decision. The spatial system
+(zones, rects, gesture bands, sheet geometry) is unchanged and lives in `docs/LAYOUT-ARCHITECTURE.md`. Tokens are in
+`reader/src/ib/theme.h` and the type rules in `reader/src/ib/text.h` and `type.h`.
 
-## 1. Concept: ink drops on white paper
+v1 (bubbles, pop shadows, pills, a colour for every control) was replaced after review: it read as a generic Android
+concept, and several of its choices worked against the panel. v2 keeps Inkie's personality (script, colour, ink drops)
+and draws it the way a good notebook is made, within what E Ink Gallery 3 can actually show.
 
-Inkie looks like a notebook someone decorated with bright stickers and a felt-tip pen. The page is clean white paper;
-everything Inkie adds on top — tools, sheets, buttons, headings — is a rounded "bubble" with a bold black outline, a
-flat pop of colour and a solid sticker shadow. Words are handwritten in cursive. The book's own words stay in the book's
-type, so you always know what is the book and what is Inkie.
+## 1. What the panel can do
 
-Why it fits the Paper Pro and Gallery 3:
+The reMarkable Paper Pro uses E Ink Gallery 3. Each design rule in §2 comes from one of these constraints.
 
-- **White stays white.** Device white is the panel's brightest, sharpest state, and every page is read on it. Tinted
-  paper would dull every page and every refresh.
-- **Colour is flat process colour.** Gallery 3 mixes cyan, magenta and yellow pigments (plus white). Inkie's pops are
-  those colours and their two-pigment mixes, at full saturation, with no tints, gradients or transparency, so the
-  panel can render them as solid fields rather than dithered approximations.
-- **Edges are black.** The fast monochrome pass that follows a tap redraws black outlines and black text immediately;
-  the colour arrives with the regional quality pass (`vendor.h` classifies composed regions as Color content). A bubble
-  therefore reads crisply before its colour settles.
-- **Small text is never coloured.** Coloured text that a later monochrome update replaces can linger faintly, so text
-  is black, or white on the darkest pops.
-- **The sleep screen is the showpiece.** E-ink keeps its last image without power, so the sleep screen (wordmark, yellow
-  moon, pop bubbles) stays bright on the cover-closed tablet.
-
-## 2. Palette
-
-| Token | RGB | Pigments | Used for |
-| --- | --- | --- | --- |
-| `PopCyan` | `#00AEEF` | cyan | My files, selected state (`ToolSelected`), progress, search, Define |
-| `PopMagenta` | `#EC008C` | magenta | Notes, "go" actions (Send, Done, Create), Note sheet, eraser, Quick Browse knob |
-| `PopYellow` | `#FFE500` | yellow | Favorites, highlighter tool, zoom badge, width choice, moon |
-| `PopGreen` | `#00B04F` | cyan + yellow | Shared, toggles on, Copy, selection tool, battery |
-| `PopOrange` | `#FF7A00` | magenta + yellow (yellow-heavy) | Recents, layers tool |
-| `PopViolet` | `#9B30FF` | cyan + magenta (magenta-heavy) | Tom, document menu |
-| `PopBlue` | `#1060FF` | cyan + magenta | Settings, searching |
-| `PopRed` | `#FF2A2A` | magenta + yellow | Trash, destructive actions, low battery |
-| `InkPrimary` | `#0A0A0A` | — | outlines, text, glyphs |
-| `Paper` | `#FFFFFF` | white | the page and every surface body |
-
-`onPop(colour)` picks the ink for anything drawn on a pop: black where it reads (cyan, yellow, green, orange), white on
-magenta, violet, blue and red.
-
-**One colour per place.** My files cyan, Notes magenta, Favorites yellow, Recents orange, Shared green, Tom violet,
-Trash red, Settings blue (`theme::SectionColor`). The colour follows the place everywhere it appears: the heading's
-marker swash, the drawer row, the sheet's grab tab, the selection strip's action dot (Note is magenta like Notes, Tom
-violet like Tom). Settings pages each have their own colour in the page list.
-
-## 3. Shape language
-
-| Element | Inkie treatment |
+| Fact | Consequence for Inkie |
 | --- | --- |
-| Floating surfaces (popovers, palette, document menu, cards, notices, layers, document settings) | `bubble()`: rounded 28 px, 3 px ink outline, 8 px solid ink shadow. The shadow is drawn **inside** the reported rect, so damage bounds and targets are unchanged. |
-| Lower sheets (Tom, Note, highlight, Notes hub, Quick Browse, Recents) | Rounded 40 px top corners, 3 px outline, a pop grab tab in the sheet's accent. |
-| Buttons, primary actions, chips, toggles, choice cells, segmented controls | Pills. Primary = magenta, destructive = red, secondary = white, all outlined; selected chips and cells fill cyan. |
-| Toolbar | A rounded rail inside the 112 px column; each tool is a circle that fills with the tool's own colour when active (pen cyan, highlighter yellow, eraser magenta, selection green, layers orange, document menu violet). |
-| Icons beside labels | `dot()`: a pop circle with an outline and the glyph in `onPop` ink (drawer, folders, create menu, selection strip). |
-| Headings | `swash()`: the heading in heavy cursive on a marker bar in the place's colour. |
-| Covers without art | Pop covers: a flat colour picked from the title's hash (a book keeps its colour), cursive title, format on a white pill. |
-| Swatches | Circles with a 3 px outline; selected sits in a cyan ring. |
-| Progress | The footer gains a thin cyan bubble track; Quick Browse a thick one with a magenta knob. |
+| Four particles per pixel: cyan, magenta, yellow and white. There is no colour filter and no black particle ([E Ink](https://www.eink.com/brand/detail/Gallery_3), [E Ink launch](https://www.eink.com/news/detail/E%20Ink_Launches_E%20Ink_Gallery_3_Color_ePaper_for_Sustainable_Digital_Reading), [MyGica](https://www.mygica.com/e-ink-color-technologies/)). | Black is a full mix, so text edges are rougher than on a monochrome panel ([The eBook Reader](https://blog.the-ebook-reader.com/2024/09/10/gallery-3-screen-comparison-vs-kaleido-3-and-regular-bw-e-ink-video/)). Text is near-black and never thin. |
+| About seven or eight clean states: white, black, C, M, Y and the two-pigment mixes R, G and B. Anything in between is blended: purple reads light blue, cyan greenish, and white fill looks grainy ([IRIS Optronics](https://iris-opt.com/en/blog/eink-acep-gallery-vs-chlcd/), [epdoptimize](https://github.com/paperlesspaper/epdoptimize)). | Only C, M, Y, R, G and B are used. No orange, violet, pink, pastel tints or greys. |
+| Colours look muted next to a phone. Reviewers describe red as closer to burnt orange and green as pea soup, and colour is best seen in good light ([Engadget review](https://www.engadget.com/mobile/tablets/remarkable-paper-pro-review-writing-in-color-is-nice-but-itll-cost-you-173024590.html), [Tom's Guide](https://www.tomsguide.com/tablets/remarkable-paper-pro), [TechCrunch](https://techcrunch.com/2024/09/04/remarkables-paper-pro-adds-color-light-and-more-but-keeps-the-focus-on-focus)). | Colour must work as an area, not as a hairline or a word. Every colour shape is at least 10 px thick (`EdgeBand`) and meets a black rule, so its edge stays crisp even when the hue is dull. |
+| Update times: black and white 350 ms; colour 500 ms (fast), 750–1000 ms (standard), 1500 ms (best) ([CNX Software](https://www.cnx-software.com/2022/04/26/e-ink-gallery-3-color-epaper-offers-faster-refresh-rate-higher-resolution/), [New Atlas](https://newatlas.com/electronics/e-ink-gallery-3-color-epaper/), [Engadget](https://www.engadget.com/e-ink-gallery-3-announced-182802114.html)). A colour change can leave a tinted ghost ([Svartling](https://www.svartling.net/2026/05/the-e-ink-dilemma-why-remarkable-pures.html), a single report). | **Colour is identity; ink is state.** Colour marks what does not change while you work (which place, which book, which sheet). Everything that changes on a tap (selected, on/off, progress, the current page) is drawn in black and white, which the fast pass serves without a colour ghost. |
+| The Paper Pro's own pens offer black, gray, white, blue, red, green, yellow, cyan and magenta. Highlighters offer yellow, blue, pink, orange, green and gray ([Engadget](https://www.engadget.com/mobile/tablets/the-new-remarkable-paper-pro-adds-a-color-display-120059067.html), [overkill.wtf](https://overkill.wtf/remarkable-paper-pro-review-the-next-step-in-the-evolution-of-the-notebook/)). | Inkie's palette matches the device's own colours, so its UI sits naturally next to Xochitl's pens. |
 
-## 4. Type: cursive everywhere
+Some sources disagree, for example on colour resolution (300 ppi in E Ink's release, 150 ppi for colour in one Good
+e-Reader article). The figures above are design inputs, not measurements on this tablet; see §8.
 
-- Every UI face (`Text`, `Sans`, `Serif`, `Subhead`, `Display` and their weights) draws in **Caveat**: Script, or
-  ScriptBold for semibold/medium (`text.cpp`, `resolved()`).
-- Size: role size × 1.25, never under **38 px** (`ScriptFloor`). Caveat's x-height is 0.357 em, so the smallest
-  cursive has a 13.6 px (1.5 mm) x-height. Captions and metadata therefore set wider; fitted rects ellipsize rather
-  than grow.
-- ScriptBold is an emboldened rasterisation of the same Caveat bytes, about 1/26 of the size wider. No heavier file
-  can ship, because the tablet update keeps the baseline's font assets (`package-tablet-update.py`).
-- Two faces never become cursive:
-  - **SerifItalic** is the book's voice: quoted passages, excerpt previews and Tom's writing placeholder.
-  - **Literal** (Source Sans 3) is for characters that must be read exactly, such as the Companion pairing code.
-- Book pages are rendered by the document engines and never change.
-- **Plain text instead of cursive** (Settings › Accessibility) restores Source Sans 3 / Source Serif 4 everywhere; the
-  colours stay. Label-fitted controls are sized with `text::span()`, the wider of the two faces, so the switch changes
-  glyphs only: every target rect is identical in both modes (tested).
+## 2. Rules
 
-## 5. Name
+1. **Paper is white and text is black.** There are no grey fills and no grey text. Hierarchy comes from size, face and
+   weight. The one grey (`Disabled`) marks rare disabled controls.
+2. **Six colours, all clean states:** `PopCyan`, `PopMagenta`, `PopYellow`, `PopGreen`, `PopBlue`, `PopRed`.
+3. **Colour is identity, ink is state.** Selected tools, cells, rows, tabs and checkboxes are ink with paper on top,
+   as on the native toolbar.
+4. **Colour is an area at least 10 px thick, met by a black rule.** It is never a line or a word.
+5. **One colour per place**, the same everywhere the place appears: My files and Recents cyan, Notes magenta, Favorites
+   yellow, Shared green, Tom blue, Trash red. Settings is ink, because it is a utility rather than a place.
+6. **Rules are dotted ink** (2 px dots every 6 px), never a grey line.
+7. **No shadows.** A card's edge is one 2 px ink rule, and every surface paints only inside the rect it reports for
+   damage.
 
-User-visible text says "Inkie": the wordmark (cursive, with the dot of the i as a magenta bubble), lock and sleep
-screens, Settings copy ("Inkie saves your work…", the About group), "Leave Inkie", "Inkie's copy of…" and the power
-notice. Unchanged on purpose: binary and package names (`inkbound-direct-handwriting-spike3`, the app id), storage
-paths and files, the Companion pairing device name, provider prompt text and source identifiers. Renaming those would
-break the installed update, stored data and the Companion contract; they are invisible to the reader.
+## 3. The look: a well-made notebook
 
-## 6. What moved
+| Element | Treatment |
+| --- | --- |
+| Cards (popovers, palette, document menu, notices, layers, document settings, selection strip) | `bubble()` / `panel()` / `popover()`: white, radius 12, a 2 px ink rule, no shadow. |
+| Lower sheets (Note, Tom, highlight, Notes hub, Quick Browse) | `contextSheet()`: square paper the full width of the screen, with a 10 px band in the sheet's colour along the top edge, closed by an ink rule, like an index card. Note is magenta, Tom blue, Notes hub magenta, Quick Browse cyan, and the highlight sheet uses the highlight's own ink. Recents is the same sheet from the top, with its cyan band along the lower edge. |
+| Toolbar | The native column: thin ink glyphs on paper, a rule along the page edge, and the active tool on an 84 px rounded ink tile. Pen and highlighter show their current ink as a small swatch. |
+| Buttons | Rounded rectangles (radius 12). Primary is ink with paper text (Send, Done, Write a note), destructive is red with white text, secondary is paper with an ink rule, and quiet buttons are text only. |
+| Choices, segmented controls, palette cells | Outlined cells; the chosen one is ink. |
+| Tabs and filters | Underlined text tabs over a dotted rule; the chosen tab is heavier, on a solid ink bar. |
+| On/off | A checkbox: ink with a paper tick when on. |
+| Headings | `swash()`: the heading written over a slanted highlighter stroke in the place's colour, with an ink foot along its base, set under the lower x-height so the letters stay black on white. In ink (Settings) it becomes a plain underline. |
+| Drawer and Settings page list | Coloured index tabs at the left edge, as on a divided notebook. The current row is ink. |
+| Covers without art | A clothbound book: flat cloth in one of the six colours (picked from the title's hash, so a book keeps its colour), a paper label plate with the title, the format printed on the cloth, an ink spine for EPUB and a clean folded corner for PDF. |
+| Settings groups | Small spaced capitals in print, followed by a dotted rule. |
+| Progress (footer, Quick Browse) | A solid ink line along a dotted rule. Quick Browse has an ink knob for this page and an open ring where you started. |
+| Lock screen | Paper keys with an ink rule. Digits are in Literal, because a passcode is read exactly. Entered digits are solid ink dots. |
+| Keyboard | Paper keys with printed characters (Literal); the modifiers and Done are ink. |
+| Battery | An ink gauge that turns red at 20% or below. |
 
-`ib-preview --targets` on the shipping base vs this redesign: 434 of 488 targets are identical. Changed targets are all
-label-fitted controls that grew to fit cursive labels — the wordmark hit area (+36 px), Notes filter chips (≤ 42 px),
-Settings choice cells (≤ 64 px, Auto sleep), document-settings choices (≤ 18 px), the Quick Browse stepper (24 px) and
-selection-strip segments (≤ 7 px) — plus the Plain-text row. Toolbar slots, close, sheets, palette cells, rows and
-every fixed control are unchanged, and no target moves between cursive and plain text.
+**Where the fun is:**
+- the script;
+- the wordmark's ink-drop dot;
+- highlighter swashes on headings;
+- coloured index tabs and sheet edges;
+- cloth covers;
+- the sleep screen, which shows the wordmark, a yellow moon and three drops of the panel's own pigments (cyan,
+  magenta, yellow). E-ink holds its last image without power, so this stays on the closed tablet.
 
-## 7. Not changed, and why
+## 4. Type: words written, data printed
 
-- **Pen and highlighter colours.** Stroke colours come from the RGB table in `styled_ink.cpp` (protected styled-ink
-  code), and the palette swatches must match what is drawn, so `theme::Ink` keeps today's values. Proposal for the
-  owner, keeping the persisted index order: Black `#0A0A0A`, Pink → `#EC008C`, Green → `#00B04F`, Orange → `#FF7A00`,
-  Yellow → `#FFE500`, Purple → `#9B30FF`, Blue → `#1060FF`, Red → `#FF2A2A`. That is one table in `styled_ink.cpp`
-  and `theme::Ink` changed together. Existing strokes would render in the new colours (indices are stored, not RGB).
-- **Refresh policy.** No new waveform, flag or timer. Coloured UI goes through the existing regional quality path.
+| Text | Face |
+| --- | --- |
+| Titles, headings, list and menu rows, settings labels, buttons and tab labels, from `Label` (30 px) up | Caveat at role × 1.25 (`ScriptBold` for semibold), so a 30 px label draws at 37.5 px. |
+| Metadata, counts, dates, notes, captions and control labels under 30 px (`Control`, `Meta`, `Caption`) | Source Sans 3, so fine print reads as fine print and titles are always larger than the metadata under them (a v1 defect). |
+| Reading text: definitions, notices, typed notes and questions (`Face::Serif`) | Source Serif 4, never script. |
+| The book's own words (`SerifItalic`) | Source Serif 4 Italic. |
+| Characters read exactly: pairing code, passcode, keyboard keys (`Literal`) | Source Sans 3. |
+| Tom's typed reply (`type::voice`) | Script at Tom's pen sizes. |
 
-## 8. Pending physical validation
+- **Plain text instead of cursive** (Settings › Accessibility) draws every face as named. Colours are unchanged.
+- Label-fitted controls are sized with `text::span()` (the wider of the two faces), so every target rect is identical
+  in both modes (tested).
+- `ScriptBold` is an emboldened rasterisation of Caveat. No heavier file can ship, because the tablet update keeps the
+  baseline's font assets.
 
-- How each pop renders on the Gallery 3 panel (hue, saturation, any dithering), and the time to settle colour after a
-  tap, in normal and high contrast.
-- Ghosting when colour bubbles close over white (sheets, popovers, the selection strip) through the regional cleanup.
-- Legibility of 38 px cursive captions and of faux-bold headings on the panel.
-- The sleep screen's colours after hours on a closed cover.
+## 5. Wordmark
+
+The wordmark is "Inkie" in heavy script (or semibold sans with Plain text). The dot of the i is a magenta drop of ink.
+It is placed over the stem of a dotless ı, found by rendering that glyph into scratch, so it sits correctly in either
+face and does not depend on the caller's clip.
+
+## 6. Name
+
+User-visible text says "Inkie". Binary and package names, the app id, storage paths, the Companion pairing name and
+provider prompts keep "Inkbound": renaming them would break the installed update, stored data and the Companion
+contract.
+
+## 7. What moved
+
+`ib-preview --targets` on the shipping base compared with v2: **471 of 488 targets are identical** (v1: 434). The
+changes are:
+- the wordmark hit area, which follows the shorter name (127 × 112 px, still above `MinTarget`);
+- the six Auto-sleep choice cells, which move by up to 12 px because their labels are now printed at `Control` size.
+
+Toolbar slots, close, sheets, palette cells, rows, Notes filters and every fixed control are unchanged. No target moves
+between cursive and plain text.
+
+## 8. Not changed, and open questions
+
+- **Pen and highlighter colours.** Stroke colours come from the RGB table in `styled_ink.cpp`, which is protected
+  styled-ink code. `theme::Ink` must match what is drawn, so it keeps today's muted values (pink, orange and purple
+  dither on the panel). Proposal for the owner, keeping the persisted index order:
+
+  | Ink | Proposed value |
+  | --- | --- |
+  | Black | `#0A0A0A` |
+  | Pink | magenta `#E6007E` |
+  | Green | `#00A650` |
+  | Orange | no clean state: keep it (it dithers), or re-purpose the slot as cyan `#00A8E8` |
+  | Yellow | `#FFE100` |
+  | Purple | no clean state: keep it (it reads light blue), or re-purpose the slot |
+  | Blue | `#1E50DC` |
+  | Red | `#E8202A` |
+
+  Re-purposing a slot changes how existing strokes look, because indices are persisted, so it needs a storage
+  decision.
+- **Selection wash.** The transient text-selection tint (`Selection`) is a light cyan. On the panel it dithers to a
+  sparse cyan grain. It is transient and reads as a selection, so it stays. A solid cyan would hide the text's edges.
+- **Refresh policy.** No new waveform, flag or timer. Colour areas only appear when a sheet or screen opens, through
+  the existing regional quality path, and state changes are monochrome.
+- **Previews.** `ib-preview` writes a `-panel` view of every surface: the eight clean states, muted and
+  error-diffused. It is an approximation for spotting problems, not a measurement.
+
+Pending physical validation, in normal and high contrast:
+- how each colour renders;
+- the time for colour to settle after a sheet opens;
+- ghosting when a coloured band closes;
+- legibility of 37.5 px script labels and 26 px printed metadata;
+- the sleep screen's colours after hours on a closed cover.

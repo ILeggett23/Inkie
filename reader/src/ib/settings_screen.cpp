@@ -9,26 +9,27 @@
 #include <cstdio>
 namespace ib::settings {namespace {
 namespace t=ib::theme;
-const Font Title{Face::TextSemibold,theme::Heading.size},Row{Face::Text,theme::Label.size},Value{Face::Text,theme::Label.size},Group{Face::TextSemibold,theme::Meta.size},Note{Face::Text,theme::Meta.size},Nav{Face::Text,theme::Label.size};
+const Font Title{Face::TextSemibold,theme::Heading.size},Row{Face::Text,theme::Label.size},Value{Face::Text,theme::Label.size},Group{Face::SansSemibold,theme::Caption.size,2.5f},Note{Face::Text,theme::Meta.size},Nav{Face::Text,theme::Label.size};
 constexpr int RowH=108;
-constexpr std::array<std::uint32_t,unsigned(Page::Count)> PageColor{t::PopCyan,t::PopGreen,t::PopYellow,t::PopOrange,t::PopRed,t::PopViolet,t::PopMagenta,t::PopViolet,t::PopBlue};
+// Index-tab colours for the page list (General, Wi-Fi, Battery, Storage, Security, Accessibility, Reading, Tom, About):
+// the panel's clean colours, Tom blue as everywhere, About in ink.
+constexpr std::array<std::uint32_t,unsigned(Page::Count)> PageColor{t::PopCyan,t::PopBlue,t::PopYellow,t::PopGreen,t::PopRed,t::PopMagenta,t::PopCyan,t::TomAccent,t::InkPrimary};
 // Pane cursor: group labels, rows (label left, value or control right, hairline under), captions.
 struct Pane {
  Canvas& c;Targets& tg;int x0,x1,y;
- // Group labels: a small pop bubble, then the label in cursive (no capitals: cursive capitals don't read as a run).
- std::uint32_t pop{t::PopCyan};
- void group(std::string_view label){y+=t::S5;const int mid=y+28;c.fillCircle(float(x0+10),float(mid),10,pop);c.strokeCircle(float(x0+10),float(mid),9,2.5f,t::InkPrimary);
-  text::centeredLine(c,Group,{x0+34,y,x1,y+56},label,t::InkPrimary,Align::Left);y+=56;}
+ // Group labels: small spaced capitals in print, then a dotted rule to the edge, as a form's section heads.
+ void group(std::string_view label){y+=t::S5;std::string caps(label);for(auto& ch:caps)ch=char(std::toupper(static_cast<unsigned char>(ch)));
+  const float w=text::draw(c,Group,float(x0),float(y+28+text::capHeight(Group)/2),caps,t::InkPrimary);divider(c,x0+int(w)+t::S2,x1,y+28);y+=56;}
  Rect row(std::string_view label){Rect r{x0,y,x1,y+RowH};text::centeredLine(c,Row,{x0,y,x1-420,y+RowH},label,t::InkPrimary,Align::Left);divider(c,x0,x1,y+RowH);y+=RowH;return r;}
- void value(std::string_view label,std::string_view v){Rect r=row(label);text::centeredLine(c,Value,{r.x0+380,r.y0,r.x1,r.y1},v,t::InkSecondary,Align::Right);}
+ void value(std::string_view label,std::string_view v){Rect r=row(label);text::centeredLine(c,Value,{r.x0+380,r.y0,r.x1,r.y1},v,t::InkPrimary,Align::Right);}
  void toggleRow(std::string_view label,int id,bool on){Rect r=row(label);toggle(c,tg,id,{r.x1-120,r.y0,r.x1,r.y1},on);}
  // Native choice cells: outlined, the chosen one black. ids[i]<0: no target (already chosen, or no action).
  void choices(std::string_view label,const std::vector<std::string>& options,std::size_t chosen,const std::vector<int>& ids){
   Rect r=row(label);const Font f{Face::Text,theme::Control.size};int x=r.x1;
   for(int i=int(options.size())-1;i>=0;--i){const int w=std::max(120,int(text::span(f,options[std::size_t(i)]))+t::S4*2);Rect cell{x-w,r.y0+18,x,r.y1-18};x=cell.x0-8;const bool on=std::size_t(i)==chosen;
-   c.fillRound(cell,height(cell)/2.f,on?t::ToolSelected:t::Surface);c.strokeRound(cell,height(cell)/2.f,on?float(t::Outline):float(t::Hairline),t::InkPrimary);text::centeredLine(c,f,cell,options[std::size_t(i)],on?t::OnSelected:t::InkPrimary,Align::Center);
+   c.fillRound(cell,t::RadiusMedium,on?t::ToolSelected:t::Surface);c.strokeRound(cell,t::RadiusMedium,float(t::Outline),t::InkPrimary);text::centeredLine(c,f,cell,options[std::size_t(i)],on?t::OnSelected:t::InkPrimary,Align::Center);
    if(ids[std::size_t(i)]>=0)tg.add(ids[std::size_t(i)],hitArea(cell));}}
- void note(std::string_view s,int lines=2){text::block(c,Note,{x0,y+t::S3,x1,y+t::S3+lines*40+8},s,t::InkTertiary,40,lines);y+=t::S3+lines*40+t::S2;}
+ void note(std::string_view s,int lines=2){text::block(c,Note,{x0,y+t::S3,x1,y+t::S3+lines*40+8},s,t::InkPrimary,40,lines);y+=t::S3+lines*40+t::S2;}
 };
 }
 const char* pageName(Page p)noexcept{static constexpr std::array<const char*,unsigned(Page::Count)> N{"General","Wi-Fi","Battery","Storage","Security","Accessibility","Reading","Tom","About"};return unsigned(p)<N.size()?N[unsigned(p)]:"";}
@@ -36,13 +37,13 @@ std::string size(std::int64_t bytes){char out[32];if(bytes<0)return {};if(bytes<
 void paint(Canvas& c,Targets& tg,const Model& m){
  // Left: the title and the page list (the chosen page black, as in the mockup); a hairline divides it from the pane.
  {const Font h=type::ScriptHeading;swash(c,h,float(NavRect.x0),PaneRect.y0+(90+text::capHeight(h))/2.f,"Settings",t::SectionColor[7]);}
- c.vline(420,PaneRect.y0,PaneRect.y1,t::Border,2);
+ for(int y=PaneRect.y0;y+2<=PaneRect.y1;y+=6)c.fill({419,y,421,y+2},t::InkPrimary);
  for(unsigned i=0;i<unsigned(Page::Count);++i){Rect r{NavRect.x0,NavRect.y0+int(i)*100,NavRect.x1,NavRect.y0+int(i)*100+100};const bool on=Page(i)==m.page;
-  // Every settings page has its own pop colour: a dot in the list, the whole row while it is open.
-  const std::uint32_t pop=PageColor[i];if(on){const Rect b=inset(r,6);c.fillRound(b,height(b)/2.f,pop);c.strokeRound(b,height(b)/2.f,float(t::Outline),t::InkPrimary);}
-  else{c.fillCircle(float(r.x0+18),float((r.y0+r.y1)/2),9,pop);c.strokeCircle(float(r.x0+18),float((r.y0+r.y1)/2),8,2.f,t::InkPrimary);}
-  text::centeredLine(c,Nav,{r.x0+40,r.y0,r.x1-12,r.y1},pageName(Page(i)),on?t::onPop(pop):t::InkPrimary,Align::Left);tg.add(PageBase+int(i),r);}
- Pane p{c,tg,PaneRect.x0,PaneRect.x1,PaneRect.y0};p.pop=PageColor[std::min(unsigned(m.page),unsigned(Page::Count)-1)];
+  // Every page has an index tab in its colour at the list's edge; the open page is an ink row.
+  if(PageColor[i]!=t::InkPrimary){const Rect tab{r.x0,r.y0+18,r.x0+14,r.y1-18};c.fill(tab,PageColor[i]);c.hairline(tab,t::InkPrimary,t::Outline);}
+  if(on)c.fillRound({r.x0+26,r.y0+8,r.x1-12,r.y1-8},t::RadiusMedium,t::ToolSelected);
+  text::centeredLine(c,Nav,{r.x0+46,r.y0,r.x1-24,r.y1},pageName(Page(i)),on?t::OnSelected:t::InkPrimary,Align::Left);tg.add(PageBase+int(i),r);}
+ Pane p{c,tg,PaneRect.x0,PaneRect.x1,PaneRect.y0};
  text::centeredLine(c,Title,{p.x0,p.y,p.x1,p.y+90},pageName(m.page),t::InkPrimary,Align::Left);p.y+=90;
  switch(m.page){
  case Page::Reading:{
@@ -56,7 +57,7 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   p.toggleRow("Sleep when cover closes",SleepCover,m.sleepCover);
   {Rect r=p.row("Auto sleep");const Font f{Face::Text,theme::Control.size};const int n=int(m.idleChoices.size());int x=r.x1;
    for(int i=n-1;i>=0;--i){const int minutes=m.idleChoices[std::size_t(i)];const std::string label=minutes==0?std::string("Never"):std::to_string(minutes)+" min";const int w=std::max(96,int(text::span(f,label))+t::S3*2);
-    Rect cell{x-w,r.y0+18,x,r.y1-18};x=cell.x0-6;const bool on=minutes==m.sleepIdle;c.fillRound(cell,height(cell)/2.f,on?t::ToolSelected:t::Surface);c.strokeRound(cell,height(cell)/2.f,on?float(t::Outline):float(t::Hairline),t::InkPrimary);
+    Rect cell{x-w,r.y0+18,x,r.y1-18};x=cell.x0-6;const bool on=minutes==m.sleepIdle;c.fillRound(cell,t::RadiusMedium,on?t::ToolSelected:t::Surface);c.strokeRound(cell,t::RadiusMedium,float(t::Outline),t::InkPrimary);
     text::centeredLine(c,f,cell,label,on?t::OnSelected:t::InkPrimary,Align::Center);tg.add(IdleBase+i,hitArea(cell));}}
   p.note("Inkie saves your work and lets the tablet sleep. Open the cover or press power to wake.");
   break;}
