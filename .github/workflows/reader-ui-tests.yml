@@ -130,6 +130,7 @@ jobs:
           name: inkbound-host-previews
           path: .ci-previews/
           retention-days: 30
+          include-hidden-files: true
           if-no-files-found: error
       - name: Preserve compiler cache after success or failure
         if: always() && !cancelled()
