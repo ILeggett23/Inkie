@@ -17,7 +17,9 @@ Zones zones(reader::Side side,Orientation o)noexcept{
  z.popover=z.strip;
  if(o==Orientation::Portrait){z.sheet={0,SheetTop,w,h};z.sheetExpanded={0,SheetExpandedTop,w,h};}
  else{ // Side sheet on the writing-hand side (the hand rests on what it writes in), as wide as the portrait sheet is tall.
-  const int sw=h-SheetTop;z.sheet=left?Rect{w-sw,0,w,h}:Rect{0,0,sw,h};z.sheetExpanded=left?Rect{w-(h-SheetExpandedTop)*w/h,0,w,h}:Rect{0,0,(h-SheetExpandedTop)*w/h,h};}
+  // Its 860 px writing width is narrower than the 1480 px stored-stroke area: landscape needs a view scale for ink.
+  const int sw=t::ScreenHeight-SheetTop,ew=t::ScreenHeight-SheetExpandedTop;
+  z.sheet=left?Rect{w-sw,0,w,h}:Rect{0,0,sw,h};z.sheetExpanded=left?Rect{w-ew,0,w,h}:Rect{0,0,ew,h};}
  z.reservedTop={0,0,w,EdgeBand};z.reservedStatus={w-(t::ScreenWidth-StatusCornerX),0,w,EdgeBand};z.reservedBottom=z.footer;
  return z;
 }

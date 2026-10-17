@@ -70,6 +70,8 @@ int main(int argc,char** argv){try{
   check(wc>wp*0.88f&&wc<wp*1.12f,"cursive and plain set within 12% of each other");
   check(text::capHeight(f)>0&&text::ascent(f)>0,"metrics");}
  text::setPlainScript(false);
+ // Tom's typed reply follows the handwriting-size preference and lands on Tom's pen sizes (Small within 0.5 px).
+ {const float pen[]{42.5f,50,60};for(unsigned i=0;i<3;++i){check(text::resolved(type::voice(i)).size==pen[i]&&type::voiceLine(i)>=int(type::voice(i).size*1.5f),"typed cursive follows hand size");}check(type::voice(0).size==type::Voice.size,"Small is the Voice role");}
  // 5. Switching cursive off changes glyphs inside unchanged rects: every surface registers identical targets.
  auto both=[&](const char* name,auto paint){Frame a,b;auto ca=a.canvas(),cb=b.canvas();text::setPlainScript(false);paint(ca,a.tg);text::setPlainScript(true);paint(cb,b.tg);text::setPlainScript(false);
   check(sameTargets(a.tg,b.tg),name);check(a.px!=b.px,"cursive is visible on the surface");};

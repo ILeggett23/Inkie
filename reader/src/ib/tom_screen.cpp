@@ -13,8 +13,8 @@ constexpr int Margin=70,Right=1550;
 // Tom's hand: Caveat in one dark ink, with small deterministic variations per word (baseline,
 // size, spacing) so a reply reads as written rather than typeset. No colors, no animation.
 constexpr std::array<float,3> HandSizes{42,50,60};constexpr std::array<int,3> HandLines{64,74,88};
-Font answerFont(const Model& m){return m.typed?type::Voice:Font{Face::Hand,HandSizes[std::min(m.handSize,2u)]};}
-int lineHeight(const Model& m){return m.typed?type::VoiceLine:HandLines[std::min(m.handSize,2u)];}
+Font answerFont(const Model& m){return m.typed?type::voice(m.handSize):Font{Face::Hand,HandSizes[std::min(m.handSize,2u)]};}
+int lineHeight(const Model& m){return m.typed?type::voiceLine(m.handSize):HandLines[std::min(m.handSize,2u)];}
 std::vector<std::string> answerWrap(const Model& m,const std::string& s){return text::wrap(answerFont(m),s,float(Right-Margin-60-t::MinTarget));}
 unsigned mixHash(unsigned h){h^=h>>16;h*=0x7feb352du;h^=h>>15;h*=0x846ca68bu;h^=h>>16;return h;}
 // Word placement on a hand line (small per-word baseline, size and spacing changes so a reply reads as written),

@@ -8,9 +8,15 @@
 // numbers, metadata, quotes and book text stay Source Sans 3 / Source Serif 4, and the user's own ink stays strokes.
 #include "ib/text.h"
 #include "ib/theme.h"
+#include <array>
 namespace ib::type {
-inline constexpr Font Voice{Face::Script,float(theme::Body.size),0,Face::Serif};               // Tom's typed reply
-inline constexpr int VoiceLine=52;                                                             // Tom's typed line pitch
+inline constexpr Font Voice{Face::Script,float(theme::Body.size),0,Face::Serif};               // Tom's typed reply (Small)
+// Tom's typed reply follows Settings > Tom > Handwriting size, the one text-size preference, so typed cursive is drawn
+// at Tom's pen sizes (42.5/50/60 px against the pen's 42/50/60; ib/handwriting traces the same face). Small is Body.
+inline constexpr std::array<float,3> VoiceRole{float(theme::Body.size),40,48};
+inline constexpr std::array<int,3> VoiceLine{52,60,72};
+constexpr Font voice(unsigned handSize)noexcept{return {Face::Script,VoiceRole[handSize<3?handSize:2],0,Face::Serif};}
+constexpr int voiceLine(unsigned handSize)noexcept{return VoiceLine[handSize<3?handSize:2];}
 inline constexpr Font ScriptHeading{Face::Script,float(theme::Heading.size),0,Face::Text};     // one section heading per screen
 inline constexpr Font ScriptTitle{Face::Script,float(theme::Body.size),0,Face::Serif};         // note titles in the Notes hub
 inline constexpr Font ScriptEmpty{Face::Script,float(theme::Body.size),0,Face::SerifItalic};   // one-line empty states
