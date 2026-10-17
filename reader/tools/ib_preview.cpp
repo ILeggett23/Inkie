@@ -98,15 +98,25 @@ std::vector<Surface> surfaces(){
  return s;
 }
 #ifdef IB_PREVIEW_LAYOUT
-// Zone map: each zone washed in its own colour, outlined and labelled.
+// Zone map: each zone washed in its own colour and outlined; each label sits at its own anchor with the zone's rect.
 void zoneMap(Image& im,const layout::Zones& z,std::string_view title){
- auto c=im.canvas();c.fill({0,0,im.w,im.h},t::Paper);
- auto box=[&](Rect r,std::uint32_t col,std::string_view label){if(r.empty())return;
-  c.multiply(r,t::wash(col,70));c.hairline(r,col,3);text::draw(c,{Face::Text,24},float(r.x0+10),float(r.y0+30),label,t::InkPrimary);};
- box(z.content,0xff567db8u,"content");box(z.sheet,0xff55905au,"sheet");box(z.palette,0xffd78b39u,"palette");box(z.strip,0xff9467acu,"strip band");
- box(z.toolbar,0xff1c2028u,"toolbar");box(z.close,0xff1c2028u,"close");box(z.footer,0xff8c8c8cu,"footer");
- box(z.reservedTop,0xffbd5250u,"edge: recents / drawer");box(z.reservedStatus,0xffbd5250u,"quick settings");box(z.reservedBottom,0xffbd5250u,"edge: quick browse");
- text::draw(c,{Face::TextSemibold,36},float(im.w/2-300),float(im.h/2),title,t::InkPrimary);}
+ auto c=im.canvas();c.fill({0,0,im.w,im.h},t::Paper);const Font f{Face::Text,float(t::Meta.size)};
+ auto box=[&](Rect r,std::uint32_t col,int strength){if(!r.empty()){c.multiply(r,t::wash(col,strength));c.hairline(r,col,3);}};
+ auto label=[&](Rect r,std::string_view name,int x,int y){if(r.empty())return;char at[64];std::snprintf(at,sizeof at," {%d,%d,%d,%d}",r.x0,r.y0,r.x1,r.y1);
+  const std::string s=std::string(name)+at;const float w=text::measure(f,s);const int x0=std::clamp(x,4,im.w-int(w)-12);c.fill({x0-4,y-28,x0+int(w)+6,y+10},t::Paper);text::draw(c,f,float(x0),float(y),s,t::InkPrimary);};
+ box(z.content,0xff567db8u,40);box(z.sheet,0xff55905au,60);box(z.strip,0xff9467acu,30);box(z.palette,0xffd78b39u,90);
+ box(z.toolbar,0xff1c2028u,70);box(z.close,0xff1c2028u,90);box(z.footer,0xff8c8c8cu,80);box(z.reservedTop,0xffbd5250u,90);box(z.reservedStatus,0xffbd5250u,120);
+ const bool leftBar=z.toolbar.x0==0;const int inner=leftBar?z.toolbar.x1+24:24;
+ label(z.reservedTop,"edge band: recents / drawer",inner,z.reservedTop.y0+50);
+ label(z.reservedStatus,"status corner: quick settings",z.reservedStatus.x0+16,z.reservedStatus.y1+40);
+ label(z.close,"close",leftBar?z.close.x0-360:z.close.x1+16,z.close.y1+80);
+ label(z.palette,"palette",z.palette.x0+16,z.palette.y0+140);
+ label(z.strip,"strip / popover",inner+(leftBar?560:440),z.strip.y0+200);
+ label(z.content,"content",inner+(leftBar?560:440),z.strip.y0+260);
+ label(z.toolbar,"toolbar",leftBar?inner:z.toolbar.x0-330,z.palette.y1+60);
+ label(z.sheet,"sheet",z.sheet.x0==0?inner:z.sheet.x0+24,z.sheet.y0==0?z.strip.y0+330:z.sheet.y0+50);
+ label(z.footer,"footer = edge band: quick browse",inner,z.footer.y0+60);
+ text::draw(c,{Face::TextSemibold,float(t::Subhead.size)},float(inner),float(z.content.y1/2),title,t::InkPrimary);}
 #endif
 #ifdef IB_PREVIEW_SCRIPT
 // Simulated panel passes over a band: fast monochrome (1-bit, as a fast regional update leaves text before its quality
