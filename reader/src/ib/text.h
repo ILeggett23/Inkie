@@ -17,8 +17,9 @@ enum class Face:unsigned {Serif,SerifItalic,SerifSemibold,Text,TextItalic,TextSe
 // size is the role size: a Script font is drawn at ScriptScale times it, its plain face at exactly it.
 struct Font {Face face{Face::Text};float size{30};float tracking{0};Face plain{Face::Text};constexpr Font(Face f=Face::Text,float s=30,float t=0,Face p=Face::Text)noexcept:face(f),size(s),tracking(t),plain(p){}};
 // Caveat's x-height is 0.357 em against 0.486 (Source Sans 3) and 0.475 (Source Serif 4). At 1.25x a cursive role sets
-// about the same line width as its plain face (within 3-4%), so switching faces neither reflows a layout nor moves a
-// control; matching x-height exactly (1.36x) would make lines 9% wider and ascenders collide.
+// within 7% of its plain face's line width (0.93-1.03 on the candidate sheets), and every cursive rect is fitted, so
+// switching faces neither reflows a layout nor moves a control; matching x-height exactly (1.36x) would make lines
+// up to 12% wider and ascenders collide.
 inline constexpr float ScriptScale=1.25f;
 enum class Align {Left,Center,Right};
 namespace text {

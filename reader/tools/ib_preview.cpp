@@ -3,7 +3,9 @@
 // painters the device uses, into a 1620x2160 RGB32 buffer, and written as PNG. Painter-level only: the shell's
 // compositing, refresh scheduling and the e-ink panel are not simulated (see docs/LAYOUT-ARCHITECTURE.md).
 // Builds against older trees too: layout zones and the cursive role are used only when their headers exist.
-//   ib-preview <reader-dir> <out-dir>
+//   ib-preview <reader-dir> <out-dir>                       every surface, zone maps, the Caveat cursive sheet
+//   ib-preview <reader-dir> <out-dir> --script-sheet <name>  only the cursive sheet, for whatever Caveat.ttf the
+//                                                            font directory holds (candidate comparison)
 #include "ib/library_screen.h"
 #include "ib/notes_screen.h"
 #include "ib/reader_screen.h"
@@ -14,7 +16,13 @@
 #include "ib/layout.h"
 #define IB_PREVIEW_LAYOUT 1
 #endif
+#if __has_include("ib/type.h")
+#include "ib/handwriting.h"
+#include "ib/type.h"
+#define IB_PREVIEW_SCRIPT 1
+#endif
 #include <zlib.h>
+#include <cmath>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -98,12 +106,48 @@ void zoneMap(Image& im,const layout::Zones& z,std::string_view title){
  box(z.reservedTop,0xffbd5250u,"edge: recents / drawer");box(z.reservedStatus,0xffbd5250u,"quick settings");box(z.reservedBottom,0xffbd5250u,"edge: quick browse");
  text::draw(c,{Face::TextSemibold,36},float(im.w/2-300),float(im.h/2),title,t::InkPrimary);}
 #endif
+#ifdef IB_PREVIEW_SCRIPT
+// Simulated panel passes over a band: fast monochrome (1-bit, as a fast regional update leaves text before its quality
+// pass) and 16 gray levels (the quality pass). Not optical: a host stand-in for what each waveform can represent.
+void quantize(Image& im,Rect r,int levels){for(int y=r.y0;y<r.y1;++y)for(int x=r.x0;x<r.x1;++x){auto& p=im.px[std::size_t(y)*im.w+x];
+ const int g=(int(p>>16&255)*30+int(p>>8&255)*59+int(p&255)*11)/100;const int q=levels==2?(g<128?0:255):(g*(levels-1)+127)/255*255/(levels-1);p=0xff000000u|std::uint32_t(q)<<16|std::uint32_t(q)<<8|std::uint32_t(q);}}
+// Cursive candidate sheet: every proposed role size, its plain counterpart, Tom's pen strokes at the same size, and
+// the same line after simulated fast and quality passes, in high contrast and over a colour wash. Measurements printed.
+void scriptSheet(Image& im,std::string_view name){
+ auto c=im.canvas();c.fill({0,0,im.w,im.h},t::Paper);const Font label{Face::Text,float(t::Caption.size)};
+ text::draw(c,{Face::TextSemibold,float(t::Subhead.size)},70,80,std::string(name)+" \xE2\x80\x94 cursive candidate sheet (229 ppi, device pixels)",t::InkPrimary);
+ const char* line="Nothing here yet \xC2\xB7 On paired opposites \xC2\xB7 0123456789 \xC2\xB7 \xE2\x80\x9CWhy?\xE2\x80\x9D (50%) \xC2\xB7 \xC3\x87" "a, Stra\xC3\x9F" "e, \xCE\x95\xCE\xBB\xCE\xBB\xCE\xB7\xCE\xBD\xCE\xB9\xCE\xBA\xCE\xAC, \xD0\xA0\xD1\x83\xD1\x81\xD1\x81\xD0\xBA\xD0\xB8\xD0\xB9";
+ const char* sample="The quick brown fox jumps over the lazy dog, 1775.";
+ int y=120;
+ for(int role:{30,34,38,44}){if(y+7*int(role*ScriptScale*1.6f)>im.h)break; // a size that cannot fit whole is left off
+  const Font cursive{Face::Script,float(role),0,Face::Serif};const Font drawn=text::resolved(cursive);
+  float xh=0;{Image probe(200,200);auto pc=probe.canvas();text::draw(pc,cursive,20,150,"x",0xff000000u);int top=200,bottom=-1; // measured, not assumed: candidates differ
+   for(int yy=0;yy<200;++yy)for(int xx=0;xx<200;++xx)if((probe.px[std::size_t(yy)*200+xx]&255)<128){top=std::min(top,yy);bottom=std::max(bottom,yy);}xh=bottom>=top?float(bottom-top+1):0;}const float ratio=text::measure(cursive,sample)/text::measure({Face::Serif,float(role)},sample);
+  char info[200];std::snprintf(info,sizeof info,"role %d px \xE2\x86\x92 drawn %.1f px \xC2\xB7 x-height %.1f px (%.2f mm) \xC2\xB7 width vs Source Serif 4 %.2f%s",role,double(drawn.size),double(xh),double(xh)*25.4/229,double(ratio),role<type::ScriptMinimumRole?" \xC2\xB7 below the floor: rejected":"");
+  text::draw(c,label,70,float(y+30),info,role<type::ScriptMinimumRole?t::Caution:t::InkSecondary);y+=44;
+  const int lh=int(std::ceil(text::ascent(cursive)+text::descent(cursive)))+8;
+  auto row=[&](std::string_view tag,auto paint){text::draw(c,label,70,float(y+lh/2+8),tag,t::InkTertiary);const Rect band{300,y,im.w-40,y+lh};paint(band);return band;};
+  const Rect live=row("cursive",[&](Rect b){text::draw(c,cursive,float(b.x0),float(b.y0)+text::ascent(cursive)+4,text::fit(cursive,line,float(width(b))),t::InkPrimary);});y+=lh;
+  row("plain",[&](Rect b){const Font f{Face::Serif,float(role)};text::draw(c,f,float(b.x0),float(b.y0)+text::ascent(cursive)+4,text::fit(f,line,float(width(b))),t::InkPrimary);});y+=lh;
+  row("Tom's pen",[&](Rect b){float x=float(b.x0);for(std::string w:{"Nothing","here","yet","On","paired","opposites","1775"}){const auto& word=hand::word(w,drawn.size);hand::draw(c,word,x,float(b.y0)+text::ascent(cursive)+4,-1,t::InkPrimary);x+=word.advance+drawn.size*0.3f;}});y+=lh;
+  for(int levels:{2,16}){const Rect src=live;const Rect dst{src.x0,y,src.x1,y+lh};for(int yy=0;yy<lh;++yy)std::copy_n(im.px.begin()+std::ptrdiff_t((src.y0+yy)*im.w+src.x0),width(src),im.px.begin()+std::ptrdiff_t((dst.y0+yy)*im.w+dst.x0));quantize(im,dst,levels);
+   text::draw(c,label,70,float(y+lh/2+8),levels==2?"fast 1-bit":"quality 16 gray",t::InkTertiary);y+=lh;}
+  row("high contrast",[&](Rect b){t::setHighContrast(true);text::draw(c,cursive,float(b.x0),float(b.y0)+text::ascent(cursive)+4,text::fit(cursive,line,float(width(b))),t::InkSecondary);t::setHighContrast(false);});y+=lh;
+  row("colour wash",[&](Rect b){text::draw(c,cursive,float(b.x0),float(b.y0)+text::ascent(cursive)+4,text::fit(cursive,line,float(width(b))),t::InkPrimary);c.multiply(b,t::wash(t::Ink[4],120));});y+=lh+12;
+ }
+}
+#endif
 }
 int main(int argc,char** argv){
- if(argc!=3){std::fprintf(stderr,"usage: ib-preview <reader-dir> <out-dir>\n");return 2;}
+ const bool sheetOnly=argc==5&&std::string_view(argv[3])=="--script-sheet";
+ if(argc!=3&&!sheetOnly){std::fprintf(stderr,"usage: ib-preview <reader-dir> <out-dir> [--script-sheet <name>]\n");return 2;}
  const std::filesystem::path reader=argv[1],out=argv[2];if(!text::load(reader/"assets/fonts")){std::fprintf(stderr,"fonts missing\n");return 2;}
  std::filesystem::create_directories(out);unsigned written=0;
  auto save=[&](const Image& im,const std::string& name){if(!png(out/(name+".png"),im)){std::fprintf(stderr,"write failed %s\n",name.c_str());std::exit(1);}++written;};
+#ifdef IB_PREVIEW_SCRIPT
+ {Image im;scriptSheet(im,sheetOnly?argv[4]:"Caveat");save(im,std::string("cursive-sheet-")+(sheetOnly?argv[4]:"Caveat"));}
+ if(sheetOnly){std::printf("IB_PREVIEW_PASS images=%u\n",written);return 0;}
+#endif
  struct Variant {std::string suffix;bool contrast,plain;};
  std::vector<Variant> variants{{"",false,false},{"-high-contrast",true,false}};
 #if __has_include("ib/type.h")
