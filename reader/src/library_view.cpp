@@ -89,7 +89,7 @@ void LibraryView::paint(spike::Surface s,const QVector<library::Document>& docs,
  if(section_==Section::Notes||section_==Section::Settings){m.pages=1;m.documents.clear();}
  m.drawer=menu_;m.create=create_;m.battery=battery_;m.charging=charging_;m.wifi=wifi_;m.clock=clock_;m.clockZone=clockZone_;
  m.createItems={{MenuNotebook,ib::Icon::Note,"Notebook","Lined, grid, dot or blank pages"}};
- if(userEnded_)m.drawerExtras.push_back({MenuWifi,ib::Icon::Wifi,"Wi-Fi",{}});else m.drawerExtras.push_back({MenuLeave,ib::Icon::Back,"Leave Inkbound",{}}); /* D2: a user-ended session is left only with the power button */
+ if(userEnded_)m.drawerExtras.push_back({MenuWifi,ib::Icon::Wifi,"Wi-Fi",{}});else m.drawerExtras.push_back({MenuLeave,ib::Icon::Back,"Leave Inkie",{}}); /* D2: a user-ended session is left only with the power button */
  ib::library::base(c,targets_,m);
  if(section_==Section::Notes){
   ib::notes::Hub hub;hub.embedded=true;hub.favorites=true;hub.canCreate=false;hub.filter=noteFilter_;hub.idOffset=HubOffset;

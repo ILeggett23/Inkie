@@ -8,6 +8,7 @@
 #include "ib/notes_screen.h"
 #include "ib/reader_screen.h"
 #include "ib/settings_screen.h"
+#include "ib/sheets.h"
 #include "ib/tom_screen.h"
 #include "ib/type.h"
 #include <cstdio>
@@ -80,10 +81,16 @@ int main(int argc,char** argv){try{
  both("settings targets unchanged",[](Canvas& c,Targets& tg){settings::Model m;m.page=settings::Page::Accessibility;settings::paint(c,tg,m);});
  both("notes hub targets unchanged",[](Canvas& c,Targets& tg){notes::Hub h;notes::Entry e;e.title="Paired opposites";e.excerpt="It was the best of times";h.entries={e,e};notes::hub(c,tg,h);});
  both("tom typed reply targets unchanged",[](Canvas& c,Targets& tg){tom::Model m;m.showAnswer=true;m.typed=true;m.answer=Answer;m.question="Why?";tom::paint(c,tg,m);});
- // The handwriting view never changes with the switch: Tom's pen strokes are not text.
- {Frame a,b;auto ca=a.canvas(),cb=b.canvas();tom::Model m;m.showAnswer=true;m.answer=Answer;text::setPlainScript(false);tom::paint(ca,a.tg,m);text::setPlainScript(true);tom::paint(cb,b.tg,m);text::setPlainScript(false);check(a.px==b.px,"stroke handwriting unaffected by plain text");}
- // Only cursive roles change: a surface without them is pixel-identical in both modes.
- {Frame a,b;auto ca=a.canvas(),cb=b.canvas();reader::Tools tools;text::setPlainScript(false);reader::toolbar(ca,a.tg,tools);reader::penPanel(ca,a.tg,tools);text::setPlainScript(true);reader::toolbar(cb,b.tg,tools);reader::penPanel(cb,b.tg,tools);text::setPlainScript(false);check(a.px==b.px,"controls never cursive");}
+ // Tom's pen reply never changes with the switch: his strokes are not text (the writing area is pixel-identical).
+ {Frame a,b;auto ca=a.canvas(),cb=b.canvas();tom::Model m;m.showAnswer=true;m.answer=Answer;text::setPlainScript(false);tom::paint(ca,a.tg,m);text::setPlainScript(true);tom::paint(cb,b.tg,m);text::setPlainScript(false);
+  const Rect area{tom::WritingArea.x0,tom::WritingArea.y0,tom::WritingArea.x1-t::MinTarget,tom::WritingArea.y1};bool same=true;
+  for(int y=area.y0;y<area.y1&&same;++y)for(int x=area.x0;x<area.x1;++x)if(a.px[std::size_t(y)*t::ScreenWidth+x]!=b.px[std::size_t(y)*t::ScreenWidth+x]){same=false;break;}
+  check(same,"Tom's pen strokes unaffected by plain text");}
+ // The toolbar carries no text: pixel-identical in both modes. The palette's labels change face, never its targets.
+ {Frame a,b;auto ca=a.canvas(),cb=b.canvas();reader::Tools tools;text::setPlainScript(false);reader::toolbar(ca,a.tg,tools);text::setPlainScript(true);reader::toolbar(cb,b.tg,tools);text::setPlainScript(false);check(a.px==b.px,"toolbar identical in both modes");}
+ both("pen palette targets unchanged",[](Canvas& c,Targets& tg){reader::Tools tools;reader::penPanel(c,tg,tools);});
+ both("selection strip targets unchanged",[](Canvas& c,Targets& tg){reader::SelectionBar bar;bar.anchor={300,900,1200,960};bar.define=true;reader::selectionToolbar(c,tg,bar);});
+ both("document settings targets unchanged",[](Canvas& c,Targets& tg){sheets::Settings st;st.pdf=false;st.tab=sheets::Tab::Reading;sheets::settings(c,tg,st);});
  // 6. The settings row exists, is a full-size control, and sits below every existing Accessibility row (none moved:
  //    High contrast and Reduce motion keep the positions they had before the row was added).
  {Frame f;auto c=f.canvas();settings::Model m;m.page=settings::Page::Accessibility;settings::paint(c,f.tg,m);const Rect r=f.tg.rect(settings::PlainText);check(!r.empty()&&width(r)>=t::MinTarget&&height(r)>=t::MinTarget,"plain text toggle is a full target");

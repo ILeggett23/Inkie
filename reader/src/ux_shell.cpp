@@ -388,7 +388,7 @@ bool Shell::finger(int x,int y,bool longPress,bool markerContact){if(lock_!=Lock
   case LA::Import:return startImport();
   case LA::NewNotebook:return openNewNotebook();
   case LA::Effects:libraryEffects_=!libraryEffects_&&!prefs_.reduceMotion;libraryRefresh();revealSceneChanged();return true;
-  case LA::Exit:if(userEnded_){notice("Press the power button to leave Inkbound");return true;}return action(Action::Exit);
+  case LA::Exit:if(userEnded_){notice("Press the power button to leave Inkie");return true;}return action(Action::Exit);
   case LA::ToolHandle:setToolHandle(!toolHandleShown());libraryRefresh();return true;
   case LA::LeftHanded:setLeftHanded(!leftHanded());libraryRefresh();return true;
   case LA::ReadingProgress:setReadingProgress(!readingProgress());libraryRefresh();return true;

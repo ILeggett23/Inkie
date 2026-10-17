@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 #pragma once
-// Cursive roles: Inkbound's written voice inside typed layouts (docs/LAYOUT-ARCHITECTURE.md, "Cursive roles").
-// Each is drawn in Caveat (Face::Script) at ScriptScale times its role size, the same face Tom's pen strokes are traced
-// from, so typed cursive and Tom's handwriting read as one hand. With Settings > Accessibility > Plain text instead of
-// cursive, each draws in its named plain face at the role size. Rects and line heights come from the role, never from
-// the face, so a switch changes glyphs inside unchanged rects. Nothing else in Inkbound is cursive: controls, labels,
-// numbers, metadata, quotes and book text stay Source Sans 3 / Source Serif 4, and the user's own ink stays strokes.
+// Cursive roles (docs/INKIE-DESIGN.md). Inkie writes every UI face in Caveat (ib/text.h); these roles name the places
+// whose plain-text face differs from a UI default — Tom's typed reply and note titles fall back to Source Serif 4,
+// headings to Source Sans 3, empty states to Serif Italic — and Tom's reply sizes, which follow his pen. Caveat is the
+// face Tom's pen strokes are traced from, so typed cursive and Tom's handwriting read as one hand. Rects and line
+// heights come from the role, never the face. The user's own ink is always real strokes; the book's words (pages and
+// quoted passages) stay in the book's type.
 #include "ib/text.h"
 #include "ib/theme.h"
 #include <array>

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 #pragma once
-// One spatial system for every Inkbound surface (docs/LAYOUT-ARCHITECTURE.md). Zones are device-pixel rects on the
+// One spatial system for every Inkie surface (docs/LAYOUT-ARCHITECTURE.md). Zones are device-pixel rects on the
 // 1620x2160 panel. Painters place surfaces inside their zone and register targets from the same rects, so hit testing
 // never disagrees with what was drawn. Portrait values are the shipping geometry; the runtime has no rotation, so the
 // landscape zones are a specification (previews and docs), not a reachable layout.

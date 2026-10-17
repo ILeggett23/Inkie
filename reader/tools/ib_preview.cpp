@@ -9,6 +9,9 @@
 //   ib-preview <reader-dir> <out-dir> --targets              every surface's registered targets (id and rect) as
 //                                                            text, to diff two trees: a moved control shows up
 #include "ib/library_screen.h"
+#include "ib/lock_screen.h"
+#include "ib/sleep_screen.h"
+#include "ib/status_screen.h"
 #include "ib/notes_screen.h"
 #include "ib/reader_screen.h"
 #include "ib/settings_screen.h"
@@ -49,7 +52,14 @@ bool png(const std::filesystem::path& path,const Image& im){
 void page(Canvas& c){
  c.fill({0,0,W,t::PageFitHeight},t::Paper);
  const char* para="It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was the spring of hope, it was the winter of despair.";
+ // Book pages are rendered by the document engines in the book's own type, never in Inkie's cursive.
+#if __has_include("ib/type.h")
+ const bool plain=text::plainScript();text::setPlainScript(true);
+#endif
  int y=180;for(int i=0;i<6&&y<1900;++i)y=text::block(c,{Face::Serif,36},{170,y,1450,2000},para,t::InkPrimary,58,6)+40;
+#if __has_include("ib/type.h")
+ text::setPlainScript(plain);
+#endif
 }
 std::vector<library::Document> books(){std::vector<library::Document> d;const char* titles[]{"A Tale of Two Cities","Middlemarch","The Origin of Species","Field Notes","Quarterly report","Walden"};const char* fmt[]{"epub","epub","epub","pdf","pdf","epub"};
  for(int i=0;i<6;++i)d.push_back({titles[i],std::string("Opened ")+std::to_string(i+1)+" d ago \xC2\xB7 "+std::to_string(12+i*7)+"%",fmt[i],{},i==1});return d;}
@@ -95,6 +105,11 @@ std::vector<Surface> surfaces(){
  s.push_back({"sheet-document-settings",[](Canvas& c,Targets& tg){page(c);sheets::Settings st;st.pdf=false;st.tab=sheets::Tab::Reading;st.pages=412;sheets::settings(c,tg,st);}});
  s.push_back({"sheet-new-notebook",[](Canvas& c,Targets& tg){auto m=libraryModel();library::paint(c,tg,m);sheets::NewNotebook n;n.title="Reading notes";n.folder="My files";sheets::newNotebook(c,tg,n);}});
  s.push_back({"keyboard",[](Canvas& c,Targets& tg){page(c);KeyboardModel k;k.title="Rename";k.value="Reading notes";keyboard(c,tg,k);}});
+ s.push_back({"lock-screen",[](Canvas& c,Targets& tg){lock::Model m;m.entered=2;m.cancel=true;lock::paint(c,tg,m);}});
+ s.push_back({"sleep-screen",[](Canvas& c,Targets&){sleep::paint(c);}});
+ s.push_back({"status-panel",[](Canvas& c,Targets& tg){auto m=libraryModel();library::paint(c,tg,m);status::Model st;st.battery=73;st.wifi=1;st.light=819;st.maximum=2047;st.clock="9:41";status::panel(c,tg,st);}});
+ s.push_back({"highlight-sheet",[](Canvas& c,Targets& tg){page(c);notes::HighlightDetail h;h.excerpt="It was the best of times, it was the worst of times";h.source="A Tale of Two Cities \xC2\xB7 p. 12";notes::highlight(c,tg,h);}});
+ s.push_back({"notice",[](Canvas& c,Targets& tg){auto m=libraryModel();library::paint(c,tg,m);sheets::Notice n;n.title="Move to Trash?";n.body="Middlemarch moves to Trash. You can restore it from there.";n.actions={{1,Icon::Close,"Cancel"},{2,Icon::Trash,"Move to Trash",true}};sheets::notice(c,tg,n);}});
  return s;
 }
 #ifdef IB_PREVIEW_LAYOUT

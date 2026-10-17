@@ -43,7 +43,7 @@ void LibraryManage::paint(spike::Surface s){if(!active())return;ib::Canvas c(s);
   ib::text::draw(c,{ib::Face::Text,float(t::Caption.size)},float(head.x0+t::S4),float(head.y0+104),document_.folder.isEmpty()?"My files":utf8("My files / "+document_.folder),t::InkSecondary);
   ib::iconButton(c,targets_,Close,{head.x1-t::MinTarget,head.y0+20,head.x1,head.y1-20},ib::Icon::Close);
   ib::sheets::menu(c,targets_,{anchor.x1-640,anchor.y0-10,anchor.x1,anchor.y0},items,640);return;}
- if(page_==Page::ConfirmDelete){ib::sheets::notice(c,targets_,{"Delete permanently?","Inkbound's copy of “"+utf8(document_.title)+"” and all its notes, highlights and handwriting will be deleted. Your original file is not affected. This cannot be undone.",{{CancelDelete,ib::Icon::Close,"Cancel"},{ConfirmDelete,ib::Icon::Trash,"Delete",true}}});return;}
+ if(page_==Page::ConfirmDelete){ib::sheets::notice(c,targets_,{"Delete permanently?","Inkie's copy of “"+utf8(document_.title)+"” and all its notes, highlights and handwriting will be deleted. Your original file is not affected. This cannot be undone.",{{CancelDelete,ib::Icon::Close,"Cancel"},{ConfirmDelete,ib::Icon::Trash,"Delete",true}}});return;}
  ib::KeyboardModel k;k.title=page_==Page::Rename?"Rename book":"Folder (empty for My files)";k.value=utf8(value_);k.hint=page_==Page::Rename?"Title":"Folder name";k.shift=upper_;k.symbols=symbols_;k.paste=!sharedClipboard().isEmpty();ib::keyboard(c,targets_,k);
 }
 }

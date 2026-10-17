@@ -83,8 +83,8 @@ void settings(Canvas& c,Targets& tg,const Settings& m){
    stepper(c,tg,{cx.x0,y,cx.x1,y+row},"Line width",std::to_string(m.lineWidth),LineLess,LineMore,!viewBlocked&&m.lineWidth>64,!viewBlocked&&m.lineWidth<4094);y+=row;
    // Native text-and-layout choices: three outlined cells, the chosen one black. "Book" keeps the publisher's choice.
    auto choices=[&](std::string_view label,std::array<const char*,3> options,unsigned selected,int firstId){const Font cf{Face::Text,theme::Control.size};text::centeredLine(c,Label,{cx.x0,y,cx.x0+260,y+row},label,t::InkPrimary,Align::Left);
-    int x=cx.x1;for(int i=2;i>=0;--i){int w=int(text::measure(cf,options[std::size_t(i)]))+t::S4*2;Rect cell{x-w,y+16,x,y+row-16};x=cell.x0-8;const bool on=unsigned(i)==selected;
-     if(on)c.fill(cell,t::ToolSelected);else c.hairline(cell,t::Border,2);text::centeredLine(c,cf,cell,options[std::size_t(i)],on?t::Paper:viewBlocked?t::Disabled:t::InkPrimary,Align::Center);if(!viewBlocked)tg.add(firstId+i,hitArea(cell));}
+    int x=cx.x1;for(int i=2;i>=0;--i){int w=int(text::span(cf,options[std::size_t(i)]))+t::S4*2;Rect cell{x-w,y+16,x,y+row-16};x=cell.x0-8;const bool on=unsigned(i)==selected;
+     c.fillRound(cell,height(cell)/2.f,on?t::ToolSelected:t::Surface);c.strokeRound(cell,height(cell)/2.f,on?float(t::Outline):float(t::Hairline),viewBlocked?t::Disabled:t::InkPrimary);text::centeredLine(c,cf,cell,options[std::size_t(i)],on?t::OnSelected:viewBlocked?t::Disabled:t::InkPrimary,Align::Center);if(!viewBlocked)tg.add(firstId+i,hitArea(cell));}
     divider(c,cx.x0,cx.x1,y+row);y+=row;};
    choices("Font",{"Book","Serif","Sans"},m.family,FamilyBase);choices("Line spacing",{"Small","Medium","Large"},m.spacing,SpacingBase);
    choices("Margins",{"Small","Medium","Large"},m.margins,MarginBase);choices("Justification",{"Book","Left","Justified"},m.alignment,AlignBase);}
@@ -100,8 +100,8 @@ void settings(Canvas& c,Targets& tg,const Settings& m){
    const PageImage image=m.pageImage?m.pageImage(page):PageImage{};
    if(!image.empty()){shown=c.grayImage(frame,image.gray,image.width,image.height,image.width,t::Paper);if(shown.empty())shown=frame;}
    else c.fill(frame,t::Paper);
-   c.hairline(shown,t::Border,2);
-   if(page==m.selectedPage)c.hairline(outset(shown,10),t::InkPrimary,4);
+   c.hairline(shown,t::InkPrimary,t::Hairline);
+   if(page==m.selectedPage)c.strokeRound(outset(shown,10),t::RadiusSmall,5.f,t::PopMagenta);
    if(std::any_of(m.bookmarks.begin(),m.bookmarks.end(),[&](const auto& b){return b.first==page;}))icon(c,Icon::BookmarkFilled,{shown.x1-12-t::IconSmall,shown.y0,shown.x1-12,shown.y0+t::IconSmall},t::InkPrimary);
    const Rect number{frame.x0,frame.y1+t::S1,frame.x1,frame.y1+numberH};const bool here=page==m.currentPage;
    text::centeredLine(c,here?Font{Face::SansSemibold,Numbers.size}:Numbers,number,std::to_string(page+1),t::InkPrimary);
@@ -172,18 +172,21 @@ Rect documentMenu(Canvas& c,Targets& tg,Rect tile,std::string_view title,const s
  return r;
 }
 Rect quickBrowse(Canvas& c,Targets& tg,const QuickBrowse& m){
- const Rect r=QuickBrowseRect;c.fill(r,t::Surface);c.hline(0,t::ScreenWidth,r.y0,t::PopoverBorder,2);const int x0=QuickTrackRect.x0,x1=QuickTrackRect.x1;
+ const Rect r=QuickBrowseRect;contextSheet(c,r.y0,t::PopCyan);const int x0=QuickTrackRect.x0,x1=QuickTrackRect.x1;
  text::draw(c,{Face::Text,theme::Body.size},float(x0),float(r.y0+44+33),"Quick browse",t::InkPrimary);
  const Font meta{Face::Text,theme::Meta.size};text::centeredLine(c,meta,{x0,r.y0+100,x1-300,r.y0+150},text::fit(meta,m.title,float(x1-300-x0)),t::InkSecondary,Align::Left);
  text::centeredLine(c,meta,{x1-300,r.y0+100,x1,r.y0+150},m.position,t::InkSecondary,Align::Right);
  // The track: the start point (small dot) and the current page (knob), placed by page.
- const int ty=(QuickTrackRect.y0+QuickTrackRect.y1)/2;c.hline(x0,x1,ty-2,0xffbababau,4);const int last=std::max(1,m.total-1);
+ // A thick bubble track filled cyan up to this page, the start point as a small dot, this page as a magenta bubble.
+ const int ty=(QuickTrackRect.y0+QuickTrackRect.y1)/2;const int last=std::max(1,m.total-1);
  auto at=[&](int page){return float(x0)+float(x1-x0)*float(std::clamp(page,0,last))/float(last);};
- if(m.start!=m.page)c.fillCircle(at(m.start),float(ty),9,t::InkPrimary);c.fillCircle(at(m.page),float(ty),17,t::InkPrimary);tg.add(QuickTrack,QuickTrackRect);
+ {const Rect track{x0,ty-9,x1,ty+9};c.fillRound(track,9,t::SurfaceSunken);const int fill=int(at(m.page));if(fill>x0+18)c.fillRound({x0,track.y0,fill,track.y1},9,t::PopCyan);c.strokeRound(track,9,2.5f,t::InkPrimary);}
+ if(m.start!=m.page){c.fillCircle(at(m.start),float(ty),10,t::PopYellow);c.strokeCircle(at(m.start),float(ty),9,2.5f,t::InkPrimary);}
+ c.fillCircle(at(m.page),float(ty),22,t::PopMagenta);c.strokeCircle(at(m.page),float(ty),20.5f,float(t::Outline),t::InkPrimary);tg.add(QuickTrack,QuickTrackRect);
  const int by=QuickTrackRect.y1+8,bh=t::MinTarget;
  if(m.start!=m.page)textAction(c,tg,QuickReturn,{x0,by,x0+460,by+bh},"Return to where you started");
  // Single-page steps for exact positioning (a tap on the track lands within a page or two).
- const Font step{Face::Text,theme::Control.size};const std::string label=std::to_string(m.page+1)+" of "+std::to_string(std::max(1,m.total));const int lw=int(text::measure(step,label))+t::S3*2;
+ const Font step{Face::Text,theme::Control.size};const std::string label=std::to_string(m.page+1)+" of "+std::to_string(std::max(1,m.total));const int lw=int(text::span(step,label))+t::S3*2;
  iconButton(c,tg,QuickNext,{x1-t::MinTarget,by,x1,by+bh},Icon::ChevronRight,{false,m.page+1>=m.total},32);
  text::centeredLine(c,step,{x1-t::MinTarget-lw,by,x1-t::MinTarget,by+bh},label,t::InkPrimary,Align::Center);
  iconButton(c,tg,QuickPrevious,{x1-2*t::MinTarget-lw,by,x1-t::MinTarget-lw,by+bh},Icon::ChevronLeft,{false,m.page<=0},32);
@@ -198,7 +201,7 @@ Rect notice(Canvas& c,Targets& tg,const Notice& n,Rect bounds){
  return r;
 }
 Rect recents(Canvas& c,Targets& tg,std::span<const RecentBook> books){
- const Rect r{0,0,theme::ScreenWidth,RecentsHeight};c.fill(r,t::Paper);c.hline(0,theme::ScreenWidth,r.y1-1,t::BorderStrong,2);
+ const Rect r{0,0,theme::ScreenWidth,RecentsHeight};c.fill(r,t::Paper);{const float R=t::RadiusLarge;const Rect s{0,-int(R)-8,theme::ScreenWidth,r.y1};c.fill(r,t::Paper);c.strokeRound(s,R,float(t::Outline),t::InkPrimary);c.fillRound(centered({0,r.y1-30,theme::ScreenWidth,r.y1-10},140,16),8,t::SectionColor[3]);c.strokeRound(centered({0,r.y1-30,theme::ScreenWidth,r.y1-10},140,16),8,2.f,t::InkPrimary);}
  text::draw(c,{Face::Text,float(t::Label.size)},float(t::Gutter),72.f,"Recent",t::InkPrimary);
  button(c,tg,RecentsLibrary,{theme::ScreenWidth-t::Gutter-300,24,theme::ScreenWidth-t::Gutter,24+t::MinTarget},"All books",ButtonKind::Quiet,false,Icon::Books);
  const int n=int(std::min<std::size_t>(books.size(),5)),cw=220,gap=(theme::ScreenWidth-t::Gutter*2-5*cw)/4,y=140;

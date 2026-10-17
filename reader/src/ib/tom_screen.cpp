@@ -41,7 +41,7 @@ Rect answerLineBox(const Model& m,unsigned line){const Rect a=answerArea(m);cons
 int sheetTop(const Model& m){return (m.inlineComposer||(m.expanded&&m.composing))&&!m.history?ExpandedSheetTop:SheetTop;}
 void paint(Canvas& c,Targets& tg,const Model& m){
  // Native lower sheet: the book stays in view above it; one ink rule, opaque paper.
- const int top=sheetTop(m);contextSheet(c,top);
+ const int top=sheetTop(m);contextSheet(c,top,t::TomAccent);
  const Rect head{0,top,t::ScreenWidth,top+HeaderHeight};
  // Header tools, right to left: close, history, expand (while writing).
  int right=Right+t::S3;auto tool=[&](int id,Icon ic,bool on=false){iconButton(c,tg,id,{right-t::MinTarget,head.y0+20,right,head.y0+20+t::MinTarget},ic,{on},36);right-=t::MinTarget;};
@@ -103,9 +103,9 @@ constexpr std::array<std::string_view,3> Symbols{"1234567890","-/:;()&@\"","#.,?
 }
 char32_t keyCharacter(int id,bool)noexcept{return id>=KeyBase&&id<KeyBase+128?char32_t(id-KeyBase):0;}
 void keyboard(Canvas& c,Targets& tg,const KeyboardModel& m,Rect a){
- namespace t=theme;c.fill(a,t::Surface);c.hline(a.x0,a.x1,a.y0,t::BorderStrong);
+ namespace t=theme;c.fill(a,t::Surface);c.hline(a.x0,a.x1,a.y0,t::InkPrimary,t::Outline);
  // Field
- Rect field{t::Gutter,a.y0+t::S3,a.x1-t::Gutter,a.y0+170};c.fillRound(field,t::RadiusSmall,t::SurfaceSunken);
+ Rect field{t::Gutter,a.y0+t::S3,a.x1-t::Gutter,a.y0+170};c.fillRound(field,t::RadiusMedium,t::SurfaceSunken);c.strokeRound(field,t::RadiusMedium,float(t::Outline),t::InkPrimary);
  if(!m.value.empty()){Rect clear{field.x1-t::MinTarget,field.y0+60,field.x1,field.y1};icon(c,Icon::Close,centered(clear,32,32),t::InkSecondary);tg.add(KeyClear,clear);}
  text::draw(c,{Face::Text,float(t::Caption.size)},float(field.x0+t::S3),float(field.y0+34),m.title,t::InkSecondary);
  std::string shown=m.value.empty()?m.hint:m.value+"|";
@@ -115,7 +115,7 @@ void keyboard(Canvas& c,Targets& tg,const KeyboardModel& m,Rect a){
  // Keys
  int ky=field.y1+t::S3;const int kh=156,kw=150,gap=10;
  const auto& rows=m.symbols?Symbols:Letters;
- auto key=[&](int id,Rect r,std::string_view label,bool dark=false,Icon i=Icon::Count){Rect v=inset(r,gap/2);c.fillRound(v,t::RadiusSmall,dark?t::SurfaceSelected:t::SurfaceSunken);
+ auto key=[&](int id,Rect r,std::string_view label,bool dark=false,Icon i=Icon::Count){Rect v=inset(r,gap/2);c.fillRound(v,t::RadiusMedium,dark?t::PopCyan:t::Surface);c.strokeRound(v,t::RadiusMedium,float(t::Outline),t::InkPrimary);
   if(i!=Icon::Count)icon(c,i,centered(v,40,40),t::InkPrimary);else text::centeredLine(c,{Face::Text,float(label.size()>1?theme::Label.size:theme::Subhead.size)},v,label,t::InkPrimary);tg.add(id,r);};
  for(int row=0;row<3;++row){auto keys=rows[std::size_t(row)];int n=int(keys.size());int x0=(a.x0+a.x1-n*kw)/2;
   if(row==2){key(m.symbols?KeySymbols:KeyShift,{t::Gutter,ky+row*kh,x0-gap,ky+(row+1)*kh},m.symbols?"abc":"",m.shift,m.symbols?Icon::Count:Icon::ChevronUp);key(KeyBackspace,{x0+n*kw+gap,ky+row*kh,a.x1-t::Gutter,ky+(row+1)*kh},"",false,Icon::Back);}
@@ -125,7 +125,7 @@ void keyboard(Canvas& c,Targets& tg,const KeyboardModel& m,Rect a){
  int spaceEnd=a.x1-t::Gutter-560;if(m.paste){key(KeyPaste,{spaceEnd-240,by,spaceEnd,by+kh},"Paste",true);spaceEnd-=240;}
  key(KeySpace,{t::Gutter+220,by,spaceEnd,by+kh},"space");
  key(m.multiline?KeyReturn:KeyCancel,{a.x1-t::Gutter-560,by,a.x1-t::Gutter-300,by+kh},m.multiline?"return":"Cancel",true);
- Rect done{a.x1-t::Gutter-300,by,a.x1-t::Gutter,by+kh};c.fillRound(inset(done,gap/2),t::RadiusSmall,t::InkPrimary);text::centeredLine(c,{Face::Text,theme::Body.size},inset(done,gap/2),"Done",t::Inverse);tg.add(KeyDone,done);
+ Rect done{a.x1-t::Gutter-300,by,a.x1-t::Gutter,by+kh};c.fillRound(inset(done,gap/2),t::RadiusMedium,t::GoAccent);c.strokeRound(inset(done,gap/2),t::RadiusMedium,float(t::Outline),t::InkPrimary);text::centeredLine(c,{Face::TextSemibold,theme::Body.size},inset(done,gap/2),"Done",t::onPop(t::GoAccent));tg.add(KeyDone,done);
  if(m.multiline){Rect cancel{field.x1-200,field.y0,field.x1,field.y0+60};text::centeredLine(c,{Face::Text,float(t::Caption.size)},cancel,"Cancel",t::InkSecondary,Align::Right);tg.add(KeyCancel,hitArea(cancel));}
 }
 }

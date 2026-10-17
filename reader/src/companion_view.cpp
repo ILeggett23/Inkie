@@ -51,7 +51,7 @@ void CompanionView::paint(spike::Surface surface){
  ib::text::draw(c,{ib::Face::Subhead,ib::theme::Title.size},70.f,150.f,"Companion",t::InkPrimary);ib::iconButton(c,tg,1,CloseBox,ib::Icon::Close);
  ib::text::block(c,{ib::Face::Serif,ib::theme::Body.size},{70,210,1550,320},"Pair this reader with your companion account to receive documents from your phone or computer.",t::InkSecondary,48,2);
  auto s=status_["state"].toString();ib::pill(c,{70,350,70+int(ib::text::measure({ib::Face::Text,ib::theme::Caption.size},sentence(stateLabel(s))))+60,404},sentence(stateLabel(s)),s=="paired"||s=="transferring");
- auto code=status_["pairing_code"].toString();if((s=="pairing"||s=="approval-required")&&livePair()&&QRegularExpression("^[A-Z0-9]{8}\\z").match(code).hasMatch()){ib::text::draw(c,{ib::Face::Text,ib::theme::Meta.size},70.f,500.f,"Pairing code",t::InkSecondary);ib::text::draw(c,{ib::Face::Sans,ib::theme::Code.size,8},70.f,640.f,u(code),t::InkPrimary);}
+ auto code=status_["pairing_code"].toString();if((s=="pairing"||s=="approval-required")&&livePair()&&QRegularExpression("^[A-Z0-9]{8}\\z").match(code).hasMatch()){ib::text::draw(c,{ib::Face::Text,ib::theme::Meta.size},70.f,500.f,"Pairing code",t::InkSecondary);ib::text::draw(c,{ib::Face::Literal,ib::theme::Code.size,8},70.f,640.f,u(code),t::InkPrimary);}
  if(!status_["account"].toString().isEmpty()){ib::text::draw(c,{ib::Face::Text,ib::theme::Meta.size},70.f,730.f,"Claimed account",t::InkSecondary);
   // Shown literally (supported ASCII only) so approval names the exact account.
   if(accountSupported()){auto account=status_["account"].toString();for(int i=0;i<account.size();i+=48)ib::text::draw(c,{ib::Face::Sans,ib::theme::Subhead.size},70.f,float(800+(i/48)*56),u(account.mid(i,48)),t::InkPrimary);}

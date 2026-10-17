@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 #pragma once
 // Settings > Tom and Accessibility (ui-prefs.json in the library root). Unknown or malformed fields keep their
-// defaults: Tom replies in handwriting, medium size, written in line by line; normal contrast and motion; cursive
-// roles in cursive (plainText swaps them to Source Sans 3 / Serif 4, ib/type.h). Version stays 1: plainText is optional.
+// defaults: Tom replies in handwriting, medium size, written in line by line; normal contrast and motion; Inkie's
+// cursive on (plainText draws every face as named, Source Sans 3 / Serif 4, ib/text.h). Version stays 1: plainText is optional.
 #include "underlay.h"
 #include <QJsonDocument>
 #include <QJsonObject>

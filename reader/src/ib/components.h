@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 #pragma once
-// Inkbound standard components. Immediate-mode painters: each draws and records
+// Inkie standard components. Immediate-mode painters: each draws and records
 // its touch targets in the caller's Targets, so hit testing always uses the
 // geometry that was painted. Visual size is independent of the hit area.
 #include "ib/icons.h"
@@ -25,20 +25,31 @@ public:
 };
 // Expands a visual rect to at least the minimum target size around its center.
 Rect hitArea(Rect visual,int minimum=theme::MinTarget)noexcept;
-struct ButtonState {bool selected{},disabled{};constexpr ButtonState(bool s=false,bool d=false)noexcept:selected(s),disabled(d){}};
-// Icon only; selected draws a filled well. Returns the hit rect.
+// accent: the pop colour a selected button fills with (0 = theme::ToolSelected).
+struct ButtonState {bool selected{},disabled{};std::uint32_t accent{};constexpr ButtonState(bool s=false,bool d=false,std::uint32_t a=0)noexcept:selected(s),disabled(d),accent(a){}};
+// Icon only; selected draws a pop bubble behind an ink glyph. Returns the hit rect.
 Rect iconButton(Canvas&,Targets&,int id,Rect hit,Icon,ButtonState={},int iconSize=theme::Icon);
 // Icon above a short label (selection toolbar, sidebar of tools).
 Rect iconLabelButton(Canvas&,Targets&,int id,Rect hit,Icon,std::string_view label,ButtonState={});
 enum class ButtonKind {Primary,Secondary,Quiet,Destructive};
 Rect button(Canvas&,Targets&,int id,Rect r,std::string_view label,ButtonKind=ButtonKind::Secondary,bool disabled=false,Icon leading=Icon::Count);
-// A surface floating over the page: white, hairline border, rounded, no shadow.
+// Inkie bubble: a rounded surface with a bold ink outline and a solid pop shadow, all drawn inside r (so a surface
+// never paints outside the bounds it reports for damage). fill is the body colour.
+void bubble(Canvas&,Rect,std::uint32_t fill=theme::Surface,float radius=theme::RadiusMedium,bool shadow=true);
+// A surface floating over the page (cards, menus, notices): a paper bubble. border is kept for callers; bubbles are ink.
 void panel(Canvas&,Rect,float radius=theme::RadiusMedium,std::uint32_t border=theme::BorderStrong);
-// Native popover (pen palette, document menu, foldouts): opaque paper, square corners, thin ink outline.
+// Popover (pen palette, document menu, foldouts): a paper bubble.
 void popover(Canvas&,Rect);
-// Native context sheet (Note, Tom): opaque paper from top to the bottom edge with one ink rule on top.
-void contextSheet(Canvas&,int top);
-// Header: title and a quiet subtitle on the left (subtitle tap target = subtitleId when >= 0).
+// A pop dot: a filled circle with an ink outline and an icon in the ink that reads on it (section and action badges).
+void dot(Canvas&,Rect box,Icon,std::uint32_t color);
+// A title on a marker swash: the lower half of the text sits on a pop bar, as if underlined with a highlighter.
+void swash(Canvas&,Font,float x,float baseline,std::string_view,std::uint32_t color);
+// The Inkie wordmark: "Inkie" in heavy cursive, its two dots in pop colours, centred in box.
+void wordmark(Canvas&,Rect box,float size);
+// Context sheet (Note, Tom, highlight): paper from top to the bottom edge, rounded top corners closed by an ink
+// outline, and a pop grab tab in the sheet's accent.
+void contextSheet(Canvas&,int top,std::uint32_t accent=theme::PopCyan);
+// Header: title (heavy cursive) and a quiet subtitle on the left (subtitle tap target = subtitleId when >= 0).
 void sheetTitle(Canvas&,Targets&,int top,int height,std::string_view title,std::string_view subtitle,int subtitleId,int rightEdge);
 // Quoted passage: a pigment rule on the left, serif text in secondary ink.
 void sheetQuote(Canvas&,Rect,std::string_view text,std::uint32_t rule);
