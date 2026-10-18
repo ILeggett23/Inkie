@@ -138,7 +138,10 @@ int main(int argc,char** argv){QCoreApplication core(argc,argv);if(argc!=5)retur
  // covers an open book the Marker must be refused at admission, never at reserve().
  test("passcode_lock_over_a_book_closes_ink_admission_before_reserve",[&]{auto root=data/"lock-admission";importBook(app,source,root);Harness h(app,root);settle(h);security::save(root,"1234");
   CHECK(h.shell.writable()&&h.display.admissionOpen());CHECK(h.shell.lockForSleep()&&h.shell.locked());
-  CHECK(!h.shell.writable()&&!h.shell.inkAdmission()&&!h.display.admissionOpen());CHECK(!h.display.reserve());CHECK(!h.shell.failed());});
+  CHECK(!h.shell.writable()&&!h.shell.inkAdmission()&&!h.display.admissionOpen());CHECK(!h.display.reserve());CHECK(!h.shell.failed());
+  /* Drain like every scenario: the destructor's own finish() waits only 100 ms and ends the process with 78 when the
+     just-opened book is still preparing its next page. */
+  CHECK(h.shell.finish(5000));});
  // The first word's centre on screen, from the page geometry (for finger and pen taps on text).
  auto firstWord=[&](Harness& h){auto geometry=h.shell.semantics().geometry();auto word=geometry->data["words"].toArray().first().toArray(),q=geometry->data["chars"].toArray()[word[0].toInt()].toObject()["quad"].toArray(),m=geometry->data["transform"].toArray();double px=(q[0].toDouble()+q[6].toDouble())/2,py=(q[1].toDouble()+q[7].toDouble())/2;return std::pair{int(m[0].toDouble()*px+m[2].toDouble()*py+m[4].toDouble()),int(m[1].toDouble()*px+m[3].toDouble()*py+m[5].toDouble())};};
  auto storedStrokes=[&](Harness& h,const QString& id){return h.shell.styledInk()->snapshot()["documents"].toObject()[id].toObject()["strokes"].toArray().size();};
