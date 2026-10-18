@@ -36,6 +36,24 @@ These are contract/fixture corrections; timing and settled-state checks stay unc
 
 The whole-block test correction (`4d67f963`) passes release, but ASan caught the existing asynchronous Notes-deletion assertion. A busy empty snapshot can replace the populated View before the settled empty snapshot arrives; the old edge predicate then misses the removal. `NotePresence` retains presentation ownership across that interleaving, resetting on a new binding or non-Note paint. Deterministic snapshot cases and the existing real delete/Undo/Redo regression cover it. Initial creation, command/save guards and protected Runtime/storage code are preserved. Require fresh host and ARM checks on the new head; do not install an older green artifact to skip a red gate.
 
+### Device report follow-up (rendering and selection)
+
+From an on-device report. Details are in report §8, "Device report follow-up".
+- **`ux_display.h`:**
+  - only pen-mode work is banded to a quarter page (quality UI updates had been banded too, so one screen change
+    finished in stages);
+  - a Regional scene is one region;
+  - quality updates keep the richest class owed or shown (per-60 px-cell record `owed_`, the existing
+    `cleanRemoval()`), replacing the single `eraseContent_`.
+- **`ux_shell.*`:**
+  - library repaints, sheet diffs and the document menu with its slot are each one region (`Shell::joined`);
+  - the removal cleanup flag (`cleanupNext_`) holds until the removal's damage arrives;
+  - the collapsed handle reopens the toolbar in Select mode;
+  - Marker taps on a selection strip or definition card are taps without the Selection tool (`PenSelect::probe`);
+  - refused Notes, Highlight and Tom opens wait for saving to settle (`pendingSelectionAction_`);
+  - `ui:selection-action` journals each command.
+- `vendor.*` is unchanged; no new waveform, flag or timer.
+
 ## Where things live
 
 | Concern | Place |
