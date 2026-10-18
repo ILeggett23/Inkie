@@ -32,6 +32,10 @@ These are contract/fixture corrections; timing and settled-state checks stay unc
 
 - **`gesture_route_tests` Selection-tool stylus drag.** A drag selects entire touched paragraphs/blocks by the shipping user contract. The expected full text, raw glyph quads and UTF-16 bounds come from parser block metadata. Highlighter/handle exact-word cases and no-stored-ink assertions remain exact. The supplied `890eaa63` host run failed this stale endpoint-word expectation even though its ARM run passed; require all current-head gates green before installation.
 
+### Post-handoff CI follow-up
+
+The whole-block test correction (`4d67f963`) passes release, but ASan caught the existing asynchronous Notes-deletion assertion. A busy empty snapshot can replace the populated View before the settled empty snapshot arrives; the old edge predicate then misses the removal. `NotePresence` retains presentation ownership across that interleaving, resetting on a new binding or non-Note paint. Deterministic snapshot cases and the existing real delete/Undo/Redo regression cover it. Initial creation, command/save guards and protected Runtime/storage code are preserved. Require fresh host and ARM checks on the new head; do not install an older green artifact to skip a red gate.
+
 ## Where things live
 
 | Concern | Place |

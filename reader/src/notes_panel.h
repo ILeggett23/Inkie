@@ -10,7 +10,23 @@
 #include <deque>
 namespace notes {
 enum class Mode {Hub,Note,Layers,Highlight};
+// Presentation ownership outlives transient worker snapshots. A busy empty
+// publication must not erase the fact that this Note view displayed a note.
+// A new, still-empty Note creation has no prior owner and must remain open.
+class NotePresence {
+ bool seen_{};
+public:
+ void reset()noexcept{seen_=false;}
+ bool removed(Mode mode,const View& fresh)noexcept{
+  if(mode!=Mode::Note){reset();return false;}
+  if(!fresh.ready||!fresh.error.isEmpty())return false;
+  if(!fresh.selected.isEmpty()&&!fresh.note.isEmpty()){seen_=true;return false;}
+  if(seen_&&!fresh.busy&&fresh.selected.isEmpty()&&fresh.note.isEmpty()){reset();return true;}
+  return false;
+ }
+};
 class Panel final:public spike::OperationSink {
+ NotePresence notePresence_;
  Canvas canvas_;Runtime runtime_;bool selectInk_{},inkActions_{},eraser_{};struct InkGesture {std::array<styled::Coordinate,128> path{};unsigned count{};bool reserved{},started{},ready{},ignored{},overflow{},move{},resize{};styled::Coordinate first{},last{};QRectF bounds;};InkGesture inkGesture_;bool inkGestureTick();bool selectInkAt(int,int);bool editInk(QJsonArray matrix={},QString color={},bool remove=false);
  tomink::StrokePlayback playback_;std::shared_ptr<const tomink::PlaybackPlan> retiredPlayback_;bool finishingPlayback_{},finishCommandSent_{},waitingBinding_{},bindingRejected_{};QString requestedNote_,playingGroup_,finishedGroup_,finishedNote_;QJsonObject finishedBinding_;bool canvasChanged_{},canvasContentChanged_{};tomink::PlaybackSpeed playbackSpeed_{tomink::PlaybackSpeed::Normal};bool playbackTick();void finishPlayback();View view_;Layers layers_;ux::TextInput keyboard_;std::vector<std::uint32_t> paper_,backdrop_;ib::Targets targets_;std::deque<QJsonObject> followUps_;ib::notes::Filter filter_{ib::notes::Filter::All};int sheetTop_{},markedTop_{};bool highlightPending_{};QString title_;
  QJsonObject page_,selection_,source_,keyboardCommand_,tomRequest_,lastGeneration_;bool confirmInkRetry_{};int sourceTarget_{-1};Mode mode_{Mode::Hub};styled::Style style_{};unsigned color_{4},hubOffset_{},textOffset_{};QString notice_;bool open_{},close_{},reset_{},pendingCommand_{},closeAfterSave_{},confirmDelete_{},sourceColor_{},textView_{};
@@ -40,7 +56,7 @@ public:
  void queueText(QString title,QString text){if(!title.isEmpty())followUps_.push_back({{"op","note.title"},{"title",title.left(256)}});if(!text.isEmpty())followUps_.push_back({{"op","note.text"},{"text",text.left(8192)}});}
  const ib::Targets& targets()const noexcept{return targets_;}const ib::Targets& keyboardTargets()const noexcept{return keyboard_.targets();}Mode mode()const noexcept{return mode_;}
  void showNotice(QString value){notice_=std::move(value);paint();mark();}
- bool finger(int,int);bool tick();bool closeRequested()const{return close_;}void closed(){open_=close_=false;canvas_.enable(false);}
+ bool finger(int,int);bool tick();bool closeRequested()const{return close_;}void closed(){open_=close_=false;notePresence_.reset();canvas_.enable(false);}
  bool readingText()const noexcept{return textView_;}unsigned textOffset()const noexcept{return textOffset_;}
  bool revealReady()const noexcept{return open_&&view_.ready&&!view_.busy&&!pendingCommand_&&!contact()&&!canvas_.unsaved()&&!canvas_.failed()&&!keyboard_.active()&&!close_;}
  std::uint64_t revealSceneEpoch()const noexcept{return revealSceneEpoch_;}

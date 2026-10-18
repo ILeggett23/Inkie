@@ -200,6 +200,14 @@ The supplied head's [host run 39088152189](https://github.com/ILeggett23/Inkie/a
 
 Final qualification must be read from [PR #2 checks](https://github.com/ILeggett23/Inkie/pull/2/checks) at the exact current head: host release, ASan/UBSan, Companion and ARM must all pass. An older green tablet run does not qualify a different head or waive a red host gate. Record the selected run, commit, artifact digest and independent package verification before installation. No device checklist item is claimed by CI.
 
+### Post-handoff Notes deletion follow-up
+
+At `4d67f963`, [host run 39098582478](https://github.com/ILeggett23/Inkie/actions/runs/39098582478) passes release, including the corrected whole-block gesture route, and Companion. Its ASan/UBSan job fails `deleted_note_returns_to_hub_without_large_note_panel`; the [ARM run 39098582414](https://github.com/ILeggett23/Inkie/actions/runs/39098582414) passes. These results do not qualify a release together.
+
+The deletion test exposed a presentation race: the old predicate required the immediately previous View to contain the selected note. `Runtime::view()` can first report an empty selection while busy (command/handwriting ownership is still active), then the same empty selection after settling. Assigning the busy snapshot discarded the previous selection, so the later settled snapshot never returned the panel to Hub.
+
+A small `NotePresence` latch now remembers ownership across transient snapshots. It resets on a new binding or leaving Note mode, so initial note creation is not mistaken for deletion. A settled, ready, error-free absent note returns to Hub through the existing path. Runtime storage/commit code is unchanged; its busy overlay continues to guard active commands and pending handwriting. Deterministic reducer cases cover busy-empty then settled-empty, rejected/unready snapshots, repeated emptiness and new creation/binding. The real asynchronous delete/Undo/Redo regression retains its exact Hub, no-writing and target assertions. No test deadline, settle predicate or durability guard changed.
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
