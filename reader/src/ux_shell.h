@@ -196,6 +196,7 @@ public:
  // external-contact gate behind Notes and Tom).
  // A library sheet (or the lock) owns the screen and its taps: the library under it must not repaint over it. Each
  // sheet repaints the library when it closes, so notices posted meanwhile appear then.
+ bool chromeBeforeHeld_{}; // libraryBefore_ holds the chrome as shown when a rail tap began (toolsPaint diffs against it)
  bool exitAfterNavigation_{}; // the close was tapped while a page turned: return to the library when it settles
  bool librarySheetOpen()const noexcept{return libraryManage_.active()||companionView_.active()||notebook_.active()||wifiView_.active()||timezoneView_.active()||lock_!=Lock::None||(tom_&&tom_->active());}
  bool writable()const noexcept{if(stop_||lock_!=Lock::None)return false;if(timezoneView_.active()||viewControls_.active()||quickSettings_||wifiView_.active())return false;if(tom_&&tom_->active())return tom_->writable()&&(!document_||document_->writable());if(notes_&&notes_->active())return !notesClosing_&&notes_->writable()&&document_&&document_->writable();return document_&&(state_==State::Clean||state_==State::Chrome)&&document_->writable()&&(!styled_||styled_->admissionOpen());}

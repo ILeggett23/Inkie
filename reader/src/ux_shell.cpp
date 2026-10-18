@@ -123,7 +123,11 @@ bool Shell::menuAction(int id){if(id>=MenuLight&&id<=LightBack){const auto previ
   case MenuSettings:return openSettings(selectedFormat_=="pdf"?0:1);case MenuPages:return openSettings(2);case MenuAbout:return openSettings(3);case MenuLibrary:return returnToLibrary();
   case MenuBookmark:if(!document_||!bookmarks_.toggle(selectedId_,bookmarkLayout(),page(),document_->total(),document_->active().prepared.metadata["pdf"].toString(),currentViewSet_))notice("The bookmark could not be saved");return true;
   default:return true;}}
-bool Shell::railAction(int id){if(!styled_||!document_||document_->contact())return false;syncToolShortcuts();using namespace ib::reader;bool ok=true;
+bool Shell::railAction(int id){if(!styled_||!document_||document_->contact())return false;
+ /* The chrome as it is on screen before this tap: a rail action may repaint the chrome on its way (semanticPaint,
+    selection, eraser), so toolsPaint() must diff against what was shown, not against its own entry. */
+ if(state_==State::Chrome&&!chromeStale_){libraryBefore_.assign(chrome_.begin(),chrome_.end());chromeBeforeHeld_=true;}
+ syncToolShortcuts();using namespace ib::reader;bool ok=true;
  auto chooseShortcut=[&](unsigned slot){const bool selecting=selectMode_,erasing=styled_->eraser();selectMode_=false;
   if(activeShortcut_==slot&&!selecting&&!erasing){rememberShortcut();if(toolsView_.active())toolsView_={};else toolsView_.open(toolsSnapshot());return true;}
   if(!erasing)rememberShortcut();if(!styled_->selectStyle(toolShortcuts_[slot]))return false;activeShortcut_=slot;saveToolShortcuts();return true;};
@@ -252,7 +256,8 @@ void Shell::toolsPaint(){
  /* A tool tap changes the chrome (a toolbar tile, the footer status), never the page: repaint the chrome only and,
     when it is already on screen, damage just the rects whose pixels changed instead of the whole chrome strip
     (top row, toolbar column and footer, about 0.5 Mpx of quality refresh for one 112 px tile). */
- const bool shown=state_==State::Chrome&&!chromeStale_;if(shown)libraryBefore_.assign(chrome_.begin(),chrome_.end());
+ /* A held frame (taken when a rail tap started) may be older than now: diffing against it can only damage more. */
+ const bool shown=chromeBeforeHeld_||(state_==State::Chrome&&!chromeStale_);if(!chromeBeforeHeld_&&shown)libraryBefore_.assign(chrome_.begin(),chrome_.end());chromeBeforeHeld_=false;
  paintChrome(true);auto p=ToolsView::panel();if(toolsView_.active()){for(int y=p.y0;y<p.y1;++y)std::copy_n(chrome_.begin()+std::ptrdiff_t(std::size_t(y)*1632+p.x0),p.x1-p.x0,toolsPixels_.begin()+std::ptrdiff_t(std::size_t(y)*1632+p.x0));toolsView_.paint({toolsPixels_,1620,2160,1632});}
  if(state_==State::Clean)state_=State::Chrome;
  if(shown){std::array<spike::Rect,8> changed;const auto n=changedRegions(libraryBefore_,chrome_,1620,2160,1632,0,changed);for(unsigned i=0;i<n;++i)damage(changed[i]);}else change_.regions|=ChromeRegions;
