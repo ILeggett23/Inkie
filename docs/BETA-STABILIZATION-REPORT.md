@@ -221,6 +221,22 @@ in `reader/src/ux_display.h` and `reader/src/ux_shell.*`. No vendor refresh auth
 | D4 | With Select on and the toolbar collapsed, the handle does not reopen the toolbar until something is selected | In `finger()`, the Select-mode branch claimed every tap above the footer as a word selection before the collapsed-handle check. | The collapsed handle is checked first (a selection showing is kept). | [auto] `collapsed_handle_reopens_toolbar_in_select_mode` (taps the painted handle, as on the device) |
 | D5 | Strip or card commands (Highlight, Note, Tom, Copy) do not respond | (a) Without the Selection tool, a Marker contact on the strip or definition card was ink. (b) Notes, Highlight and Tom were refused silently while ink was saving. Finger and Selection-tool Marker taps reach the commands in every test; no device-only drop was found in the code. | (a) While a selection or definition is up, a Marker contact starting on it is a tap (command after pen-up, no ink); elsewhere it is ordinary ink. (b) A refused open waits and runs once saving settles (same selection). Every command's outcome is journaled as `ui:selection-action` = id×10 + 0 refused / 1 done / 2 waiting. | [auto] `definition_card_accepts_pen_without_selection_tool`; existing `selection_options_accept_pen_*`. Device: journal check 18 below |
 
+### Device report follow-up 2: strip commands, erase ghosting, Tom guides
+
+From the 2026-10-18 tablet session on the `2ae400e` build (journal read with the user's approval). The journal shows
+Tom (id 121) running 3 times and Note (120) twice, one Note refused with "Finishing the previous panel". Highlight (122) and
+Copy (123) never ran. Each Note opened at once in state, but its first screen update went out only after the next tap
+(…023.437 → …024.403, …031.092 → …032.161); the Marker-tapped Tom waited 2.2 s the same way.
+
+| # | Issue | Root cause | Fix | Verified |
+|---|---|---|---|---|
+| D6 | Strip commands look ignored; a second tap lands on the panel | An opened Note or Tom panel is not settled until its helper binds (1–3 s). `RefreshController::feedback` treats an unsettled scene with no contact as deferred and drops the plan, so nothing was shown until the binding finished, and the user tapped again first. | A done strip command, and every `openNotes`/`openTom`, marks the change `preview`: the panel (or notice, or dismissed strip) is presented by the next boundary. A refused open while the previous panel is finishing now waits (`pendingSelectionAction_`) instead of "try again in a moment". | [auto] `strip_note_presents_before_its_helper_binds`. Optics [device] |
+| D7 | Taps just off the strip or card do nothing (finger and Marker) | Only exact hits counted; a tap a few px past the edge dismissed the selection, and a Marker tap had to lift within 25 px. | A tap within `StripSlop` (24 px) of the strip or card reaches the nearest command (`Targets::nearest`), for the finger and the Marker; a Marker tap may travel 40 px. `ui:semantic-tap` journals every strip tap (id, 0 elsewhere) and `ui:semantic-pen-dropped` a Marker tap that did not run. | [auto] `strip_tap_near_edge_reaches_command`; existing `selection_options_accept_pen_*` |
+| D8 | Erased colour and black ink leave ghosts; no visible local cleanup | The settled cleanup is a quality update over pixels the fast erase had already set white. If the panel drives only changed pixels, white to white drives nothing, so the pigment stays. | At the user's choice, a removal (erase, undo/redo, snap, highlight/layer change) gets a local flash before its quality update: one fast update of the area to dark, then the existing quality update redraws it from dark with the removed class (`Display::flashRemoval`). Existing fast and quality modes only; no complete update. `ui:erase-flash` journals each. | [auto] `erase_cleanup_covers_every_live_erase_submission` (a flash exists and a later quality update covers it). Optics [device] |
+| D9 | Dotted guides in Tom's answer | `ruledPaper` was drawn under a native reply. | Guides only where the reader writes to Tom. | [inspect]; device check 21 |
+
+Device checks 19–21 below.
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -260,6 +276,9 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 16 | Turn ten pages in each direction | Each page replaces the previous in one step | `reader:scene-regions` |
 | 17 | Draw colour and black strokes; erase them (Marker eraser and toolbar eraser), then undo and redo | The erased area clears regionally, without shadows or colour residue, and without a complete refresh | `ui:cleanup-requested`, `ui:retirement-quality-submit` |
 | 18 | Select on, collapse the toolbar, tap the handle; select text; tap Highlight, Note, Tom and Copy with a finger and with the Marker; long-press a word and use its card with the Marker | The handle reopens the toolbar; every command runs; no ink is left on the strip or card | `ui:selection-action` (…1 done) for each; any …0 or …2 names the refusal |
+| 19 | Select a passage; tap Note, Tom, Highlight and Copy once each, with a finger and with the Marker, also a few px below the strip | Each responds on the first tap: the panel or notice appears at once, no second tap needed | `ui:semantic-tap` (id) then `ui:selection-action` …1 |
+| 20 | Draw colour and black strokes; erase them with the Marker eraser and the toolbar eraser | The erased area blinks dark once, locally, and comes back clean with no ghost; no full-screen flash | `ui:erase-flash`, `ui:retirement-quality-submit` |
+| 21 | Ask Tom; read the answer | No dotted guides under the answer; the writing area keeps them | — |
 
 ## 11. Beta-readiness recommendation
 

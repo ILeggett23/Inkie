@@ -54,6 +54,16 @@ From an on-device report. Details are in report §8, "Device report follow-up".
   - `ui:selection-action` journals each command.
 - `vendor.*` is unchanged; no new waveform, flag or timer.
 
+### Device report follow-up 2 (strip commands, erase flash, Tom guides)
+
+Details in report §8, "Device report follow-up 2".
+- **`ux_shell.*`:** done strip commands and `openNotes`/`openTom` present at once (`change_.preview`); strip and card
+  taps reach the nearest command within 24 px (`onSemantic`, `semanticTarget`, `Targets::nearest`) for finger and
+  Marker; opens wait while the previous panel finishes; `ui:semantic-tap`, `ui:semantic-pen-dropped`.
+- **`ux_display.h`:** removals get a local flash (`flashRemoval`: fast dark, then the existing quality update).
+- **`ib/tom_screen.cpp`:** no guides under Tom's answer.
+- `vendor.*` is unchanged; no new waveform, flag or timer.
+
 ## Where things live
 
 | Concern | Place |

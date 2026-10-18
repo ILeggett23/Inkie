@@ -19,6 +19,9 @@ public:
  void add(int id,Rect r)noexcept{if(count_<items_.size()&&!r.empty())items_[count_++]={id,r};}
  // Later targets win so overlays registered after their background take precedence.
  int find(int x,int y)const noexcept{for(unsigned i=count_;i-->0;)if(items_[i].rect.contains(x,y))return items_[i].id;return -1;}
+ // The target nearest (x,y) within slop px of its rect (inside counts as 0, later targets win ties), or -1: a tap on a
+ // divider or just off a card's edge still reaches the control it was aimed at.
+ int nearest(int x,int y,int slop)const noexcept{int best=-1;long long bestDistance=(long long)slop*slop+1;for(unsigned i=count_;i-->0;){const auto& r=items_[i].rect;const long long dx=x<r.x0?r.x0-x:x>=r.x1?x-r.x1+1:0,dy=y<r.y0?r.y0-y:y>=r.y1?y-r.y1+1:0;if(dx*dx+dy*dy<bestDistance){bestDistance=dx*dx+dy*dy;best=items_[i].id;}}return best;}
  Rect rect(int id)const noexcept{for(unsigned i=0;i<count_;++i)if(items_[i].id==id)return items_[i].rect;return {};}
  unsigned size()const noexcept{return count_;}
  const Target& operator[](unsigned i)const noexcept{return items_[i];}

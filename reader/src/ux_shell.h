@@ -145,7 +145,7 @@ class Shell final:public spike::OperationSink {
  struct PenSelect {spike::Point first,last;bool active{},complete{},probe{};std::uint64_t epoch{};spike::Point screenFirst,screenLast;int action{-1};semantic::Selection selected;};PenSelect penSelect_;std::array<PenSelect,semantic::MaxSelectionRanges> penRanges_{};unsigned penRangeCount_{};bool penRangeOverflow_{};void selectTick();
  semantic::ScreenRangeResult selectRange(int sx,int sy,int ex,int ey,bool walkIn,bool handlesOnly=false); /* drags that start on a selection end move that end */
  void markNotice(const QString&);bool retireFailedTom();bool retireFailedNotes();std::atomic<bool> viewRefused_{false}; /* the last layout change was refused; the old layout reopened */void setLibraryNotice(QString text){markNotice(text);libraryView_.setNotice(std::move(text));}SnapStroke snapStroke_;std::thread snapThread_;std::atomic<bool> snapDone_{false},snapOk_{false};void snapTick();bool chromeStale_{}; /* chrome_ is painted when it becomes visible, not on every page turn */
- bool railAction(int);bool menuAction(int);bool semanticAction(int x,int y);bool semanticCommand(int id);
+ bool railAction(int);bool menuAction(int);bool semanticAction(int x,int y);bool semanticCommand(int id);bool onSemantic(int x,int y)const noexcept;int semanticTarget(int x,int y)const noexcept;
  // A strip action refused only because ink is still saving or a contact is open runs once that settles (same selection).
  struct PendingSelectionAction {int id{-1};semantic::Selection selected;};PendingSelectionAction pendingSelectionAction_;void selectionActionTick();void notice(QString);void libraryNotes();void saveFavorites();
  NotebookView notebook_;bool creatingNotebook_{};QString notebookFolder_;QSet<QString> idsBeforeImport_;

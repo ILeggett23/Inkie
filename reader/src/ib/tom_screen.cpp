@@ -77,7 +77,7 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   const auto response=answerArea(m);const int atop=response.y0,bottom=response.y1,lh=lineHeight(m);const Font f=answerFont(m);
   const bool pen=!m.typed&&!m.answer.empty();
   auto lines=answerWrap(m,m.answer.empty()?"\xE2\x80\xA6":pen?writable(m):m.answer);if(lines.empty())lines.push_back("");const int rows=answerRows(m);unsigned first=std::min<unsigned>(m.answerScroll,unsigned(std::max(0,int(lines.size())-1)));
-  if(m.nativeReply){ruledPaper(c,response);}else if(!pen){const unsigned shown=m.answer.empty()?unsigned(lines.size()):std::min<unsigned>(m.revealLines,unsigned(lines.size()));
+  if(m.nativeReply){/* plain paper: writing guides belong only where the reader writes to Tom */}else if(!pen){const unsigned shown=m.answer.empty()?unsigned(lines.size()):std::min<unsigned>(m.revealLines,unsigned(lines.size()));
    for(int i=0;i<rows&&first+unsigned(i)<shown;++i){const float bx=float(area.x0+t::S3),by=float(atop+56+i*lh);
     if(m.typed)text::draw(c,f,bx,by,lines[first+unsigned(i)],t::InkPrimary);else text::draw(c,f,bx,by,lines[first+unsigned(i)],t::InkPrimary);}}
   else{ // Tom's pen: everything up to revealInk, the current word stopping mid-stroke.
