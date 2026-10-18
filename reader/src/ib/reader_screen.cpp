@@ -49,20 +49,23 @@ Rect penCell(unsigned i,Rect r)noexcept{if(i>=9)return {};return gridCell(r,r.y0
 Rect widthCell(unsigned i,Rect r)noexcept{if(i>=3)return {};return gridCell(r,widthTitleY(r)+PaletteTitle,WidthRow,i);}
 Rect colorCell(unsigned i,Rect r)noexcept{if(i>=8)return {};return gridCell(r,swatchY(r),SwatchRow,i);}
 void toolbar(Canvas& c,Targets& tg,const Tools& m){
- // The native column: thin ink glyphs on paper, the active tool on a rounded ink tile, and a rule along the page edge.
+ // The native column, in two families: writing tools (pen, highlighter, eraser) are the objects themselves, slanted
+ // pen silhouettes carrying their current ink as a band; usability tools (select, layers, undo, redo, document) are
+ // outline icons. A dotted rule divides the families, the active tool sits on a rounded ink tile, and a rule runs
+ // along the page edge. Colour stays put while you write; selection is ink.
  Rect r=toolbarRect();c.fill(r,t::Paper);tg.add(RailBlank,r);c.fill(side_==Side::Left?Rect{r.x1-t::Hairline,r.y0,r.x1,r.y1}:Rect{r.x0,r.y0,r.x0+t::Hairline,r.y1},t::InkPrimary);
+ {const int y=toolbarSlot(SlotSelect).y0,x0=r.x0+28,x1=r.x1-28;divider(c,x0,x1,y-1);}
  auto tile=[&](unsigned slot,int id,bool selected,bool enabled,auto&& draw){Rect cell=toolbarSlot(slot);
   if(selected)c.fillRound(centered(cell,ToolbarTile,ToolbarTile),t::RadiusMedium,t::ToolSelected);
   draw(centered(cell,ToolbarGlyph,ToolbarGlyph),selected?t::OnSelected:enabled?t::ToolbarInk:t::Disabled,cell);if(enabled||selected)tg.add(id,cell);};
- // Pigment: the shortcut's current ink as a small swatch in the tile's upper corner, ringed in paper on the ink tile.
- auto pigment=[&](Rect cell,std::uint32_t color,bool selected){const float mx=(cell.x0+cell.x1)/2.f,cx=side_==Side::Left?mx+24:mx-24,cy=(cell.y0+cell.y1)/2.f-24;c.fillCircle(cx,cy,8.f,color);c.strokeCircle(cx,cy,7.5f,float(t::Outline),selected?t::Paper:t::InkPrimary);};
+ auto pen=[&](Rect cell,Instrument kind,std::uint32_t ink,bool selected){penGlyph(c,kind,centered(cell,PenGlyph,PenGlyph),ink,selected);};
  // One black tile at a time: an open document menu takes the selection from the writing tool.
  const unsigned shortcut=m.activeShortcut<2?m.activeShortcut:(m.highlighter?1u:0u);
  const bool tool=!m.menu,penActive=tool&&!m.eraser&&!m.selecting&&shortcut==0,hlActive=tool&&!m.eraser&&!m.selecting&&shortcut==1;
  tile(SlotHandle,ToolHandle,false,true,[&](Rect b,std::uint32_t col,Rect){icon(c,Icon::ToolbarHandle,centered(b,HandleGlyph,HandleGlyph),col);});
- tile(SlotPen,RailPen,penActive,true,[&](Rect b,std::uint32_t col,Rect cell){nibGlyph(c,m.activeShortcut<2?m.primary:m.pen,b,col);pigment(cell,m.activeShortcut<2?t::Ink[m.primaryColor%8]:m.ink,penActive);});
- tile(SlotHighlighter,RailHighlighter,hlActive,true,[&](Rect b,std::uint32_t col,Rect cell){nibGlyph(c,m.activeShortcut<2?m.secondary:Instrument::Highlighter,b,col);pigment(cell,t::Ink[(m.activeShortcut<2?m.secondaryColor:m.highlightColor)%8],hlActive);});
- tile(SlotEraser,RailEraser,tool&&m.eraser&&!m.selecting,true,[&](Rect b,std::uint32_t col,Rect){icon(c,Icon::NativeEraser,b,col);});
+ tile(SlotPen,RailPen,penActive,true,[&](Rect b,std::uint32_t col,Rect cell){(void)b;(void)col;pen(cell,m.activeShortcut<2?m.primary:m.pen,m.activeShortcut<2?t::Ink[m.primaryColor%8]:m.ink,penActive);});
+ tile(SlotHighlighter,RailHighlighter,hlActive,true,[&](Rect b,std::uint32_t col,Rect cell){(void)b;(void)col;pen(cell,m.activeShortcut<2?m.secondary:Instrument::Highlighter,t::Ink[(m.activeShortcut<2?m.secondaryColor:m.highlightColor)%8],hlActive);});
+ {const bool on=tool&&m.eraser&&!m.selecting;tile(SlotEraser,RailEraser,on,true,[&](Rect,std::uint32_t,Rect cell){pen(cell,Instrument::Eraser,0,on);});}
  tile(SlotSelect,RailSelect,tool&&m.selecting,true,[&](Rect b,std::uint32_t col,Rect){icon(c,Icon::NativeSelection,b,col);});
  tile(SlotLayers,RailLayers,m.layers,true,[&](Rect b,std::uint32_t col,Rect){icon(c,Icon::NativeLayers,b,col);});
  tile(SlotUndo,RailUndo,false,m.canUndo&&!m.busy,[&](Rect b,std::uint32_t col,Rect){icon(c,Icon::NativeUndo,b,col);});
@@ -83,7 +86,7 @@ void penPanel(Canvas& c,Targets& tg,const Tools& m,Rect at){
  for(std::size_t i=0;i<Pens.size();++i){Rect cell=penCell(unsigned(i),r);
   bool sel=!m.eraser&&(Pens[i]==Instrument::Highlighter?m.highlighter:(!m.highlighter&&m.pen==Pens[i]));
   const bool available=m.colors||Pens[i]!=Instrument::Highlighter;
-  if(sel&&available)pick(cell);nibGlyph(c,Pens[i],centered(cell,55,55),!available?t::Disabled:sel?t::OnSelected:t::InkPrimary);if(available)tg.add(PenBase+int(i),cell);}
+  if(sel&&available)pick(cell);penGlyph(c,Pens[i],centered(cell,68,68),!m.colors?0:t::Ink[(Pens[i]==Instrument::Highlighter?m.highlightColor:m.color)%8],sel&&available,!available);if(available)tg.add(PenBase+int(i),cell);}
  int wy=widthTitleY(r);rule(wy-2);
  static constexpr std::array<const char*,3> WidthName{"Thin","Medium","Thick"};
  text::centeredLine(c,title,{r.x0+30,wy,r.x1-30,wy+PaletteTitle},WidthName[unsigned(m.width)%3],t::InkPrimary,Align::Left);
@@ -99,8 +102,8 @@ void penPanel(Canvas& c,Targets& tg,const Tools& m,Rect at){
  if(m.colors&&m.highlighter&&!m.eraser){Rect hit{r.x0+24,r.y1-96,r.x1-24,r.y1-8};rule(hit.y0);text::centeredLine(c,label,{hit.x0,hit.y0,hit.x1-112,hit.y1},"Snap to Text",t::InkPrimary,Align::Left);toggle(c,tg,SnapHighlights,{hit.x1-100,hit.y0,hit.x1,hit.y1},m.snapHighlights,!m.canSnap);if(m.canSnap)tg.add(SnapHighlights,hit);}
 }
 Rect selectionToolbar(Canvas& c,Targets& tg,const SelectionBar& m,Rect bounds){
- // Context strip: one card of ink glyphs with printed labels and dotted dividers. The highlighter's glyph sits on a
- // short yellow swash, the one colour here: it is the action that puts colour on the page.
+ // Context strip: one card of ink glyphs with printed labels and dotted dividers. The highlighter is the writing-tool
+ // glyph with a yellow tip, the one colour here: it is the action that puts colour on the page.
  struct Item{int id;const char* label;Icon icon;bool nib;};std::array<Item,6> items{};unsigned n=0;
  if(m.define)items[n++]={SelDefine,"Define",Icon::BookOpen,false};
  if(m.highlight)items[n++]={SelHighlight,m.highlighted?"Color":"Highlight",Icon::Highlight,true};
@@ -117,7 +120,7 @@ Rect selectionToolbar(Canvas& c,Targets& tg,const SelectionBar& m,Rect bounds){
   const std::uint32_t ink=items[i].id==SelHighlight&&m.highlighted?t::InkSecondary:t::InkPrimary;
   if(!items[i].label[0]){icon(c,items[i].icon,centered({seg.x0,r.y0,seg.x1,body},34,34),ink);tg.add(items[i].id,hitArea(seg));continue;}
   int gx=seg.x0+pad,mid=(r.y0+body)/2;Rect g{gx,mid-glyph/2,gx+glyph,mid+glyph/2};
-  if(items[i].nib){c.fill({g.x0-3,g.y1-8,g.x1+3,g.y1+4},t::PopYellow);c.fill({g.x0-3,g.y1+4,g.x1+3,g.y1+6},t::InkPrimary);nibGlyph(c,Instrument::Highlighter,g,ink);}
+  if(items[i].nib)penGlyph(c,Instrument::Highlighter,outset(g,7),t::PopYellow);
   else icon(c,items[i].icon,g,ink);
   text::centeredLine(c,f,{g.x1+gap,r.y0,seg.x1,body},items[i].label,ink,Align::Left);tg.add(items[i].id,hitArea(seg));}
  return r;

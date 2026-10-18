@@ -67,7 +67,7 @@ void note(Canvas& c,Targets& tg,const Note& m){
  const int ry=t::ScreenHeight-NoteToolRow;divider(c,70,1550,ry-8);
  auto tool=[&](int id,int k,bool selected,bool enabled,auto&& draw){Rect cell{70+k*t::MinTarget,ry+4,70+(k+1)*t::MinTarget,ry+4+t::MinTarget};if(selected)c.fillRound(centered(cell,80,80),t::RadiusMedium,t::ToolSelected);
   draw(centered(cell,40,40),selected?t::OnSelected:enabled?t::InkPrimary:t::Disabled);tg.add(id,cell);};
- tool(NoteInk,0,m.picker,m.editable,[&](Rect b,std::uint32_t col){if(m.eraser)icon(c,Icon::NativeEraser,b,col);else nibGlyph(c,m.pen,b,col);});
+ tool(NoteInk,0,m.picker,m.editable,[&](Rect b,std::uint32_t){penGlyph(c,m.eraser?Instrument::Eraser:m.pen,outset(b,12),0,m.picker,!m.editable);});
  tool(NoteUndo,1,false,m.canUndo&&!m.busy,[&](Rect b,std::uint32_t col){icon(c,Icon::NativeUndo,b,col);});
  tool(NoteRedo,2,false,m.canRedo&&!m.busy,[&](Rect b,std::uint32_t col){icon(c,Icon::NativeRedo,b,col);});
  tool(NoteType,3,false,!m.busy,[&](Rect b,std::uint32_t col){icon(c,Icon::Keyboard,b,col);}); // typing stays available, quietly
@@ -79,7 +79,7 @@ void note(Canvas& c,Targets& tg,const Note& m){
  else{const Font sf{Face::Text,theme::Meta.size};Rect st{70+6*t::MinTarget+t::S3,ry+4,done.x0-t::S3,ry+4+t::MinTarget};std::string s=!m.status.empty()?text::quiet(m.status):m.busy?"Saving\xE2\x80\xA6":"Saved on this tablet";
   text::centeredLine(c,sf,st,text::fit(sf,s,float(width(st))),m.status.empty()?t::InkSecondary:t::InkPrimary,Align::Left);} /* only real problems replace the save state */
  if(m.inkActions){const Rect popup{780,NoteArea.y1-300,1550,NoteArea.y1-12};popover(c,popup);textAction(c,tg,NoteInkSmaller,{800,popup.y0+8,1150,popup.y0+88},"Smaller",false,!m.hasInkSelection);textAction(c,tg,NoteInkLarger,{1160,popup.y0+8,1530,popup.y0+88},"Larger",false,!m.hasInkSelection);textAction(c,tg,NoteInkColor,{800,popup.y0+96,1150,popup.y0+176},"Change color",false,!m.hasInkSelection);textAction(c,tg,NoteInkDelete,{1160,popup.y0+96,1530,popup.y0+176},"Delete ink",false,!m.hasInkSelection);textAction(c,tg,NoteExportInk,{800,popup.y0+184,1530,popup.y0+264},"Export ink as SVG",false,m.busy);}
- if(m.picker){R::Tools tools;tools.pen=m.pen;tools.width=R::Width(std::min(m.width,2u));tools.colors=false;tools.ink=t::InkPrimary;tools.eraser=m.eraser;tools.busy=!m.editable;R::penPanel(c,tg,tools,notePicker(m.expanded));auto p=notePicker(m.expanded);iconButton(c,tg,NoteEraser,{p.x1-176,p.y0,p.x1-88,p.y0+80},Icon::NativeEraser,{m.eraser,!m.editable},36);}
+ if(m.picker){R::Tools tools;tools.pen=m.pen;tools.width=R::Width(std::min(m.width,2u));tools.colors=false;tools.ink=t::InkPrimary;tools.eraser=m.eraser;tools.busy=!m.editable;R::penPanel(c,tg,tools,notePicker(m.expanded));auto p=notePicker(m.expanded);{const Rect e=hitArea({p.x1-176,p.y0,p.x1-88,p.y0+80});if(m.eraser)c.fillRound(centered(e,72,72),t::RadiusMedium,t::ToolSelected);penGlyph(c,Instrument::Eraser,centered(e,56,56),0,m.eraser,!m.editable);if(m.editable)tg.add(NoteEraser,e);}}
 }
 void highlight(Canvas& c,Targets& tg,const HighlightDetail& m){
  // The same lower sheet as Note and Tom: square, one ink rule, close in the same place.

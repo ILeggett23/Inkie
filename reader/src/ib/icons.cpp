@@ -30,18 +30,20 @@ G grid40(Canvas& c,Rect box,std::uint32_t col,float sw){float side=float(std::mi
 void native(Canvas& c,Icon i,Rect box,std::uint32_t col,float sw){
  G g=grid40(c,box,col,sw);
  switch(i){
- case Icon::ToolbarHandle:g.circle(20,20,14).circle(15,15,2.7f,true);break;
+ // Usability family: outlines on the 40 grid, one stroke weight, stationery motifs (a panel, a page, a stack of sheets).
+ case Icon::ToolbarHandle:g.rect(5,8,35,32,4).ln(15,8,15,32).ln(8.5f,14,11.5f,14).ln(8.5f,19,11.5f,19);break;
  case Icon::CloseCircle:g.circle(20,20,14).ln(15,15,25,25).ln(25,15,15,25);break;
- case Icon::DocumentMenu:g.poly({{8,4},{32,4},{32,36},{8,36}},true).ln(14,12,26,12).ln(14,19,26,19).ln(14,26,22,26);break;
+ case Icon::DocumentMenu:g.poly({{8,4},{25,4},{32,11},{32,36},{8,36}},true).poly({{25,4},{25,11},{32,11}}).ln(14,19,26,19).ln(14,25,26,25).ln(14,31,21,31);break;
  case Icon::BookOpen:{Path p;p.move(g.X(20),g.Y(9)).cubic(g.X(13),g.Y(4),g.X(6),g.Y(5),g.X(3),g.Y(7)).line(g.X(3),g.Y(35)).cubic(g.X(8),g.Y(32),g.X(13),g.Y(32),g.X(20),g.Y(35))
   .cubic(g.X(27),g.Y(32),g.X(32),g.Y(32),g.X(37),g.Y(35)).line(g.X(37),g.Y(7)).cubic(g.X(34),g.Y(5),g.X(27),g.Y(4),g.X(20),g.Y(9)).close();g.shape(p,false);g.ln(20,9,20,35);break;}
  case Icon::Tag:g.poly({{5,6},{20,6},{36,22},{22,36},{5,19}},true).circle(12,13,2);break;
  case Icon::NativeEraser:g.poly({{5,24},{23,6},{36,19},{19,36},{16,36}},true).ln(14,15,27,28).ln(20,36,35,36);break;
- case Icon::NativeSelection:for(auto [x,y]:{std::pair{6.f,6.f},{29.f,6.f},{6.f,29.f},{29.f,29.f}})g.poly({{x,y},{x+5,y},{x+5,y+5},{x,y+5}},true);
-  g.dash(14,8,26,8,2,4).dash(8,14,8,26,2,4).dash(32,14,32,26,2,4).dash(14,32,26,32,2,4);break;
- case Icon::NativeLayers:g.poly({{5,16},{20,7},{35,16},{20,25}},true).poly({{5,24},{20,33},{35,24}}).poly({{5,31},{20,39},{35,31}});break;
- case Icon::NativeUndo:{g.poly({{9,10},{2,17},{9,24}});Path p;p.move(g.X(3),g.Y(17)).line(g.X(18),g.Y(17)).cubic(g.X(30),g.Y(17),g.X(34),g.Y(26),g.X(34),g.Y(34));g.shape(p,false);break;}
- case Icon::NativeRedo:{g.poly({{31,10},{38,17},{31,24}});Path p;p.move(g.X(37),g.Y(17)).line(g.X(22),g.Y(17)).cubic(g.X(10),g.Y(17),g.X(6),g.Y(26),g.X(6),g.Y(34));g.shape(p,false);break;}
+ case Icon::NativeSelection:{ // a dashed lasso loop with its solid tail
+  for(int i=0;i<18;++i){const float a0=(i*20.f+4)*Pi/180,a1=(i*20.f+14)*Pi/180;g.c.line(g.X(21+15*std::cos(a0)),g.Y(16+10*std::sin(a0)),g.X(21+15*std::cos(a1)),g.Y(16+10*std::sin(a1)),g.w,g.col);}
+  Path p;p.move(g.X(12),g.Y(24)).cubic(g.X(8),g.Y(29),g.X(15),g.Y(32),g.X(12),g.Y(37));g.shape(p,false);break;}
+ case Icon::NativeLayers:g.rect(4,15,26,36,2.5f).poly({{9,15},{9,10},{31,10},{31,31},{26,31}}).poly({{14,10},{14,5},{36,5},{36,26},{31,26}});break; // a stack of sheets
+ case Icon::NativeUndo:{g.poly({{4,15},{13,8},{13,22}},true,true);Path p;p.move(g.X(12),g.Y(15)).line(g.X(21),g.Y(15)).cubic(g.X(30),g.Y(15),g.X(35),g.Y(21),g.X(35),g.Y(26)).cubic(g.X(35),g.Y(31),g.X(30),g.Y(34),g.X(24),g.Y(34));g.shape(p,false);break;}
+ case Icon::NativeRedo:{g.poly({{36,15},{27,8},{27,22}},true,true);Path p;p.move(g.X(28),g.Y(15)).line(g.X(19),g.Y(15)).cubic(g.X(10),g.Y(15),g.X(5),g.Y(21),g.X(5),g.Y(26)).cubic(g.X(5),g.Y(31),g.X(10),g.Y(34),g.X(16),g.Y(34));g.shape(p,false);break;}
  default:break;}
 }
 }
@@ -185,6 +187,37 @@ void nibGlyph(Canvas& c,Instrument kind,Rect box,std::uint32_t col){
  case Instrument::Shader:{g.poly({{10,34},{10,26},{30,26},{30,34}});Path p;p.move(g.X(12),g.Y(26)).cubic(g.X(14),g.Y(23),g.X(15),g.Y(22),g.X(15),g.Y(19)).cubic(g.X(15),g.Y(16),g.X(20),g.Y(11),g.X(20),g.Y(7))
   .cubic(g.X(21),g.Y(14),g.X(29),g.Y(16),g.X(25),g.Y(22)).line(g.X(28),g.Y(26));filled(p);break;}
  case Instrument::Eraser:native(c,Icon::NativeEraser,box,col,0);break;
+ case Instrument::Count:break;}
+}
+// Writing family: each tool as the object in the hand, slanted 45 degrees with its tip at lower left as it meets the
+// page. A paper body closed by an ink outline, the tip in solid ink in a shape that names the tool, and a band in the
+// tool's current ink (the highlighter's tip too), so colour sits in the glyph as an area met by an ink rule.
+void penGlyph(Canvas& c,Instrument kind,Rect box,std::uint32_t ink,bool selected,bool disabled){
+ G g=grid40(c,box,0,0);g.w=std::max(2.25f,1.6f*g.k);
+ const std::uint32_t edge=disabled?theme::Disabled:selected?theme::Inverse:theme::InkPrimary,fill=selected?theme::InkPrimary:theme::Paper,solid=edge;
+ const float s=0.70710678f;
+ auto X=[&](float a,float b){return g.X(5+(a+b)*s);};auto Y=[&](float a,float b){return g.Y(35+(-a+b)*s);};
+ auto quad=[&](float a0,float h0,float a1,float h1){Path p;p.move(X(a0,-h0),Y(a0,-h0)).line(X(a1,-h1),Y(a1,-h1)).line(X(a1,h1),Y(a1,h1)).line(X(a0,h0),Y(a0,h0)).close();return p;};
+ auto part=[&](const Path& p,std::uint32_t f){c.fillPath(p,f);c.stroke(p,g.w,edge);};
+ const bool wide=kind==Instrument::Highlighter||kind==Instrument::Eraser;const float half=wide?4.8f:3.7f,end=42.f;
+ const std::uint32_t band=disabled?theme::Disabled:ink?ink:solid;
+ // The barrel ends in a round cap; the band sits a third of the way up, where a cap ring or label would be.
+ auto barrel=[&](float from){Path p;p.move(X(from,-half),Y(from,-half)).line(X(end-half,-half),Y(end-half,-half)).arc(X(end-half,0),Y(end-half,0),half*g.k,225,405).line(X(from,half),Y(from,half)).close();part(p,fill);
+  if(kind!=Instrument::Eraser)part(quad(from+8,half,from+14,half),band);};
+ switch(kind){
+ case Instrument::Ballpoint:barrel(12);part(quad(12,half,3,1.3f),fill);c.fillCircle(X(1.6f,0),Y(1.6f,0),1.7f*g.k,solid);break;
+ case Instrument::Fineliner:barrel(12);part(quad(12,half,7,2.2f),fill);part(quad(7,0.9f,0.5f,0.9f),solid);break;
+ case Instrument::Pencil:barrel(12);part(quad(12,half,0,0.01f),fill);part(quad(4.5f,1.7f,0,0.01f),solid);c.line(X(26,0),Y(26,0),X(end-half,0),Y(end-half,0),g.w*0.7f,edge);break;
+ case Instrument::Mechanical:barrel(12);part(quad(12,half,6,1.7f),fill);part(quad(6,0.9f,2,0.9f),fill);part(quad(2,0.5f,0,0.5f),solid);break;
+ case Instrument::Paintbrush:{barrel(13);part(quad(13,half-0.6f,9,half-0.2f),fill);Path p;p.move(X(9,-half+0.4f),Y(9,-half+0.4f)).cubic(X(5,-4.6f),Y(5,-4.6f),X(2,-1.6f),Y(2,-1.6f),X(0,0),Y(0,0))
+  .cubic(X(2,1.6f),Y(2,1.6f),X(5,4.6f),Y(5,4.6f),X(9,half-0.4f),Y(9,half-0.4f)).close();part(p,solid);break;}
+ case Instrument::Calligraphy:{barrel(13);Path p;p.move(X(13,-half),Y(13,-half)).line(X(5,-3.4f),Y(5,-3.4f)).line(X(0,0),Y(0,0)).line(X(5,3.4f),Y(5,3.4f)).line(X(13,half),Y(13,half)).close();part(p,fill);
+  c.line(X(1.4f,0),Y(1.4f,0),X(6.4f,0),Y(6.4f,0),g.w*0.8f,edge);c.fillCircle(X(7.6f,0),Y(7.6f,0),1.2f*g.k,solid);break;}
+ case Instrument::Marker:{barrel(12);part(quad(12,half,6,3.2f),fill);Path p;p.move(X(6,-3.2f),Y(6,-3.2f)).line(X(1.4f,-2.6f),Y(1.4f,-2.6f)).line(X(0,2.4f),Y(0,2.4f)).line(X(6,3.2f),Y(6,3.2f)).close();part(p,solid);break;}
+ case Instrument::Shader:{barrel(12);part(quad(12,half,7,3.4f),fill);Path p;p.move(X(7,-3.4f),Y(7,-3.4f)).cubic(X(2.4f,-3.4f),Y(2.4f,-3.4f),X(0.4f,-1.6f),Y(0.4f,-1.6f),X(0.4f,0),Y(0.4f,0))
+  .cubic(X(0.4f,1.6f),Y(0.4f,1.6f),X(2.4f,3.4f),Y(2.4f,3.4f),X(7,3.4f),Y(7,3.4f)).close();part(p,solid);break;}
+ case Instrument::Highlighter:{barrel(12);part(quad(12,half,6,3.6f),fill);Path p;p.move(X(6,-3.6f),Y(6,-3.6f)).line(X(2.2f,-3.2f),Y(2.2f,-3.2f)).line(X(0,3.2f),Y(0,3.2f)).line(X(6,3.6f),Y(6,3.6f)).close();part(p,band);break;}
+ case Instrument::Eraser:{barrel(14);Path tip=quad(14,half,1,half);part(tip,fill);part(quad(14,half,22,half),solid);c.line(X(5,-half),Y(5,-half),X(5,half),Y(5,half),g.w*0.7f,edge);break;}
  case Instrument::Count:break;}
 }
 }
