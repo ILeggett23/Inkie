@@ -102,7 +102,7 @@ void LibraryView::paint(spike::Surface s,const QVector<library::Document>& docs,
   if(device_.percent||device_.charge!=device::Charge::Unknown)st.externalPower=device_.external?1:0;
   if(wifiLink_)st.wifiLink=*wifiLink_?1:0;
   st.storageTotal=storage_.total;st.storageFree=storage_.available;st.documents=int(std::count_if(all_.begin(),all_.end(),[](const auto& d){return !d.trashed;}));st.notes=int(notes_.size());st.firmware=firmware_;
-  st.about={{"Typefaces","Source Serif 4, Source Sans 3"},{"Font license","SIL Open Font License"},{"Dictionary","WordNet 3.0 \xC2\xB7 offline"},{"Dictionary source","Princeton University"}};
+  st.about={{"Typefaces","Caveat, Source Serif 4, Source Sans 3"},{"Font license","SIL Open Font License"},{"Dictionary","WordNet 3.0 and GCIDE \xC2\xB7 offline"},{"Dictionary source","Princeton University; GNU GCIDE (Webster 1913)"}};
   S::paint(c,targets_,st);}
  ib::library::overlays(c,targets_,m);
  if(keyboard_){ib::KeyboardModel k;k.title="Search titles";k.value=utf8(query_);k.hint="Type a title";k.shift=shift_;k.symbols=symbols_;ib::keyboard(c,targets_,k);}

@@ -52,6 +52,8 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   // Saved conversations (left) and the questions of this conversation (right), four rows each.
   text::draw(c,Meta,float(Margin),float(y+40),"Conversations",t::InkSecondary);text::draw(c,Meta,float(830),float(y+40),"Questions in this conversation",t::InkSecondary);y+=64;
   constexpr int RowH=112;
+  if(m.threads.empty())text::draw(c,type::ScriptEmpty,float(Margin),float(y+70),"No conversations yet",t::InkPrimary);
+  if(m.turns.empty())text::draw(c,type::ScriptEmpty,830.f,float(y+70),"Ask Tom a question to start",t::InkPrimary);
   for(unsigned i=0;i<HistoryRows&&m.threadOffset+i<m.threads.size();++i){Rect r{Margin,y+int(i)*RowH,780,y+int(i)*RowH+RowH-8};divider(c,r.x0,r.x1,r.y1);text::centeredLine(c,{Face::Serif,theme::Body.size},Rect{r.x0+t::S2,r.y0+t::S2,r.x1-t::S2,r.y0+56},text::fit({Face::Serif,theme::Body.size},m.threads[m.threadOffset+i].title,float(width(r)-2*t::S2)),t::InkPrimary,Align::Left);text::centeredLine(c,Caption,{r.x0+t::S2,r.y0+56,r.x1-t::S2,r.y1-t::S2},m.threads[m.threadOffset+i].metadata,t::InkSecondary,Align::Left);tg.add(ThreadBase+int(m.threadOffset+i),r);}
   for(unsigned i=0;i<HistoryRows&&m.turnOffset+i<m.turns.size();++i){Rect r{830,y+int(i)*RowH,Right,y+int(i)*RowH+RowH-8};divider(c,r.x0,r.x1,r.y1);text::centeredLine(c,{Face::SerifItalic,theme::Body.size},inset(r,t::S2),m.turns[m.turns.size()-1-(m.turnOffset+i)].question,t::InkPrimary,Align::Left);tg.add(TurnBase+int(m.turns.size()-1-(m.turnOffset+i)),r);}
   int by=y+int(HistoryRows)*RowH+t::S2;
@@ -60,7 +62,7 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   by+=t::MinTarget+t::S2;
   button(c,tg,HistoryBack,{Margin,by,Margin+380,by+t::MinTarget},"Back to Tom",ButtonKind::Quiet,false,Icon::Back);
   button(c,tg,NewChat,{Margin+400,by,Margin+760,by+t::MinTarget},"New conversation",ButtonKind::Quiet,false,Icon::Plus);
-  button(c,tg,HistoryDelete,{Right-420,by,Right,by+t::MinTarget},m.confirmDelete?"Confirm delete":"Delete conversation",m.confirmDelete?ButtonKind::Destructive:ButtonKind::Quiet,false,Icon::Trash);
+  button(c,tg,HistoryDelete,{Right-420,by,Right,by+t::MinTarget},m.confirmDelete?"Delete conversation?":"Delete conversation",m.confirmDelete?ButtonKind::Destructive:ButtonKind::Quiet,false,Icon::Trash);
   if(!m.status.empty())text::draw(c,Caption,float(Margin),float(t::ScreenHeight-26),text::fit(Caption,text::quiet(m.status),float(Right-Margin)),m.failed?t::InkPrimary:t::InkSecondary);
   return;
  }
@@ -68,7 +70,7 @@ void paint(Canvas& c,Targets& tg,const Model& m){
  // One line between header and writing: the passage while writing; the recognized question above an answer.
  {const Rect quote{Margin,y,Right,(m.inlineComposer?680:area.y0)-8};
   if(m.showAnswer&&!m.question.empty()){const Font qf{Face::Text,theme::Meta.size};text::centeredLine(c,qf,quote,text::fit(qf,"You asked: "+m.question,float(width(quote))),t::InkSecondary,Align::Left);}
-  else if(!m.excerpt.empty()){sheetQuote(c,quote,"\xE2\x80\x9C"+m.excerpt+"\xE2\x80\x9D",t::Ink[4]);if(m.hasSource)tg.add(Source,quote);}}
+  else if(!m.excerpt.empty()){sheetQuote(c,quote,"\xE2\x80\x9C"+m.excerpt+"\xE2\x80\x9D",t::Ink[4]);if(m.hasSource)tg.add(Source,{quote.x0,std::min(quote.y0,quote.y1-t::MinTarget),quote.x1,quote.y1});}} /* the source target grows upward only, into the header line that leads to the same source, never into the writing area */
  if(m.showAnswer){
   // Tom's answer in his hand (or the typed view), on the same paper where the question was written.
   // Only revealed lines are drawn; the canonical text is unchanged by presentation.
@@ -86,8 +88,8 @@ void paint(Canvas& c,Targets& tg,const Model& m){
  }else{
   ruledPaper(c,area);
   if(!m.question.empty())text::block(c,{Face::Serif,theme::Body.size},{area.x0+t::S3,area.y0+24,area.x1-t::S3,area.y1},m.question,t::InkPrimary,52,20); // a typed question
-  else if(m.empty&&!m.historyTurn)text::draw(c,{Face::SerifItalic,theme::Body.size},float(area.x0+t::S3),float(area.y0+60),"Write to Tom\xE2\x80\xA6",t::InkTertiary);}
- if(m.inlineComposer){divider(c,Margin,Right,1340);ruledPaper(c,WritingArea);if(!m.draftQuestion.empty())text::block(c,{Face::Serif,theme::Body.size},{WritingArea.x0+t::S3,WritingArea.y0+24,WritingArea.x1-t::S3,WritingArea.y1},m.draftQuestion,t::InkPrimary,52,12);else if(m.empty)text::draw(c,{Face::SerifItalic,theme::Label.size},float(WritingArea.x0+t::S3),float(WritingArea.y0+56),"Continue the conversation…",t::InkTertiary);}
+  else if(m.empty&&!m.historyTurn)text::draw(c,HintFont,float(area.x0+t::S3),float(area.y0+60),"Write to Tom\xE2\x80\xA6",t::InkPrimary);}
+ if(m.inlineComposer){divider(c,Margin,Right,1340);ruledPaper(c,WritingArea);if(!m.draftQuestion.empty())text::block(c,{Face::Serif,theme::Body.size},{WritingArea.x0+t::S3,WritingArea.y0+24,WritingArea.x1-t::S3,WritingArea.y1},m.draftQuestion,t::InkPrimary,52,12);else if(m.empty)text::draw(c,HintFont,float(WritingArea.x0+t::S3),float(WritingArea.y0+56),"Continue the conversation…",t::InkPrimary);}
  // Footer: tools on the left, one status line, the primary action on the right.
  divider(c,Margin,Right,FooterTop);const int fy=FooterTop+8,fh=t::MinTarget;const Rect primary{Right-180,fy+8,Right,fy+fh-8};
  const Font sf{Face::Text,theme::Meta.size};int sx=Margin;std::string status=!m.status.empty()?text::quiet(m.status):m.showAnswer?"":m.disclosure;std::uint32_t sink=m.failed?t::InkPrimary:t::InkSecondary;int sright=primary.x0-t::S3;
@@ -106,10 +108,11 @@ void keyboard(Canvas& c,Targets& tg,const KeyboardModel& m,Rect a){
  namespace t=theme;c.fill(a,t::Surface);c.hline(a.x0,a.x1,a.y0,t::InkPrimary,t::Outline);
  // Field
  Rect field{t::Gutter,a.y0+t::S3,a.x1-t::Gutter,a.y0+170};c.fillRound(field,t::RadiusMedium,t::Surface);c.strokeRound(field,t::RadiusMedium,float(t::Outline),t::InkPrimary);
- if(!m.value.empty()){Rect clear{field.x1-t::MinTarget,field.y0+60,field.x1,field.y1};icon(c,Icon::Close,centered(clear,32,32),t::InkSecondary);tg.add(KeyClear,clear);}
+ if(!m.value.empty()){Rect clear{field.x1-t::MinTarget,field.y0+60,field.x1,field.y1};icon(c,Icon::Close,centered(clear,32,32),t::InkSecondary);tg.add(KeyClear,hitArea(clear));}
  text::draw(c,{Face::Text,float(t::Caption.size)},float(field.x0+t::S3),float(field.y0+34),m.title,t::InkSecondary);
  std::string shown=m.value.empty()?m.hint:m.value+"|";
- auto lines=text::wrap({Face::Serif,theme::Body.size},shown,float(width(field)-t::S5),2);
+ if(m.value.empty())text::draw(c,HintFont,float(field.x0+t::S3),float(field.y0+90),text::fit(HintFont,shown,float(width(field)-t::S5)),t::InkPrimary);
+ auto lines=m.value.empty()?std::vector<std::string>{}:text::wrap({Face::Serif,theme::Body.size},shown,float(width(field)-t::S5),2);
  if(lines.size()==2&&text::wrap({Face::Serif,theme::Body.size},shown,float(width(field)-t::S5)).size()>2)lines={"\xE2\x80\xA6"+lines.back()};
  for(std::size_t i=0;i<lines.size();++i)text::draw(c,{Face::Serif,theme::Body.size},float(field.x0+t::S3),float(field.y0+84+int(i)*46),lines[i],m.value.empty()?t::InkTertiary:t::InkPrimary);
  // Keys: paper keys with an ink rule; the modifiers and Done are ink.

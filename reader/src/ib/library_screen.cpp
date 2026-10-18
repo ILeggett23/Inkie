@@ -55,7 +55,7 @@ void base(Canvas& c,Targets& tg,const Model& m){
  {status::Model status;status.battery=m.battery;status.charging=m.charging;status.wifi=m.wifi?1:-1;status.clock=m.clock;status.zone=m.clockZone;ib::status::bar(c,tg,status,ib::status::LibraryBar);}
  // Heading row: title (or the search field), then sort and the grid/list toggle.
  if(m.searching){Rect field{ContentX,HeadingTop,ContentR,HeadingTop+88};c.fill(field,t::Paper);c.hairline(field,t::InkPrimary,2);icon(c,Icon::Search,{field.x0+t::S3,field.y0+24,field.x0+t::S3+40,field.y0+64},t::InkSecondary);
-  text::centeredLine(c,{Face::Text,theme::Body.size},{field.x0+t::S3+40+t::S3,field.y0,field.x1-t::MinTarget,field.y1},m.query.empty()?"Search titles":m.query+"|",m.query.empty()?t::InkTertiary:t::InkPrimary,Align::Left);
+  if(m.query.empty())text::centeredLine(c,HintFont,{field.x0+t::S3+40+t::S3,field.y0,field.x1-t::MinTarget,field.y1},"Search titles",t::InkPrimary,Align::Left);else text::centeredLine(c,{Face::Text,theme::Body.size},{field.x0+t::S3+40+t::S3,field.y0,field.x1-t::MinTarget,field.y1},m.query+"|",t::InkPrimary,Align::Left);
   iconButton(c,tg,ClearSearch,{field.x1-t::MinTarget,field.y0-4,field.x1,field.y1+4},Icon::Close);}
  else if(m.section!=Section::Settings){ /* Settings draws its own titles (ib/settings_screen) */
   int titleX=ContentX;if(!m.crumb.empty()){iconButton(c,tg,Up,{ContentX-t::S4,HeadingTop,ContentX-t::S4+t::MinTarget,HeadingBottom},Icon::ChevronLeft);titleX+=t::MinTarget-t::S4;}
@@ -71,7 +71,7 @@ void base(Canvas& c,Targets& tg,const Model& m){
  int shown=std::min(int(m.folders.size()),folderCapacity());int fw=(ContentR-ContentX-(FolderCols-1)*FolderGap)/FolderCols;
  for(int i=0;i<shown;++i){int col=i%FolderCols,row=i/FolderCols;Rect r{ContentX+col*(fw+FolderGap),FolderTop+row*FolderH,0,0};r.x1=r.x0+fw;r.y1=r.y0+FolderH;
   int mid=(r.y0+r.y1)/2;icon(c,Icon::Folder,{r.x0,mid-22,r.x0+44,mid+22},t::InkPrimary);
-  text::centeredLine(c,Label,{r.x0+60,r.y0,r.x1,r.y1},text::fit(Label,m.folders[std::size_t(i)].name,float(fw-70)),t::InkPrimary,Align::Left);tg.add(FolderBase+i,r);}
+  text::centeredLine(c,Label,{r.x0+60,r.y0,r.x1,r.y1},text::fit(Label,m.folders[std::size_t(i)].name,float(fw-70)),t::InkPrimary,Align::Left);tg.add(FolderBase+i,hitArea(r));} /* 76 px rows, 96 px targets */
  int top=documentsTop(shown);
  // Documents
  int cap=capacity(m.grid,shown);int n=std::min(int(m.documents.size()),cap);

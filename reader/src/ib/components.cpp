@@ -44,7 +44,7 @@ void contextSheet(Canvas& c,int top,std::uint32_t accent){
  c.fill({0,top+t::EdgeBand,t::ScreenWidth,top+t::EdgeBand+t::Hairline},t::InkPrimary);}
 void sheetTitle(Canvas& c,Targets& tg,int top,int h,std::string_view title,std::string_view subtitle,int subtitleId,int rightEdge){
  const Font tf{Face::TextSemibold,theme::Subhead.size},sf{Face::Text,theme::Meta.size};text::draw(c,tf,70.f,float(top+62),title,t::InkPrimary);
- if(!subtitle.empty()){Rect s{70,top+76,rightEdge-t::S3,top+h-16};text::centeredLine(c,sf,s,text::fit(sf,subtitle,float(width(s))),t::InkSecondary,Align::Left);if(subtitleId>=0)tg.add(subtitleId,s);}
+ if(!subtitle.empty()){Rect s{70,top+76,rightEdge-t::S3,top+h-16};text::centeredLine(c,sf,s,text::fit(sf,subtitle,float(width(s))),t::InkSecondary,Align::Left);if(subtitleId>=0)tg.add(subtitleId,hitArea(s));} /* a 44 px line, a 96 px target */
 }
 void sheetQuote(Canvas& c,Rect r,std::string_view s,std::uint32_t rule){const Font qf{Face::SerifItalic,theme::Label.size}; // the book's words stay serif; the bar is the highlight's colour
  const Rect bar{r.x0+34,r.y0+8,r.x0+48,r.y1-8};c.fill(bar,rule);c.hairline(bar,t::InkPrimary,t::Hairline);
@@ -91,7 +91,7 @@ Rect button(Canvas& c,Targets& tg,int id,Rect r,std::string_view label,ButtonKin
 SheetFrame sheet(Canvas& c,Targets& tg,Rect r,std::string_view title,const SheetOptions& o){
  popover(c,r);int h=t::TopBar+8; /* native: square, thin ink outline */Rect header{r.x0,r.y0,r.x1,r.y0+h};int x=r.x0+t::S4,right=r.x1-t::S3;
  if(o.back){iconButton(c,tg,o.backId,{r.x0+t::S2,header.y0+4,r.x0+t::S2+t::MinTarget,header.y1-4},Icon::Back);x=r.x0+t::S2+t::MinTarget+t::S1;}
- if(o.close){iconButton(c,tg,o.closeId,{right-t::MinTarget,header.y0+4,right,header.y1-4},Icon::Close);right-=t::MinTarget;}
+ if(o.close){iconButton(c,tg,o.closeId,{right-t::MinTarget,header.y0+4,right,header.y1-4},Icon::Close,{},36);right-=t::MinTarget;}
  if(o.done){iconButton(c,tg,o.doneId,{right-t::MinTarget,header.y0+4,right,header.y1-4},Icon::Check);right-=t::MinTarget;}
  if(o.more){iconButton(c,tg,o.moreId,{right-t::MinTarget,header.y0+4,right,header.y1-4},Icon::More);right-=t::MinTarget;}
  Font f{Face::TextSemibold,theme::Body.size};

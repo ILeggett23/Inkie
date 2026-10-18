@@ -46,7 +46,7 @@ QStringList CompanionView::displayedText()const{
 void CompanionView::paint(spike::Surface surface){
  painted_=false;if(!active_||surface.width!=1620||surface.height!=2160||surface.stridePixels<1620||surface.pixels.size()<std::size_t(surface.stridePixels)*2160)return;
  namespace t=ib::theme;ib::Canvas c(surface);ib::Targets tg;auto u=[](const QString& v){auto b=v.toUtf8();return std::string(b.constData(),std::size_t(b.size()));};
- auto sentence=[&](QString v){v=v.toLower();if(!v.isEmpty())v[0]=v[0].toUpper();return u(v);};
+ auto sentence=[&](QString v){v=v.toLower();if(!v.isEmpty())v[0]=v[0].toUpper();v.replace(" - "," \u2014 ");return u(v);};
  c.fill({0,0,1620,2160},t::Paper);
  ib::text::draw(c,{ib::Face::Subhead,ib::theme::Title.size},70.f,150.f,"Companion",t::InkPrimary);ib::iconButton(c,tg,1,CloseBox,ib::Icon::Close);
  ib::text::block(c,{ib::Face::Serif,ib::theme::Body.size},{70,210,1550,320},"Pair this reader with your companion account to receive documents from your phone or computer.",t::InkSecondary,48,2);
@@ -54,17 +54,19 @@ void CompanionView::paint(spike::Surface surface){
  auto code=status_["pairing_code"].toString();if((s=="pairing"||s=="approval-required")&&livePair()&&QRegularExpression("^[A-Z0-9]{8}\\z").match(code).hasMatch()){ib::text::draw(c,{ib::Face::Text,ib::theme::Meta.size},70.f,500.f,"Pairing code",t::InkSecondary);ib::text::draw(c,{ib::Face::Literal,ib::theme::Code.size,8},70.f,640.f,u(code),t::InkPrimary);}
  if(!status_["account"].toString().isEmpty()){ib::text::draw(c,{ib::Face::Text,ib::theme::Meta.size},70.f,730.f,"Claimed account",t::InkSecondary);
   // Shown literally (supported ASCII only) so approval names the exact account.
-  if(accountSupported()){auto account=status_["account"].toString();for(int i=0;i<account.size();i+=48)ib::text::draw(c,{ib::Face::Sans,ib::theme::Subhead.size},70.f,float(800+(i/48)*56),u(account.mid(i,48)),t::InkPrimary);}
+  if(accountSupported()){auto account=status_["account"].toString();for(int i=0;i<account.size();i+=48)ib::text::draw(c,{ib::Face::Literal,ib::theme::Subhead.size},70.f,float(800+(i/48)*56),u(account.mid(i,48)),t::InkPrimary);} /* Literal: never script */
   else ib::text::block(c,{ib::Face::Serif,ib::theme::Body.size},{70,770,1550,900},"This account name can't be shown accurately, so approval is disabled.",t::InkPrimary,46,2);}
  for(const auto& line:displayedText()){
-  if(line.startsWith("EXPIRES "))ib::text::draw(c,{ib::Face::Text,ib::theme::Meta.size},70.f,1180.f,"Expires "+u(line.mid(8)),t::InkSecondary);
-  else if(line.startsWith("RECEIVED ")||line=="TRANSFER IN PROGRESS")ib::text::draw(c,{ib::Face::Serif,ib::theme::Body.size},70.f,1320.f,sentence(line),t::InkPrimary);
+  // Shown in plain terms: minutes left rather than a UTC timestamp, and a percentage rather than byte counts.
+  if(line.startsWith("EXPIRES ")){const qint64 left=qint64(std::ceil((status_["expires_at"].toDouble()-now())/60.));ib::text::draw(c,{ib::Face::Text,ib::theme::Meta.size},70.f,1180.f,left<=0?std::string("This code has expired"):left==1?std::string("Expires in 1 minute"):"Expires in "+std::to_string(left)+" minutes",t::InkPrimary);}
+  else if(line.startsWith("RECEIVED ")){const double received=status_["received"].toDouble(),total=status_["total"].toDouble();const int pct=total>0?int(std::lround(100.*received/total)):0;ib::text::draw(c,{ib::Face::Serif,ib::theme::Body.size},70.f,1320.f,"Receiving a document \u2014 "+std::to_string(pct)+"%",t::InkPrimary);}
+  else if(line=="TRANSFER IN PROGRESS")ib::text::draw(c,{ib::Face::Serif,ib::theme::Body.size},70.f,1320.f,"Receiving a document\u2026",t::InkPrimary);
   else if(line.startsWith("WAIT ")||line=="REQUEST IN PROGRESS"||line.startsWith("CONNECTION ERROR"))ib::text::draw(c,{ib::Face::Serif,ib::theme::Body.size},70.f,1440.f,sentence(line),line.startsWith("CONNECTION")?t::InkPrimary:t::InkSecondary);
   else if(line.startsWith("START FRESH"))ib::text::draw(c,{ib::Face::Serif,ib::theme::Body.size},70.f,1530.f,"Start fresh — an earlier approval will not be replayed",t::InkPrimary);
  }
  const Action paintedPrimary=primary(),paintedSecondary=secondary();auto p=buttonName(paintedPrimary),q=buttonName(paintedSecondary);
  if(!p.isEmpty())ib::button(c,tg,2,ib::inset(PrimaryBox,20),sentence(p),ib::ButtonKind::Primary);
- if(!q.isEmpty())ib::button(c,tg,3,ib::inset(SecondaryBox,20),sentence(paintedSecondary==Action::Unpair&&confirmUnpair_?QString("CONFIRM UNPAIR"):q),ib::ButtonKind::Secondary);
+ if(!q.isEmpty())ib::button(c,tg,3,ib::inset(SecondaryBox,20),sentence(paintedSecondary==Action::Unpair&&confirmUnpair_?QString("UNPAIR THIS TABLET?"):q),ib::ButtonKind::Secondary);
  ib::text::draw(c,{ib::Face::TextItalic,ib::theme::Meta.size},70.f,2000.f,"Reading in your library always works offline.",t::InkTertiary);
  paintedPair_=status_["pairing_id"].toString();paintedAccount_=status_["account"].toString();paintedPrimary_=paintedPrimary;paintedSecondary_=paintedSecondary;painted_=true;
 }

@@ -91,7 +91,7 @@ int main(int argc,char** argv){QCoreApplication app(argc,argv);
   check(view.hit(300,680).action==ux::WifiView::Action::None,"enterprise row has no action");
   auto pick=view.hit(300,850);check(pick.action==ux::WifiView::Action::Select&&pick.index==2,"open network row selects");
   check(view.hit(300,1950).action==ux::WifiView::Action::Rescan,"rescan");
-  auto text=view.displayedText().join('|');check(text.contains("CONNECTED TO Home")&&text.contains("NOT SUPPORTED HERE")&&text.contains("SHARED WITH THE STOCK APP"),"screen text");
+  auto text=view.displayedText().join('|');check(text.contains("CONNECTED TO Home")&&text.contains("NOT SUPPORTED HERE")&&text.contains("SHARED WITH THE REMARKABLE'S OWN WI-FI SETTINGS"),"screen text");
   ux::WifiView off;off.open();off.update({},{},{},false);check(off.displayedText().join('|').contains("WI-FI IS OFF"),"service off explained");
   // Device status bridge (read-only): the tablet's fuel-gauge files in a fake sysfs tree; malformed or missing
   // values are unknown, never invented.

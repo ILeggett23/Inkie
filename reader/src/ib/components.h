@@ -25,6 +25,8 @@ public:
 };
 // Expands a visual rect to at least the minimum target size around its center.
 Rect hitArea(Rect visual,int minimum=theme::MinTarget)noexcept;
+// Placeholder text in an empty field: small printed italic, so a hint never reads as a value (values are Body).
+inline constexpr Font HintFont{Face::TextItalic,float(theme::Meta.size)};
 // accent: the colour a selected button fills with (0 = theme::ToolSelected, ink).
 struct ButtonState {bool selected{},disabled{};std::uint32_t accent{};constexpr ButtonState(bool s=false,bool d=false,std::uint32_t a=0)noexcept:selected(s),disabled(d),accent(a){}};
 // Icon only; selected draws a rounded ink tile behind a paper glyph. Returns the hit rect.

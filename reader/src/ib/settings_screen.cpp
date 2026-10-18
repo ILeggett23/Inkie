@@ -52,7 +52,7 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   p.toggleRow("Toolbar handle while reading",ToolHandle,m.toolHandle);
   p.toggleRow("Show reading progress",ReadingProgress,m.progress);
   if(m.reduceMotion)p.value("Page turn effects","Off (Reduce motion)");else p.toggleRow("Page turn effects",Effects,m.effects);
-  p.note("Snapped highlights follow the words your highlighter crosses; turn it off to keep freehand highlighter marks. Page turn effects add a short settle after page changes; off keeps refreshes minimal.",3);
+  p.note("Page turn effects add a short settle after page changes; off keeps refreshes minimal. Snap to text is in the highlighter\xE2\x80\x99s palette.",3);
   p.group("Power");
   p.toggleRow("Sleep when cover closes",SleepCover,m.sleepCover);
   {Rect r=p.row("Auto sleep");const Font f{Face::Text,theme::Control.size};const int n=int(m.idleChoices.size());int x=r.x1;
@@ -108,7 +108,7 @@ void paint(Canvas& c,Targets& tg,const Model& m){
  case Page::Accessibility:
   p.group("Display");
   p.toggleRow("High contrast",HighContrast,m.highContrast);
-  p.note("Darker secondary text, lines and controls throughout Inkie.",1);
+  p.note("Darker disabled controls; text and lines are already black throughout Inkie.",1);
   p.group("Motion");
   p.toggleRow("Reduce motion",ReduceMotion,m.reduceMotion);
   p.note("Tom's replies appear all at once instead of line by line, and page turn effects stay off.",1);

@@ -19,7 +19,7 @@ Rect closeRect()noexcept{return side_==Side::Left?Rect{t::ScreenWidth-ToolbarIte
 Rect topRect()noexcept{return {0,0,t::ScreenWidth,ToolbarItem};}
 Rect toolHandleRect()noexcept{return toolbarSlot(SlotHandle);}
 void closeButton(Canvas& c,Targets& tg){Rect r=closeRect();c.fill(r,t::Paper);icon(c,Icon::CloseCircle,centered(r,ToolbarGlyph,ToolbarGlyph),t::ToolbarInk);tg.add(Back,r);}
-void zoomBadge(Canvas& c,Targets& tg,int percent){const Rect r=ZoomBadgeRect;c.fill(r,t::Paper);const Rect b=inset(r,3);c.strokeRound(b,t::RadiusSmall,float(t::Outline),t::InkPrimary);text::centeredLine(c,{Face::SansSemibold,theme::Control.size},r,std::to_string(percent)+"%",t::InkPrimary,Align::Center);tg.add(ZoomBadge,r);}
+void zoomBadge(Canvas& c,Targets& tg,int percent){const Rect r=ZoomBadgeRect;c.fill(r,t::Paper);const Rect b=inset(r,3);c.strokeRound(b,t::RadiusSmall,float(t::Outline),t::InkPrimary);text::centeredLine(c,{Face::SansSemibold,theme::Control.size},r,std::to_string(percent)+"%",t::InkPrimary,Align::Center);tg.add(ZoomBadge,hitArea(r));}
 void footer(Canvas& c,Targets& tg,const Chrome& m){
  // Quiet metadata under the page, as in the native reader: title or chapter left, position right.
  Rect r=FooterRect;c.fill(r,t::Paper);Rect text{FooterInset,r.y0,r.x1-FooterInset,r.y1};const Font f{Face::Text,theme::Meta.size};
@@ -99,7 +99,7 @@ void penPanel(Canvas& c,Targets& tg,const Tools& m,Rect at){
   for(unsigned i=0;i<8;++i){Rect cell=colorCell(i,r);bool unavailable=m.highlighter&&i==0;bool sel=(m.highlighter?m.highlightColor:m.color)==i;bool off=unavailable||m.busy;
    if(sel)pick(cell);float cx=float(cell.x0+cell.x1)/2,cy=float(cell.y0+38);c.fillCircle(cx,cy,19.f,unavailable?t::Paper:t::Ink[i]);c.strokeCircle(cx,cy,18.f,float(t::Outline),off?t::Disabled:sel?t::Paper:t::InkPrimary);
    text::centeredLine(c,label,{cell.x0,cell.y0+62,cell.x1,cell.y1-8},t::InkName[i],sel?t::OnSelected:off?t::Disabled:t::InkPrimary,Align::Center);if(!off)tg.add(ColorBase+int(i),cell);}}
- if(m.colors&&m.highlighter&&!m.eraser){Rect hit{r.x0+24,r.y1-96,r.x1-24,r.y1-8};rule(hit.y0);text::centeredLine(c,label,{hit.x0,hit.y0,hit.x1-112,hit.y1},"Snap to Text",t::InkPrimary,Align::Left);toggle(c,tg,SnapHighlights,{hit.x1-100,hit.y0,hit.x1,hit.y1},m.snapHighlights,!m.canSnap);if(m.canSnap)tg.add(SnapHighlights,hit);}
+ if(m.colors&&m.highlighter&&!m.eraser){Rect hit{r.x0+24,r.y1-96,r.x1-24,r.y1-8};rule(hit.y0);text::centeredLine(c,label,{hit.x0,hit.y0,hit.x1-112,hit.y1},"Snap to text",t::InkPrimary,Align::Left);toggle(c,tg,SnapHighlights,{hit.x1-100,hit.y0,hit.x1,hit.y1},m.snapHighlights,!m.canSnap);if(m.canSnap)tg.add(SnapHighlights,hitArea(hit));}
 }
 Rect selectionToolbar(Canvas& c,Targets& tg,const SelectionBar& m,Rect bounds){
  // Context strip: one card of ink glyphs with printed labels and dotted dividers. The highlighter is the writing-tool
@@ -158,7 +158,7 @@ Rect definitionCard(Canvas& c,Targets& tg,Rect anchor,const Definition& d,Rect b
  const unsigned visibleRows=d.expanded?std::min<unsigned>(capacity,unsigned(all.size())):count;
  const int h=fixed+int(visibleRows)*lh;
  int x=std::clamp(anchor.x0,bounds.x0+t::S3,bounds.x1-t::S3-w);Rect r=anchor.y1+t::S4+h<=bounds.y1?Rect{x,anchor.y1+t::S4,x+w,anchor.y1+t::S4+h}:placeNear(anchor,w,h,bounds,t::S4);
- popover(c,r);iconButton(c,tg,DefClose,{r.x1-t::MinTarget,r.y0,r.x1,r.y0+t::MinTarget},Icon::Close,{},30);
+ popover(c,r);iconButton(c,tg,DefClose,{r.x1-t::MinTarget,r.y0,r.x1,r.y0+t::MinTarget},Icon::Close,{},36);
  int y=r.y0+36;swash(c,word,float(r.x0+pad),float(y+44),text::fit(word,d.word,float(w-pad*2-t::MinTarget)),t::PopCyan);y+=56;
  if(!tag.empty()){text::draw(c,pos,float(r.x0+pad),float(y+30),tag,t::InkSecondary);y+=40;}y+=t::S3;
  for(unsigned k=0;k<count;++k)text::draw(c,body,float(r.x0+pad),float(y+34+int(k)*lh),lines[start+k],none||d.loading?t::InkSecondary:t::InkPrimary);
@@ -166,7 +166,7 @@ Rect definitionCard(Canvas& c,Targets& tg,Rect anchor,const Definition& d,Rect b
  if(!source.empty()){text::draw(c,src,float(r.x0+pad),float(y+28),text::fit(src,source,float(w-pad*2)),t::InkSecondary);y+=50;}
  if(controls){textAction(c,tg,DefMore,{r.x0+pad,y,r.x0+pad+200,y+72},d.expanded?"Collapse":"Expand",false,false);
   if(d.expanded){textAction(c,tg,DefPrevious,{r.x1-pad-360,y,r.x1-pad-180,y+72},"Previous",false,start==0);textAction(c,tg,DefNext,{r.x1-pad-180,y,r.x1-pad,y+72},"Next",false,start+count>=all.size());}y+=72;}
- if(d.actions){y=r.y1-100;c.hline(r.x0+pad,r.x1-pad,y,t::Border,t::Hairline);textAction(c,tg,DefWriteNote,{r.x0+pad,y,r.x0+pad+260,r.y1},"Write note",false,d.loading);textAction(c,tg,DefWriteTom,{r.x0+pad+280,y,r.x0+pad+520,r.y1},"Ask Tom",false,d.loading);}
+ if(d.actions){y=r.y1-100;divider(c,r.x0+pad,r.x1-pad,y);textAction(c,tg,DefWriteNote,{r.x0+pad,y,r.x0+pad+260,r.y1},"Write a note",false,d.loading);textAction(c,tg,DefWriteTom,{r.x0+pad+280,y,r.x0+pad+520,r.y1},"Ask Tom",false,d.loading);}
  return r;
 }
 void selectionWash(Canvas& c,std::span<const Rect> lines){

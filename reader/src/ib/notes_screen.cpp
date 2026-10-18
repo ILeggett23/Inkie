@@ -16,7 +16,7 @@ void hub(Canvas& c,Targets& tg,const Hub& m){const int o=m.idOffset;
  if(!m.embedded){contextSheet(c,120,t::SectionColor[1]);y=120; /* the native square sheet, as Note and Tom */
   text::draw(c,type::ScriptHeading,float(x0),float(y+72),m.heading,t::InkPrimary);
   if(!m.subtitle.empty())text::draw(c,{Face::TextItalic,float(t::Meta.size)},float(x0+text::measure(type::ScriptHeading,m.heading)+t::S3),float(y+70),text::fit({Face::TextItalic,float(t::Meta.size)},m.subtitle,700),t::InkSecondary);
-  iconButton(c,tg,HubClose+o,{x1-t::MinTarget+t::S2,y+8,x1+t::S2,y+t::TopBar},Icon::Close);
+  iconButton(c,tg,HubClose+o,{x1-t::MinTarget+t::S3,y+20,x1+t::S3,y+20+t::MinTarget},Icon::Close,{},36); /* where Note, Tom and Highlight have it */
   if(m.canCreate)iconButton(c,tg,HubCreate+o,{x1-2*t::MinTarget+t::S2,y+8,x1-t::MinTarget+t::S2,y+t::TopBar},Icon::Plus);
   if(m.layers)iconButton(c,tg,HubLayers+o,{x1-3*t::MinTarget+t::S2,y+8,x1-2*t::MinTarget+t::S2,y+t::TopBar},Icon::Layers);
   y+=t::TopBar+t::S3;}
@@ -34,7 +34,7 @@ void hub(Canvas& c,Targets& tg,const Hub& m){const int o=m.idOffset;
   std::string quoteText=!e.excerpt.empty()?"\xE2\x80\x9C"+e.excerpt+"\xE2\x80\x9D":e.body;
   auto lines=text::wrap({e.excerpt.empty()?Face::Serif:Face::SerifItalic,theme::Label.size},quoteText,float(tr-tx),2);for(std::size_t k=0;k<lines.size();++k)text::draw(c,{e.excerpt.empty()?Face::Serif:Face::SerifItalic,theme::Label.size},float(tx),float(ty+40+int(k)*42),lines[k],t::InkSecondary);
   text::draw(c,Caption,float(tx),float(r.y1-t::S4-8),text::fit(Caption,e.unresolved?"Source changed \xE2\x80\x94 note kept":e.source,float(tr-tx)),e.unresolved?t::InkPrimary:t::InkTertiary);
-  if(m.favorites)iconButton(c,tg,StarBase+o+int(i),{r.x1-t::MinTarget,r.y0+t::S3,r.x1,r.y0+t::S3+t::MinTarget},e.favorite?Icon::StarFilled:Icon::Star,{e.favorite,false,t::PopYellow},36);
+  if(m.favorites)iconButton(c,tg,StarBase+o+int(i),{r.x1-t::MinTarget,r.y0+t::S3,r.x1,r.y0+t::S3+t::MinTarget},e.favorite?Icon::StarFilled:Icon::Star,{e.favorite,false},36); /* starred is state: ink */
   divider(c,r.x0,r.x1,r.y1);tg.add(EntryBase+o+int(i),{r.x0,r.y0,r.x1-t::MinTarget,r.y1});}
  if(m.pages>1){int py=m.embedded?library::PillRect.y0:t::ScreenHeight-150;int cx=m.embedded?(1160+library::ContentRight)/2:(x0+x1)/2; /* embedded: right of the create pill */text::centeredLine(c,{Face::Sans,float(t::Meta.size)},{cx-100,py,cx+100,py+t::MinTarget},std::to_string(m.page+1)+" of "+std::to_string(m.pages),t::InkSecondary);
   iconButton(c,tg,HubPrev+o,{cx-220,py,cx-120,py+t::MinTarget},Icon::ChevronLeft,{false,m.page<=0});iconButton(c,tg,HubNext+o,{cx+120,py,cx+220,py+t::MinTarget},Icon::ChevronRight,{false,m.page+1>=m.pages});}
@@ -51,7 +51,7 @@ void note(Canvas& c,Targets& tg,const Note& m){
  Rect del{right-(m.confirmDelete?(m.hasHighlight?500:260):t::MinTarget),m.confirmDelete?hy+12:hy,right,m.confirmDelete?hy+t::MinTarget-12:hy+t::MinTarget};
  if(m.confirmDelete)button(c,tg,NoteDelete,del,m.hasHighlight?"Delete note and highlight?":"Delete note?",ButtonKind::Destructive);else iconButton(c,tg,NoteDelete,del,Icon::Trash,{false,m.busy},36);
  right=del.x0;iconButton(c,tg,NoteBack,{right-t::MinTarget,hy,right,hy+t::MinTarget},Icon::Notes,{},36);right-=t::MinTarget;
- if(m.favorites){iconButton(c,tg,NoteFavorite,{right-t::MinTarget,hy,right,hy+t::MinTarget},m.favorite?Icon::StarFilled:Icon::Star,{m.favorite,false,t::PopYellow},36);right-=t::MinTarget;}
+ if(m.favorites){iconButton(c,tg,NoteFavorite,{right-t::MinTarget,hy,right,hy+t::MinTarget},m.favorite?Icon::StarFilled:Icon::Star,{m.favorite,false},36);right-=t::MinTarget;}
  iconButton(c,tg,NoteExpand,{right-t::MinTarget,hy,right,hy+t::MinTarget},m.expanded?Icon::ChevronDown:Icon::ChevronUp,{false,m.busy},36);right-=t::MinTarget;
  iconButton(c,tg,NoteTom,{right-t::MinTarget,hy,right,hy+t::MinTarget},Icon::TomWrite,{false,m.busy||m.playing},36);right-=t::MinTarget;
  iconButton(c,tg,NoteSelectInk,{right-t::MinTarget,hy,right,hy+t::MinTarget},Icon::NativeSelection,{m.selecting,m.busy||m.playing},36);right-=t::MinTarget;
@@ -61,8 +61,8 @@ void note(Canvas& c,Targets& tg,const Note& m){
  // Paper. Typed text (saved Tom answers, older typed notes) stays readable above the ink.
  if(!m.text.empty()){const Font tf{Face::Serif,theme::Body.size};auto lines=text::wrap(tf,m.text,float(width(area)-t::S4));int rows=std::max(1,(height(area)-40)/50);unsigned first=std::min<unsigned>(m.textOffset,unsigned(std::max(0,int(lines.size())-1)));
   for(int i=0;i<rows&&first+unsigned(i)<lines.size();++i)text::draw(c,tf,float(area.x0+t::S2),float(area.y0+40+i*50),lines[first+unsigned(i)],t::InkPrimary);}
- else{ruledPaper(c,area);if(m.editable&&!m.busy&&m.empty)text::draw(c,{Face::SerifItalic,theme::Body.size},float(area.x0+t::S3),float(area.y0+60),"Write a note\xE2\x80\xA6",t::InkTertiary);}
- if(!m.editable&&!m.busy)text::centeredLine(c,{Face::SerifItalic,theme::Label.size},{area.x0,area.y1-80,area.x1,area.y1-20},"This layer is hidden or locked \xE2\x80\x94 open Layers to write",t::InkTertiary);
+ else{ruledPaper(c,area);if(m.editable&&!m.busy&&m.empty)text::draw(c,HintFont,float(area.x0+t::S3),float(area.y0+60),"Write a note\xE2\x80\xA6",t::InkPrimary);}
+ if(!m.editable&&!m.busy)text::centeredLine(c,HintFont,{area.x0,area.y1-80,area.x1,area.y1-20},"This layer is hidden or locked \xE2\x80\x94 open Layers to write",t::InkPrimary);
  // Footer: pen, undo, redo, keyboard, scroll; the save state; Done.
  const int ry=t::ScreenHeight-NoteToolRow;divider(c,70,1550,ry-8);
  auto tool=[&](int id,int k,bool selected,bool enabled,auto&& draw){Rect cell{70+k*t::MinTarget,ry+4,70+(k+1)*t::MinTarget,ry+4+t::MinTarget};if(selected)c.fillRound(centered(cell,80,80),t::RadiusMedium,t::ToolSelected);
@@ -92,7 +92,7 @@ void highlight(Canvas& c,Targets& tg,const HighlightDetail& m){
  y+=100+t::S4;
  button(c,tg,HlAttachNote,{x0,y,x0+440,y+92},"Write a note",ButtonKind::Primary,m.busy,Icon::Note);
  button(c,tg,HlSource,{x0+460,y,x0+800,y+92},"Go to source",ButtonKind::Secondary,m.busy,Icon::Link);
- button(c,tg,HlDelete,{x1-360,y,x1,y+92},m.confirmDelete?"Confirm remove":"Remove",ButtonKind::Destructive,m.busy,Icon::Trash);
+ button(c,tg,HlDelete,{x1-360,y,x1,y+92},m.confirmDelete?"Remove highlight?":"Remove",ButtonKind::Destructive,m.busy,Icon::Trash);
  status(c,text::quiet(m.status));
 }
 }
