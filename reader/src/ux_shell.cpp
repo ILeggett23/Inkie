@@ -155,7 +155,7 @@ void Shell::notice(QString message){notice_=std::move(message);markNotice(notice
 bool Shell::openSettings(int tab){if(!openViewControls())return false;viewControls_.showTab(DocumentControls::Tab(std::clamp(tab,0,3)));viewPaint();return true;}
 void Shell::viewPaint(bool full){auto p=DocumentControls::Panel;auto& before=libraryBefore_; /* reused frame, never reallocated per tap */if(!full)before.assign(viewPixels_.begin(),viewPixels_.end());auto bg=background();for(int y=std::max(0,p.y0-4);y<std::min(2160,p.y1+4);++y)for(int x=std::max(0,p.x0-4);x<std::min(1620,p.x1+4);++x)viewPixels_[std::size_t(y)*1632+x]=bg[std::size_t(y)*1632+x];viewControls_.paint({viewPixels_,1620,2160,1632});if(full){tomDamage(ib::outset(p,4));return;}
  // Partial repaint (arriving thumbnails): refresh only the bands whose pixels changed, a row of pages at a time.
- std::array<spike::Rect,4> changed;const unsigned n=changedRegions(before,viewPixels_,1620,2160,1632,std::max(0,p.y0-4),changed);for(unsigned k=0;k<n;++k)damage(changed[k]);}
+ std::array<spike::Rect,4> changed;const unsigned n=changedRegions(before,viewPixels_,1620,2160,1632,std::max(0,p.y0-4),changed);damage(joined(changed,n));}
 // Page overview thumbnails: asked for only while the Pages tab is showing and the reader is neither writing nor
 // preparing a page; an arriving batch refreshes the sheet's region, never the whole screen.
 void Shell::thumbnailTick(){
@@ -274,21 +274,31 @@ Change Shell::takeChange(){static_assert(RegionCount+8<=16);auto change=change_;
   if(semanticChanged){for(unsigned n=0;n<submittedUi_.semanticCount;++n)add(submittedUi_.semanticRegions[n]);add(pendingUi_.semanticMenu);add(pendingUi_.semanticPanel);}if(!same(pendingUi_.tools,submittedUi_.tools)){add(submittedUi_.tools);add(pendingUi_.tools);}if(!same(pendingUi_.menu,submittedUi_.menu)){add(submittedUi_.menu);add(pendingUi_.menu);}if(!same(pendingUi_.status,submittedUi_.status)||pendingUi_.statusStyle!=submittedUi_.statusStyle){add(submittedUi_.status);add(pendingUi_.status);}if(!same(pendingUi_.palette,submittedUi_.palette)||pendingUi_.paletteStyle!=submittedUi_.paletteStyle){add(submittedUi_.palette);add(pendingUi_.palette);}}
  return change;}
 void Shell::semanticPaint(){for(unsigned i=0;i<semanticVisual_.count;++i)tomDamage(semanticVisual_.regions[i]);pageBackgrounds();semanticVisual_=semantic::transient({semanticOverlay_,1620,2160,1632},*semantics_,background(),{libraryMode_,bool(styled_),state_==State::Chrome?ib::reader::toolbarRect():spike::Rect{},epubZoomActive()?epubZoom_.scale():1,epubZoomActive()?epubZoom_.dx():0,epubZoomActive()?epubZoom_.dy():0});for(unsigned i=0;i<semanticVisual_.count;++i)tomDamage(semanticVisual_.regions[i]);revealSceneChanged();}
-bool Shell::semanticAction(int x,int y){using namespace ib::reader;auto s=semantics_->selection();int id=semanticVisual_.targets.find(x,y);bool ok=false;
+bool Shell::semanticAction(int x,int y){using namespace ib::reader;const int id=semanticVisual_.targets.find(x,y);
+ switch(id){case SelHighlight:case SelDefine:case DefMore:case DefPrevious:case DefNext:case SelNote:case DefWriteNote:case SelTom:case DefWriteTom:case SelCopy:case DefClose:return semanticCommand(id);default:break;}
+ if(semanticVisual_.menu.contains(x,y)||semanticVisual_.panel.contains(x,y))return true;
+ semantics_->dismiss();if(semantics_->takeDirty())semanticPaint();return true;}
+// One strip or definition-card command. Opening Notes, Highlight or Tom waits while ink is saving or a contact is open:
+// it is kept and runs once that settles, instead of being dropped with no feedback. The journal names every outcome
+// (ui:selection-action value = id*10 + 0 refused, 1 done, 2 waiting).
+bool Shell::semanticCommand(int id){using namespace ib::reader;auto s=semantics_->selection();bool ok=false;
  auto refresh=[&]{if(semantics_->takeDirty())semanticPaint();};
+ auto opens=[&]{return id==SelHighlight&&styled_&&s?true:id==SelNote||id==DefWriteNote||id==SelTom||id==DefWriteTom;};
+ if(opens()&&s&&((styled_&&styled_->status().busy)||(document_&&document_->contact()))){pendingSelectionAction_={id,s};recovery::v2::e2::mark("ui:selection-action",unsigned(id)*10+2);return true;}
+ auto done=[&](bool result){recovery::v2::e2::mark("ui:selection-action",unsigned(id)*10+(result?1:0));return result;};
  switch(id){
- case SelHighlight:if(styled_&&s)return openNotes(notes::Mode::Highlight,s);ok=semantics_->action(semantic::Action::Highlight);if(ok&&s)damage(contentRect(semantic::bounds(s->data)));refresh();return ok;
- case SelDefine:ok=semantics_->action(semantic::Action::Define);refresh();return ok;
+ case SelHighlight:if(styled_&&s)return done(openNotes(notes::Mode::Highlight,s));ok=semantics_->action(semantic::Action::Highlight);if(ok&&s)damage(contentRect(semantic::bounds(s->data)));refresh();return done(ok);
+ case SelDefine:ok=semantics_->action(semantic::Action::Define);refresh();return done(ok);
  case DefMore:ok=semantics_->expandDefinition();refresh();return ok;
  case DefPrevious:ok=semantics_->scrollDefinition(-10);refresh();return ok;
  case DefNext:ok=semantics_->scrollDefinition(10);refresh();return ok;
- case SelNote:case DefWriteNote:if(styled_&&s)return openNotes(notes::Mode::Note,s);return false;
- case SelTom:case DefWriteTom:if(s&&libraryMode_)return openTom(s);return false;
- case SelCopy:if(s){sharedClipboard()=s->data["text"].toString();semantics_->dismiss();refresh();notice("Copied — paste it from the keyboard");}return true;
+ case SelNote:case DefWriteNote:if(styled_&&s)return done(openNotes(notes::Mode::Note,s));return done(false);
+ case SelTom:case DefWriteTom:if(s&&libraryMode_)return done(openTom(s));return done(false);
+ case SelCopy:if(s){sharedClipboard()=s->data["text"].toString();semantics_->dismiss();refresh();notice("Copied — paste it from the keyboard");}return done(bool(s));
  case DefClose:semantics_->dismiss();refresh();return true;
- default:break;}
- if(semanticVisual_.menu.contains(x,y)||semanticVisual_.panel.contains(x,y))return true;
- semantics_->dismiss();refresh();return true;}
+ default:return false;}}
+void Shell::selectionActionTick(){if(pendingSelectionAction_.id<0||!document_||document_->contact()||(styled_&&styled_->status().busy)||penSelect_.active)return;auto pending=std::move(pendingSelectionAction_);pendingSelectionAction_={};
+ if(pending.selected&&pending.selected==semantics_->selection()&&(state_==State::Clean||state_==State::Chrome))(void)semanticCommand(pending.id);}
 void Shell::reloadLibrary(){books_=library::documents(data_);books_+=library::documents(data_,true);}
 // The page as currently displayed (document + ink, no chrome) for sheets to float over.
 void Shell::backdrop(std::vector<std::uint32_t>& out){out.assign(underlay::Pixels,0xffffffffu);spike::Surface s{out,1620,2160,1632};if(styled_)styled_->composite(s,clean_,{0,0,1620,2160});else underlay::compose(s,clean_,ink(),{0,0,1620,2160});
@@ -301,10 +311,14 @@ void Shell::libraryRefresh(){
  if(change_.full||chrome_.size()!=underlay::Pixels){libraryPaint();change_.full=true;return;}
  libraryBefore_.assign(chrome_.begin(),chrome_.end());libraryPaint();if(change_.full)return;
  constexpr int W=1620,H=2160,S=underlay::Stride;auto same=[&](int y){return std::memcmp(&libraryBefore_[std::size_t(y)*S],&chrome_[std::size_t(y)*S],W*sizeof(std::uint32_t))==0;};
+ spike::Rect view{};
  for(int y=0;y<H;){if(same(y)){++y;continue;}
-  // One band per run of changed rows; short unchanged gaps join the band so a popup stays one region.
+  // Runs of changed rows (short unchanged gaps join a run); their bounding box is the view that changed.
   int y0=y,x0=W,x1=0;for(int gap=0;y<H&&gap<24;++y){if(same(y)){++gap;continue;}gap=0;const auto* a=&libraryBefore_[std::size_t(y)*S];const auto* b=&chrome_[std::size_t(y)*S];int l=0,r=W;while(l<r&&a[l]==b[l])++l;while(r>l&&a[r-1]==b[r-1])--r;x0=std::min(x0,l);x1=std::max(x1,r);}
-  const int y1=std::min(H,y);damage({x0,y0,x1,y1});}
+  const int y1=std::min(H,y);if(view.empty())view={x0,y0,x1,y1};else view.include({x0,y0,x1,y1});}
+ /* One library repaint replaces one view (a drawer, a tab, a settings pane): its bands present together as one
+    region. Sent separately they finish one after another on the panel, and the old view shows through meanwhile. */
+ damage(view);
  // Area alone never authorizes the complete-update bit.
 }
 void Shell::libraryPaint(){libraryView_.setCoverSource([this](const QString& id,const QString& source){return covers_.find(id,source);});if(wifiView_.active()){wifiPaint();return;}libraryView_.setTimeZone(semantic::utf8(clockprefs::label(timeSetting_)));libraryView_.setClock(statusModel_.clock,statusModel_.zone);libraryView_.setBattery(battery_.percent.value_or(-1),battery_.charging(),wifiLink_.value_or(false));libraryView_.setDevice(battery_,wifiLink_,storage_,firmware_);libraryView_.setFavorites(favorites_);libraryView_.setEnvironment(libraryEffects_,companionEnabled_,true,userEnded_);{const auto& sleep=sleepSettings();libraryView_.setSleep(sleep.cover,sleep.idleMinutes);}libraryView_.setToolHandle(toolHandleShown());libraryView_.setLeftHanded(leftHanded());libraryView_.setReading(readingProgress(),snapHighlights());
@@ -427,6 +441,9 @@ bool Shell::finger(int x,int y,bool longPress,bool markerContact){if(lock_!=Lock
  }
  if(markerContact||(document_&&document_->contact()))return false;
  if(document_&&menu_&&!longPress){int id=menuTargets_.find(x,y);if(id>=0&&quickBrowsing())return quickBrowseTap(id,x);if(id>=0)return menuAction(id);menu_=false;pageBackgrounds();damage(menuRect_);damage(ib::reader::toolbarSlot(ib::reader::SlotDocument));return true;}
+ /* The collapsed handle always reopens the toolbar, also in Select mode and with a selection showing: a Select tap
+    used to claim it as a word under the handle, so the toolbar could not come back until something was selected. */
+ if(document_&&!longPress&&state_==State::Clean&&styled_&&cleanTargets_.find(x,y)==ib::reader::ToolHandle){const bool shown=action(Action::Show);if(shown&&semantics_->view()!=semantic::View::None)semanticPaint();return shown;}
  if(document_&&semantics_->view()!=semantic::View::None&&!longPress){if(state_==State::Chrome&&!semanticVisual_.menu.contains(x,y)&&!semanticVisual_.panel.contains(x,y)){const int id=chromeTargets_.find(x,y);if(id==ib::reader::ToolHandle){const bool hidden=action(Action::Hide);if(hidden)semanticPaint();return hidden;}if(id>=ib::reader::RailPen&&id<=ib::reader::RailMore){semantics_->dismiss();if(semantics_->takeDirty())semanticPaint();return railAction(id);}}if(selectMode_&&!semanticVisual_.menu.contains(x,y)&&!semanticVisual_.panel.contains(x,y)&&semantics_->longPress(contentPoint(x,y).first,contentPoint(x,y).second,QString::fromLatin1(document_->active().prepared.binding.toHex()))){if(semantics_->takeDirty())semanticPaint();return true;}return semanticAction(x,y);}
  if(document_&&!longPress&&state_==State::Chrome){int id=chromeTargets_.find(x,y);
   if(id>=ib::reader::RailPen&&id<=ib::reader::RailMore)return railAction(id);
@@ -531,7 +548,7 @@ void Shell::runWifi(std::optional<wifi::Network> target,QString password,bool au
 }
 void Shell::wifiTick(){const auto now=std::chrono::steady_clock::now();if(wifiBusy_&&wifiDone_.load(std::memory_order_acquire)){wifiThread_.join();wifiBusy_=false;bool changed=false;{std::lock_guard lock(wifiMutex_);changed=wifiView_.update(wifiFound_,wifiFoundStatus_,wifiResult_,false);}nextWifi_=now+std::chrono::seconds(wifiFoundStatus_.connected()?30:15);if(auto next=wifiRequests_.finish()){runWifi(std::move(next->target),std::move(next->password),false);changed=true;}if(changed&&wifiView_.active()&&(state_==State::Picker||document_))wifiPaint();}
  if(libraryMode_&&releaseNetworking_&&now>=nextWifi_&&!stop_&&!powerConstrained_&&!wifiBusy_&&!wifiRequests_.queued()&&!wifiView_.active()&&!wifiPassword_.active()){nextWifi_=now+std::chrono::seconds(30);startWifi(-2,{});}}
-void Shell::wifiPaint(){if(!wifiView_.active())return;auto& pixels=document_?viewPixels_:chrome_;auto& before=libraryBefore_;before.assign(pixels.begin(),pixels.end()); /* reused frame */spike::Surface s{pixels,1620,2160,1632};wifiView_.paint(s);if(wifiPassword_.active())wifiPassword_.paint(s);std::array<spike::Rect,8> changed;const auto count=changedRegions(before,pixels,1620,2160,1632,0,changed);for(unsigned i=0;i<count;++i)damage(changed[i]);}
+void Shell::wifiPaint(){if(!wifiView_.active())return;auto& pixels=document_?viewPixels_:chrome_;auto& before=libraryBefore_;before.assign(pixels.begin(),pixels.end()); /* reused frame */spike::Surface s{pixels,1620,2160,1632};wifiView_.paint(s);if(wifiPassword_.active())wifiPassword_.paint(s);std::array<spike::Rect,8> changed;const auto count=changedRegions(before,pixels,1620,2160,1632,0,changed);damage(joined(changed,count));}
 void Shell::companionTick(){if(!libraryMode_)return;
  if(companionBusy_&&companionDone_.load(std::memory_order_acquire)){companionThread_.join();companionBusy_=false;auto before=companionStatus_;companionStatus_=std::move(companionResult_);auto state=companionStatus_["state"].toString();qint64 delay=state=="transferring"||(state=="paired"&&companionStatus_.value("pending_jobs").toInt()>0)?500:state=="pairing"?2000:30000;auto retry=companionStatus_["next_poll"].toDouble()-double(QDateTime::currentSecsSinceEpoch());if(std::isfinite(retry)&&retry>0)delay=std::max<qint64>(delay,qint64(std::min(retry,86400.0)*1000));if(companionView_.active()){auto shown=companionStatus_;shown["busy"]=false;companionView_.update(shown);}if(inboxRunning_&&!companionStatus_["operation_failed"].toBool()){inboxPassed_=inboxStarted_;inboxPassedValid_=true;}if(!inboxRunning_)nextCompanion_=std::chrono::steady_clock::now()+std::chrono::milliseconds(delay);inboxRunning_=false;
   if(companionStatus_["library_changed"].toBool())reloadLibrary();if(companionStatus_["inbox_errors_changed"].toBool()&&companionStatus_["inbox_error_count"].toInt()>0){if(document_)notice("Some Inbox files were rejected — your originals are kept");else setLibraryNotice("Some files were rejected — your originals are kept");}else if(companionStatus_["inbox_errors_changed"].toBool()&&companionStatus_["inbox_error_count"].toInt()==0&&libraryView_.notice()==QString("Some files were rejected — your originals are kept"))setLibraryNotice({});
@@ -564,7 +581,7 @@ bool Shell::tick(){if((tom_&&tom_->contact())||(document_&&document_->contact())
  // built when one of them changed, not on every tick while the sheet is open.
  if(viewControls_.active()&&document_&&!document_->contact()){const auto& applied=viewControls_.applied();const bool busy=changingView_||(styled_&&styled_->status().busy)||semantics_->pending(),quiet=styled_&&styled_->revealEnabled();
   if((busy!=applied.busy||quiet!=applied.quietEffects)&&viewControls_.update(viewSnapshot()))viewPaint();}
- thumbnailTick();snapTick();selectTick();
+ thumbnailTick();snapTick();selectTick();selectionActionTick();
  if(tom_&&tom_->active()){tomTick();return false;}
  sourceTick();
  if(notes_&&notes_->active()){notesTick();return false;}
@@ -578,7 +595,7 @@ bool Shell::tick(){if((tom_&&tom_->contact())||(document_&&document_->contact())
  if(returning_){if(notes_){if(!notes_->finish(10))return false;notes_.reset();noteIndicators_.clear();}if(styled_){if(!styled_->finish(10))return false;retiredStyledCommits_+=styled_->status().saved;styled_.reset();styledPage_.clear();}if(!document_->finish(10)||!semantics_->finish(10))return false;presentedInk_={};std::fill(clean_.begin(),clean_.end(),0xffffffffu);document_.reset();openingLease_.reset();
   /* Nothing of the closed document may be composited over My Files: its panels, menus, selection tool, pending pen
      selection or snap, page thumbnails and reader notice all go with it. */
-  pdfPreviewActive_=false;quickSettings_=quickSettingsWait_=false;toolsView_={};viewControls_={};menu_=false;selectMode_=false;penSelect_={};penRangeCount_=0;penRangeOverflow_=false;snapStroke_={};cleanupNext_=false;thumbnails_.reset();notice_.clear();pageFirstPending_=false;recovery::v2::e2::mark("ui:document-closed");semantics_=std::make_unique<semantic::Controller>(app_,data_);semanticVisual_={};std::fill(semanticOverlay_.begin(),semanticOverlay_.end(),0);noteIndicators_.clear();exitAfterNavigation_=false;
+  pdfPreviewActive_=false;quickSettings_=quickSettingsWait_=false;toolsView_={};viewControls_={};menu_=false;selectMode_=false;penSelect_={};pendingSelectionAction_={};penRangeCount_=0;penRangeOverflow_=false;snapStroke_={};cleanupNext_=false;thumbnails_.reset();notice_.clear();pageFirstPending_=false;recovery::v2::e2::mark("ui:document-closed");semantics_=std::make_unique<semantic::Controller>(app_,data_);semanticVisual_={};std::fill(semanticOverlay_.begin(),semanticOverlay_.end(),0);noteIndicators_.clear();exitAfterNavigation_=false;
   /* Notes written, starred or deleted in the book must show in Library > Notes straight away. */
   reloadLibrary();if(libraryView_.section()==LibraryView::Section::Notes)libraryNotes();libraryPaint();returning_=false;state_=State::Picker;change_.complete(FullRefreshReason::DocumentBinding);++presentedVersion_;return true;}
  if(styled_&&styled_->status().failed){fail(11);return false;}if(styled_&&(!document_||styledPage_==document_->active().prepared.binding)){if(styled_->tick()){auto visible=[](ib::reader::Tools t){t.canUndo=t.canUndo&&!t.busy;t.canRedo=t.canRedo&&!t.busy;t.busy=false;return t;};auto r=styled_->damage();const bool toolsChanged=visible(railModel())!=visible(paintedTools_);const bool repaint=pageFirstPending_||!r.empty()||!toolsPainted_||toolsChanged||chromeModel().status!=paintedStyledStatus_;
@@ -589,7 +606,11 @@ bool Shell::tick(){if((tom_&&tom_->contact())||(document_&&document_->contact())
    if(repaint){if(pageFirstPending_)pageBackgrounds();else paintChrome();damage({0,2060,1620,2160});if(toolsChanged&&state_==State::Chrome&&!chromeStale_)damage(ib::reader::toolbarRect());}++toolsRevision_;
    /* page-first: the bootstrap result of a page just shown is never a flash, whatever its size (ink appears over the page) */
    const bool first=pageFirstPending_;if(first){pageFirstPending_=false;recovery::v2::e2::mark("reader:page-first-ink-us",lapUs(pageFirstAt_));}
-   if(!r.empty()&&cleanupNext_&&!first){if(change_.cleanup.empty())change_.cleanup=contentRect(r);else change_.cleanup.include(contentRect(r));recovery::v2::e2::mark("ui:cleanup-requested",unsigned(std::uint64_t(r.x1-r.x0)*(r.y1-r.y0)/1000));}if(!first)cleanupNext_=false;
+   if(!r.empty()&&cleanupNext_&&!first){if(change_.cleanup.empty())change_.cleanup=contentRect(r);else change_.cleanup.include(contentRect(r));recovery::v2::e2::mark("ui:cleanup-requested",unsigned(std::uint64_t(r.x1-r.x0)*(r.y1-r.y0)/1000));}
+   /* The removal is owed until its own damage arrives: a status-only result (saving, Undo availability) can come first,
+      and clearing on it left the erased or undone strokes without their cleanup (residue until a complete refresh). An
+      idle ink owner with nothing drawn means nothing was removed. */
+   if(!first&&(!r.empty()||!styled_->status().busy))cleanupNext_=false;
    if(!r.empty()){if(viewportRefresh_)tomDamage(contentRect(r));else damage(contentRect(r));}if(first&&viewportRefresh_)viewportRefresh_=false;if(toolsView_.active()){toolsView_.update(toolsSnapshot());if(repaint)toolsPaint();}}}
  if(styled_&&styled_->status().ready&&!styled_->status().contact)syncToolShortcuts();
  semantics_->tick();
@@ -678,7 +699,7 @@ semantic::ScreenRangeResult Shell::selectRange(int sx,int sy,int ex,int ey,bool 
  if(handlesOnly)return {semantic::RangeStatus::StartMiss,{},0,0};return semantic::selectScreenRangeChecked(geometry,sx,sy,ex,ey,version(),walkIn,(selectMode_&&std::hypot(ex-sx,ey-sy)>25)||(styled_&&styled_->style().tool==styled::Tool::Highlighter&&!selectMode_&&std::abs(ey-sy)>48&&std::abs(ey-sy)>2*std::abs(ex-sx)));}
 // The selection tool with the pen: when the contact lifts, the words between its ends (or the word under a tap) are
 // selected exactly as a finger drag selects them, and the selection strip offers its actions. Nothing is drawn.
-void Shell::selectTick(){if(!document_||document_->contact()||penSelect_.active||stop_)return;const unsigned count=penRangeCount_;penRangeCount_=0;const bool overflow=penRangeOverflow_;penRangeOverflow_=false;if(!selectMode_||(state_!=State::Clean&&state_!=State::Chrome)){for(auto& pending:penRanges_)pending={};return;}auto lap=std::chrono::steady_clock::now();for(unsigned n=0;n<count;++n){const auto& pen=penRanges_[n];if(pen.epoch!=version()||pen.first.eraser||pen.last.eraser)continue;
+void Shell::selectTick(){if(!document_||document_->contact()||penSelect_.active||stop_)return;const unsigned count=penRangeCount_;penRangeCount_=0;const bool overflow=penRangeOverflow_;penRangeOverflow_=false;if(state_!=State::Clean&&state_!=State::Chrome){for(auto& pending:penRanges_)pending={};return;}auto lap=std::chrono::steady_clock::now();for(unsigned n=0;n<count;++n){const auto& pen=penRanges_[n];if(pen.epoch!=version()||pen.first.eraser||pen.last.eraser||(!selectMode_&&!pen.probe))continue;
  if(pen.action!=-1){if(pen.action>=0&&!pen.first.eraser&&pen.selected==semantics_->selection()&&std::abs(pen.screenLast.x-pen.screenFirst.x)<=25&&std::abs(pen.screenLast.y-pen.screenFirst.y)<=25&&semanticVisual_.targets.find(pen.screenLast.x,pen.screenLast.y)==pen.action)(void)semanticAction(pen.screenLast.x,pen.screenLast.y);if(!selectMode_)break;continue;}
 if(state_==State::Chrome&&(topStrip().contains(pen.first.x,pen.first.y)||ib::reader::toolbarRect().contains(pen.first.x,pen.first.y)))continue;const auto result=selectRange(pen.first.x,pen.first.y,pen.last.x,pen.last.y,true);if(result.selection){if(semantics_->select(result.selection,!result.replace))recovery::v2::e2::mark("ui:select-glyphs",result.glyphCount);else notice("Select fewer or shorter passages");}else if(!semantics_->hasSelection())semantics_->notify(QString::fromUtf8(semantic::rangeStatusText(result.status)));}for(auto& pending:penRanges_)pending={};if(overflow)notice("Select fewer passages — the previous selection is kept");if(semantics_->takeDirty())semanticPaint();if(count)recovery::v2::e2::mark("ui:select-visible-us",lapUs(lap));}
 // Every notice names itself in the journal (a stable id of its text, and the text once on stderr): UI strings only.
@@ -712,11 +733,13 @@ void Shell::snapTick(){
  }catch(...){}
 }
 bool Shell::reserve()noexcept{if(lock_!=Lock::None||!writable())return false;
- if(selectMode_&&styled_&&(state_==State::Clean||state_==State::Chrome)&&!(tom_&&tom_->active())&&!(notes_&&notes_->active())&&!toolsView_.active()&&!viewControls_.active()){penSelect_={};penSelect_.active=true;penSelect_.epoch=version();return true;}if(quietEffectsEnabled()||!reveal_.quiescent())cancelRevealForContact();if(tom_&&tom_->active()){if(!tom_->reserve())return false;if(document_&&!document_->beginExternalContact()){tom_->cancel();return false;}return true;}if(notes_&&notes_->active()){if(!notes_->reserve())return false;if(!document_->beginExternalContact()){notes_->cancel();return false;}return true;}if(!styled_)return document_->reserve();if(!styled_->reserve())return false;if(!document_->beginExternalContact()){styled_->cancel();return false;}return true;}
+ if(styled_&&(selectMode_||semantics_->view()!=semantic::View::None)&&(state_==State::Clean||state_==State::Chrome)&&!(tom_&&tom_->active())&&!(notes_&&notes_->active())&&!toolsView_.active()&&!viewControls_.active()){penSelect_={};penSelect_.active=true;penSelect_.probe=!selectMode_;penSelect_.epoch=version();return true;}if(quietEffectsEnabled()||!reveal_.quiescent())cancelRevealForContact();if(tom_&&tom_->active()){if(!tom_->reserve())return false;if(document_&&!document_->beginExternalContact()){tom_->cancel();return false;}return true;}if(notes_&&notes_->active()){if(!notes_->reserve())return false;if(!document_->beginExternalContact()){notes_->cancel();return false;}return true;}if(!styled_)return document_->reserve();if(!styled_->reserve())return false;if(!document_->beginExternalContact()){styled_->cancel();return false;}return true;}
 bool Shell::append(const spike::Point& original)noexcept{auto p=original;if(epubZoomActive()&&!statusContact_&&p.y<2060){auto at=contentPoint(p.x,p.y);p.x=at.first;p.y=at.second;}if(stop_)return false;if(statusContact_){statusLast_=p;if(p.phase==spike::Phase::Up){statusContact_=false;statusTapPending_=!p.eraser&&std::abs(p.x-statusFirst_.x)<=25&&std::abs(p.y-statusFirst_.y)<=25;}return true;}if(p.phase==spike::Phase::Down&&libraryMode_&&document_&&!(tom_&&tom_->active())&&!(notes_&&notes_->active())&&statusBarRect_.contains(p.x,p.y)){if(penSelect_.active)penSelect_={};else if(styled_){styled_->cancel();document_->endExternalContact();}statusFirst_=statusLast_=p;statusContact_=true;return true;}
  // reserve() cannot know which end of the Marker will touch. Switch a hardware
  // eraser contact to the ordinary ink owner before collecting selection points.
  if(penSelect_.active&&p.phase==spike::Phase::Down&&p.eraser){if(quietEffectsEnabled()||!reveal_.quiescent())cancelRevealForContact();penSelect_={};if(!styled_->reserve())return false;if(!document_->beginExternalContact()){styled_->cancel();return false;}}
+ // A probe (selection showing, Selection tool off) that does not start on the strip or card is ordinary ink.
+ if(penSelect_.active&&penSelect_.probe&&p.phase==spike::Phase::Down&&!(semantics_->view()!=semantic::View::None&&(semanticVisual_.menu.contains(original.x,original.y)||semanticVisual_.panel.contains(original.x,original.y)))){if(quietEffectsEnabled()||!reveal_.quiescent())cancelRevealForContact();penSelect_={};if(!styled_->reserve())return false;if(!document_->beginExternalContact()){styled_->cancel();return false;}}
  if(penSelect_.active){if(p.phase==spike::Phase::Down){penSelect_.first=p;penSelect_.screenFirst=original;
   // An explicit Selection-tool contact may tap the existing selection UI.
   // Capture intent only; dictionary, storage and panel work run after pen-up.

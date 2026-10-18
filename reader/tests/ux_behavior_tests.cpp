@@ -132,6 +132,42 @@ int main(int argc,char** argv){QCoreApplication core(argc,argv);if(argc!=5)retur
  test("passcode_lock_over_a_book_closes_ink_admission_before_reserve",[&]{auto root=data/"lock-admission";importBook(app,source,root);Harness h(app,root);settle(h);security::save(root,"1234");
   CHECK(h.shell.writable()&&h.display.admissionOpen());CHECK(h.shell.lockForSleep()&&h.shell.locked());
   CHECK(!h.shell.writable()&&!h.shell.inkAdmission()&&!h.display.admissionOpen());CHECK(!h.display.reserve());CHECK(!h.shell.failed());});
+ // The first word's centre on screen, from the page geometry (for finger and pen taps on text).
+ auto firstWord=[&](Harness& h){auto geometry=h.shell.semantics().geometry();auto word=geometry->data["words"].toArray().first().toArray(),q=geometry->data["chars"].toArray()[word[0].toInt()].toObject()["quad"].toArray(),m=geometry->data["transform"].toArray();double px=(q[0].toDouble()+q[6].toDouble())/2,py=(q[1].toDouble()+q[7].toDouble())/2;return std::pair{int(m[0].toDouble()*px+m[2].toDouble()*py+m[4].toDouble()),int(m[1].toDouble()*px+m[3].toDouble()*py+m[5].toDouble())};};
+ auto storedStrokes=[&](Harness& h,const QString& id){return h.shell.styledInk()->snapshot()["documents"].toObject()[id].toObject()["strokes"].toArray().size();};
+ // The collapsed handle is a real tap target in Select mode: it used to be claimed as a word under the handle, so the
+ // toolbar could not come back until something was selected. Driven through the painted targets, as on the device.
+ test("collapsed_handle_reopens_toolbar_in_select_mode",[&]{auto root=data/"select-handle";importBook(app,source,root);Harness h(app,root);settle(h);CHECK(h.shell.action(ux::Action::Show));h.boundary();CHECK(uitest::chrome(h.shell,ib::reader::RailSelect));h.boundary();CHECK(h.shell.selectMode());
+  CHECK(uitest::chrome(h.shell,ib::reader::ToolHandle));h.boundary();CHECK(h.shell.selectMode()&&!h.shell.toolbarVisible()&&h.shell.state()==ux::State::Clean);
+  CHECK(uitest::chrome(h.shell,ib::reader::ToolHandle));h.boundary();CHECK(h.shell.selectMode()&&h.shell.toolbarVisible());
+  const auto [x,y]=firstWord(h);h.stroke(x,y,x,y);settle(h);CHECK(h.shell.semantics().view()==semantic::View::Menu);
+  CHECK(uitest::chrome(h.shell,ib::reader::ToolHandle));h.boundary();CHECK(!h.shell.toolbarVisible()&&h.shell.semantics().view()==semantic::View::Menu);
+  CHECK(uitest::chrome(h.shell,ib::reader::ToolHandle));h.boundary();settle(h);CHECK(h.shell.toolbarVisible()&&h.shell.selectMode()&&h.shell.semantics().view()==semantic::View::Menu);CHECK(h.shell.finish(5000));});
+ // Without the Selection tool, a Marker tap on the definition card runs its command and leaves no ink (it used to
+ // draw a dot under the card); a Marker stroke anywhere else while the card is up is still ordinary ink.
+ test("definition_card_accepts_pen_without_selection_tool",[&]{auto root=data/"definition-pen";auto book=importBook(app,source,root);Harness h(app,root);settle(h);CHECK(!h.shell.selectMode());
+  const auto [x,y]=firstWord(h);auto define=[&]{CHECK(h.shell.finger(x,y,true));until([&]{h.boundary();return h.shell.semantics().view()==semantic::View::Definition;});};
+  define();const auto strokes=storedStrokes(h,book.id);const auto close=h.shell.semanticVisual().targets.rect(ib::reader::DefClose);CHECK(!close.empty());
+  h.stroke((close.x0+close.x1)/2,(close.y0+close.y1)/2,(close.x0+close.x1)/2,(close.y0+close.y1)/2);settle(h);CHECK(h.shell.semantics().view()==semantic::View::None&&storedStrokes(h,book.id)==strokes);
+  define();const auto card=h.shell.semanticVisual().panel,strip=h.shell.semanticVisual().menu;int line=0;for(int candidate:{1700,1500,300,1900})if(!card.contains(300,candidate)&&!card.contains(460,candidate)&&!strip.contains(300,candidate)&&!strip.contains(460,candidate)){line=candidate;break;}CHECK(line);
+  h.stroke(300,line,460,line);settle(h);CHECK(storedStrokes(h,book.id)==strokes+1);CHECK(h.shell.finish(5000));});
+ // One library view change is one quality update: the drawer used to go out as quarter-page bands (rows 0-1845 and
+ // 1845-2160 for its 474 px width), so its lower part stayed on screen for about a second after the upper part. Closing
+ // keeps the colour class of the coloured tabs it removes; a class taken from the new pixels left their residue.
+ test("library_drawer_presents_as_one_update",[&]{auto root=data/"library-drawer";importBook(app,source,root);Harness h(app,root);settle(h);CHECK(h.shell.returnToLibrary());until([&]{h.boundary();return !h.shell.document()&&h.shell.state()==ux::State::Picker;});h.boundary();
+  const auto full=h.calls.full;auto drawerUpdates=[&]{std::vector<Calls::Request> out;for(const auto& q:h.calls.requests)if(q.mode==3&&q.flags==0&&overlap(q.rect,ib::library::DrawerRect))out.push_back(q);return out;};
+  h.calls.requests.clear();
+  const auto menu=h.shell.libraryView().targets().rect(ib::library::Menu);CHECK(!menu.empty());CHECK(h.shell.finger((menu.x0+menu.x1)/2,(menu.y0+menu.y1)/2));h.boundary();h.boundary();
+  auto opened=drawerUpdates();CHECK(opened.size()==1);std::vector<spike::Rect> rows;for(unsigned i=0;i<h.shell.libraryView().targets().size();++i){const auto& t=h.shell.libraryView().targets()[i];if(t.rect.x1<=ib::library::DrawerRect.x1&&t.id!=ib::library::Menu)rows.push_back(t.rect);}CHECK(!rows.empty());for(auto r:rows)CHECK(opened[0].rect.x0<=r.x0&&opened[0].rect.y0<=r.y0&&opened[0].rect.y1>=r.y1);
+  h.calls.requests.clear();CHECK(h.shell.finger(1300,1500));h.boundary();h.boundary();
+  auto closed=drawerUpdates();CHECK(closed.size()==1&&closed[0].content==3);for(auto r:rows)CHECK(closed[0].rect.x0<=r.x0&&closed[0].rect.y0<=r.y0&&closed[0].rect.y1>=r.y1);
+  CHECK(h.calls.full==full);onlyRegional(h.calls);CHECK(h.shell.finish(5000));});
+ // A page turn is one scene: it used to go out as up to eight tile regions, each banded to a quarter page, finishing in
+ // visible stages. Now one regional quality update, never the complete-update bit.
+ test("page_turn_presents_as_one_region",[&]{auto root=data/"page-turn-region";importBook(app,source,root);Harness h(app,root);settle(h);const auto full=h.calls.full;h.calls.requests.clear();
+  CHECK(h.shell.navigateTo(1));until([&]{h.boundary();return h.shell.page()==1&&h.shell.writable()&&h.shell.state()==ux::State::Clean;});settle(h);
+  unsigned scene=0;for(const auto& q:h.calls.requests)if(q.mode==3&&q.flags==0&&q.rect.y0<2060&&ux::RefreshPlan::area(q.rect)>=200000)++scene;std::fprintf(stderr,"PAGE_TURN_REGIONS quality=%u full=%u\n",scene,unsigned(h.calls.full-full));
+  CHECK(scene==1&&h.calls.full==full);onlyRegional(h.calls);CHECK(h.shell.finish(5000));});
  test("library_scene_changes_are_regional_and_complete_reasons_explicit",[&]{auto root=data/"library-smart-scenes";importBook(app,source,root);Harness h(app,root);settle(h);std::fprintf(stderr,"LIBRARY_SCENE_PHASE loaded\n");CHECK(h.vendor.completeRequests(ux::FullRefreshReason::Initialization)==1&&h.vendor.completeRequests(ux::FullRefreshReason::DocumentBinding)>=1);CHECK(h.shell.returnToLibrary());std::fprintf(stderr,"LIBRARY_SCENE_PHASE close-requested\n");until([&]{h.boundary();return !h.shell.document()&&h.shell.state()==ux::State::Picker;});std::fprintf(stderr,"LIBRARY_SCENE_PHASE library-ready\n");const auto full=h.calls.full;const auto opened=h.vendor.completeRequests(ux::FullRefreshReason::DocumentBinding);CHECK(opened>=2);h.calls.requests.clear();auto tap=[&](int id){const auto rect=h.shell.libraryView().targets().rect(id);CHECK(!rect.empty());CHECK(h.shell.finger((rect.x0+rect.x1)/2,(rect.y0+rect.y1)/2));h.boundary();};const bool grid=h.shell.libraryView().grid();tap(ib::library::ViewMode);CHECK(h.shell.libraryView().grid()!=grid);tap(ib::library::ViewMode);CHECK(h.shell.libraryView().grid()==grid);tap(ib::library::Create);tap(ib::library::Create);CHECK(h.calls.full==full&&h.vendor.completeRequests(ux::FullRefreshReason::DocumentBinding)==opened);onlyRegional(h.calls);auto canonical=h.calls.pixels;h.shell.compose({canonical,1620,2160,1632},{0,0,1620,2160});CHECK(canonical==h.calls.pixels);CHECK(h.shell.finish(5000));std::fprintf(stderr,"LIBRARY_SCENE_PHASE finished\n");});
  std::printf("UX_REFRESH_SCENARIOS_PASS cases=%u production_Shell_Display=true provider_calls=NONE raw_input_opens=0 actual_vendor_calls=0 optical=NOT_RUN\n",passed);return 0;
  }catch(const std::exception& e){std::fprintf(stderr,"UX_REFRESH_SCENARIO_FAIL %s\n",e.what());return 1;}}

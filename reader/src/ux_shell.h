@@ -140,10 +140,14 @@ class Shell final:public spike::OperationSink {
  struct SnapStroke {spike::Point first,last;bool active{},complete{};};
  bool cleanupNext_{};void expectRemoval()noexcept{cleanupNext_=true;} /* the next ink result removes something: request a cleanup */
  // Selection tool with the pen: the contact selects text instead of writing (no ink, nothing saved).
- struct PenSelect {spike::Point first,last;bool active{},complete{};std::uint64_t epoch{};spike::Point screenFirst,screenLast;int action{-1};semantic::Selection selected;};PenSelect penSelect_;std::array<PenSelect,semantic::MaxSelectionRanges> penRanges_{};unsigned penRangeCount_{};bool penRangeOverflow_{};void selectTick();
+ // probe: a Marker contact while a selection or definition is up without the Selection tool. On the strip or card it
+ // is a tap (the action runs after pen-up); anywhere else it becomes ordinary ink at pen-down.
+ struct PenSelect {spike::Point first,last;bool active{},complete{},probe{};std::uint64_t epoch{};spike::Point screenFirst,screenLast;int action{-1};semantic::Selection selected;};PenSelect penSelect_;std::array<PenSelect,semantic::MaxSelectionRanges> penRanges_{};unsigned penRangeCount_{};bool penRangeOverflow_{};void selectTick();
  semantic::ScreenRangeResult selectRange(int sx,int sy,int ex,int ey,bool walkIn,bool handlesOnly=false); /* drags that start on a selection end move that end */
  void markNotice(const QString&);bool retireFailedTom();bool retireFailedNotes();std::atomic<bool> viewRefused_{false}; /* the last layout change was refused; the old layout reopened */void setLibraryNotice(QString text){markNotice(text);libraryView_.setNotice(std::move(text));}SnapStroke snapStroke_;std::thread snapThread_;std::atomic<bool> snapDone_{false},snapOk_{false};void snapTick();bool chromeStale_{}; /* chrome_ is painted when it becomes visible, not on every page turn */
- bool railAction(int);bool menuAction(int);bool semanticAction(int x,int y);void notice(QString);void libraryNotes();void saveFavorites();
+ bool railAction(int);bool menuAction(int);bool semanticAction(int x,int y);bool semanticCommand(int id);
+ // A strip action refused only because ink is still saving or a contact is open runs once that settles (same selection).
+ struct PendingSelectionAction {int id{-1};semantic::Selection selected;};PendingSelectionAction pendingSelectionAction_;void selectionActionTick();void notice(QString);void libraryNotes();void saveFavorites();
  NotebookView notebook_;bool creatingNotebook_{};QString notebookFolder_;QSet<QString> idsBeforeImport_;
  bool openSettings(int tab);void viewPaint(bool full=true);void thumbnailTick();thumbs::Service thumbnails_;bool openNewNotebook();bool startImport();void backdrop(std::vector<std::uint32_t>&);std::vector<std::uint32_t> backdrop_;semantic::Selection tomSelection_;QJsonObject pendingTomNote_;
  void semanticPaint();void damage(spike::Rect);void tomDamage(spike::Rect);
@@ -191,6 +195,9 @@ public:
  bool generatedPlaying()const noexcept{return (notes_&&notes_->active()&&notes_->generatedPlaying())||(tom_&&tom_->active()&&tom_->generatedPlaying());}bool generatedQuiet()const noexcept{return (!notes_||!notes_->active()||notes_->generatedQuiet())&&(!tom_||!tom_->active()||tom_->generatedQuiet());}
  bool inkSettled()const noexcept{return !styled_||!styled_->status().busy;} // D2: no ink save/redraw pending
  bool inkAdmission()const noexcept{if(!writable())return false;if((tom_&&tom_->active())||(notes_&&notes_->active())||styled_)return true;return document_&&document_->inkAdmissible();} // styled ink is gated inside writable()
+ // One view replacement (a sheet's change, a library repaint) is presented as one region: separate quality updates
+ // of its pieces finish one after another on the panel.
+ template<std::size_t N> static spike::Rect joined(const std::array<spike::Rect,N>& r,unsigned n)noexcept{spike::Rect out{};for(unsigned i=0;i<n&&i<N;++i){if(r[i].empty())continue;if(out.empty())out=r[i];else out.include(r[i]);}return out;}
  bool chromeBeforeHeld_{}; // libraryBefore_ holds the chrome as shown when a rail tap began (toolsPaint diffs against it)
  bool exitAfterNavigation_{}; // the close was tapped while a page turned: return to the library when it settles
  // A library sheet (or the lock) owns the screen and its taps: the library under it must not repaint over it. Each
