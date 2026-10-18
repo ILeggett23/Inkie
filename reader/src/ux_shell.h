@@ -56,6 +56,7 @@ class Shell final:public spike::OperationSink {
  bool openQuickSettings();bool statusFinger(int,int);void refreshStatus(bool force=false);void pollClock(qint64);void compositeStatus(spike::Surface,spike::Rect)const noexcept;
  device::frontlight::Control light_;int pendingLight_{-1};covers::Service covers_;void coverTick();reader::lifecycle::Tracking canonicalTracking_,notesTracking_,tomTracking_,preparationTracking_,resumeTracking_;recovery::v2::progress::WorkToken openerTracking_,openerResumeTracking_;
  std::filesystem::path app_,data_,selectedData_;
+ bool releaseNetworking_{}; // release::policy(app).networking, read once at construction (it was re-read every tick)
  bool libraryMode_{},companionEnabled_{true},tomNetworkEnabled_{true},returning_{},syncing_{};LibraryView libraryView_;LibraryManage libraryManage_;unsigned libraryOffset_{};QVector<library::Document> books_;QString selectedId_,selectedTitle_,selectedFormat_,currentViewSet_,openingViewSet_;std::unique_ptr<library::Lease> openingLease_;void libraryPaint();void reloadLibrary();
  // Repaints the library and refreshes only the bands that changed (a popup, a row, the keyboard), not the whole panel.
  std::vector<std::uint32_t> libraryBefore_;void libraryRefresh();
@@ -139,10 +140,14 @@ class Shell final:public spike::OperationSink {
  struct SnapStroke {spike::Point first,last;bool active{},complete{};};
  bool cleanupNext_{};void expectRemoval()noexcept{cleanupNext_=true;} /* the next ink result removes something: request a cleanup */
  // Selection tool with the pen: the contact selects text instead of writing (no ink, nothing saved).
- struct PenSelect {spike::Point first,last;bool active{},complete{};std::uint64_t epoch{};spike::Point screenFirst,screenLast;int action{-1};semantic::Selection selected;};PenSelect penSelect_;std::array<PenSelect,semantic::MaxSelectionRanges> penRanges_{};unsigned penRangeCount_{};bool penRangeOverflow_{};void selectTick();
+ // probe: a Marker contact while a selection or definition is up without the Selection tool. On the strip or card it
+ // is a tap (the action runs after pen-up); anywhere else it becomes ordinary ink at pen-down.
+ struct PenSelect {spike::Point first,last;bool active{},complete{},probe{};std::uint64_t epoch{};spike::Point screenFirst,screenLast;int action{-1};semantic::Selection selected;};PenSelect penSelect_;std::array<PenSelect,semantic::MaxSelectionRanges> penRanges_{};unsigned penRangeCount_{};bool penRangeOverflow_{};void selectTick();
  semantic::ScreenRangeResult selectRange(int sx,int sy,int ex,int ey,bool walkIn,bool handlesOnly=false); /* drags that start on a selection end move that end */
  void markNotice(const QString&);bool retireFailedTom();bool retireFailedNotes();std::atomic<bool> viewRefused_{false}; /* the last layout change was refused; the old layout reopened */void setLibraryNotice(QString text){markNotice(text);libraryView_.setNotice(std::move(text));}SnapStroke snapStroke_;std::thread snapThread_;std::atomic<bool> snapDone_{false},snapOk_{false};void snapTick();bool chromeStale_{}; /* chrome_ is painted when it becomes visible, not on every page turn */
- bool railAction(int);bool menuAction(int);bool semanticAction(int x,int y);void notice(QString);void libraryNotes();void saveFavorites();
+ bool railAction(int);bool menuAction(int);bool semanticAction(int x,int y);bool semanticCommand(int id);bool onSemantic(int x,int y)const noexcept;int semanticTarget(int x,int y)const noexcept;
+ // A strip action refused only because ink is still saving or a contact is open runs once that settles (same selection).
+ struct PendingSelectionAction {int id{-1};semantic::Selection selected;};PendingSelectionAction pendingSelectionAction_;void selectionActionTick();void notice(QString);void libraryNotes();void saveFavorites();
  NotebookView notebook_;bool creatingNotebook_{};QString notebookFolder_;QSet<QString> idsBeforeImport_;
  bool openSettings(int tab);void viewPaint(bool full=true);void thumbnailTick();thumbs::Service thumbnails_;bool openNewNotebook();bool startImport();void backdrop(std::vector<std::uint32_t>&);std::vector<std::uint32_t> backdrop_;semantic::Selection tomSelection_;QJsonObject pendingTomNote_;
  void semanticPaint();void damage(spike::Rect);void tomDamage(spike::Rect);
@@ -185,12 +190,25 @@ public:
  // E2 diagnostics: bit mask of what still blocks a drained/saved shutdown (see ux_shell.cpp).
  unsigned drainBlockers()noexcept;
  std::size_t inkRoom()const noexcept{if(penSelect_.active||statusContact_)return 1u<<16;if(tom_&&tom_->active())return tom_->inkRoom();if(notes_&&notes_->active())return notes_->inkRoom();if(styled_)return styled_->room();return document_?document_->inkRoom():0;}
+ // The page's current ink is coloured (not black): its strokes get their own local quality update once the pen pauses.
+ bool colorInk()const noexcept;
  bool eraseMode()const noexcept{if(tom_&&tom_->active())return tom_->localEraser();if(notes_&&notes_->active())return notes_->localEraser();return styled_&&styled_->eraser();}
  bool cleanupSettled()const noexcept{return inkSettled()&&(!notes_||!notes_->active()||notes_->renderSettled())&&(!tom_||!tom_->active()||tom_->renderSettled());}
  bool generatedPlaying()const noexcept{return (notes_&&notes_->active()&&notes_->generatedPlaying())||(tom_&&tom_->active()&&tom_->generatedPlaying());}bool generatedQuiet()const noexcept{return (!notes_||!notes_->active()||notes_->generatedQuiet())&&(!tom_||!tom_->active()||tom_->generatedQuiet());}
  bool inkSettled()const noexcept{return !styled_||!styled_->status().busy;} // D2: no ink save/redraw pending
  bool inkAdmission()const noexcept{if(!writable())return false;if((tom_&&tom_->active())||(notes_&&notes_->active())||styled_)return true;return document_&&document_->inkAdmissible();} // styled ink is gated inside writable()
- bool writable()const noexcept{if(stop_)return false;if(timezoneView_.active()||viewControls_.active()||quickSettings_||wifiView_.active())return false;if(tom_&&tom_->active())return tom_->writable();if(notes_&&notes_->active())return !notesClosing_&&notes_->writable();return document_&&(state_==State::Clean||state_==State::Chrome)&&document_->writable()&&(!styled_||styled_->admissionOpen());}
+ // One view replacement (a sheet's change, a library repaint) is presented as one region: separate quality updates
+ // of its pieces finish one after another on the panel.
+ template<std::size_t N> static spike::Rect joined(const std::array<spike::Rect,N>& r,unsigned n)noexcept{spike::Rect out{};for(unsigned i=0;i<n&&i<N;++i){if(r[i].empty())continue;if(out.empty())out=r[i];else out.include(r[i]);}return out;}
+ bool chromeBeforeHeld_{}; // libraryBefore_ holds the chrome as shown when a rail tap began (toolsPaint diffs against it)
+ bool exitAfterNavigation_{}; // the close was tapped while a page turned: return to the library when it settles
+ // A library sheet (or the lock) owns the screen and its taps: the library under it must not repaint over it. Each
+ // sheet repaints the library when it closes, so notices posted meanwhile appear then.
+ bool librarySheetOpen()const noexcept{return libraryManage_.active()||companionView_.active()||notebook_.active()||wifiView_.active()||timezoneView_.active()||lock_!=Lock::None||(tom_&&tom_->active());}
+ // Ink admission must agree with reserve(): the session treats a refused reserve after an admitted contact as fatal,
+ // so every condition reserve() checks before accepting a contact is checked here first (the lock, and the reader's
+ // external-contact gate behind Notes and Tom).
+ bool writable()const noexcept{if(stop_||lock_!=Lock::None)return false;if(timezoneView_.active()||viewControls_.active()||quickSettings_||wifiView_.active())return false;if(tom_&&tom_->active())return tom_->writable()&&(!document_||document_->writable());if(notes_&&notes_->active())return !notesClosing_&&notes_->writable()&&document_&&document_->writable();return document_&&(state_==State::Clean||state_==State::Chrome)&&document_->writable()&&(!styled_||styled_->admissionOpen());}
  // D2 user-ended sessions (V2 reader): an on-screen Exit never ends the session (only the power button does); in a
  // document it returns to the library, in the library it shows how to leave.
  void setUserEnded(bool v)noexcept{userEnded_=v;}bool userEnded()const noexcept{return userEnded_;}bool statusAvailable()const noexcept{return libraryMode_&&!timezoneView_.active()&&!stop_&&!returning_&&!changingView_&&lock_==Lock::None&&!wifiView_.active()&&!(notes_&&notes_->active())&&!(tom_&&tom_->active())&&!libraryManage_.active()&&!companionView_.active()&&!notebook_.active()&&((!document_&&state_==State::Picker)||(document_&&(state_==State::Clean||state_==State::Chrome||state_==State::NavigationPending)));}

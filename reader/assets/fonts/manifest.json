@@ -24,5 +24,29 @@
   "Caveat-OFL.txt": "1f9d81d094273d82f3898a1ee8b598a717d050ecbf5ff7bede105b704880157b",
   "SourceSans3-LICENSE.md": "89ad2c4f66dd29127527493e729c31e731f111cf10faf5774c3db9275ed0c22c",
   "SourceSerif4-LICENSE.md": "75784a295293a8992f5a8d99210566e0064a012e6dab6731305e3787f15896c7"
+ },
+ "evaluatedCandidates": {
+  "_note": "Not packaged and not in this directory: joined-script faces compared with Caveat on cursive candidate sheets (docs/LAYOUT-ARCHITECTURE.md). Licence texts: reader/notices/fonts/CANDIDATES.md.",
+  "DancingScript[wght].ttf": {
+   "license": "SIL Open Font License 1.1",
+   "source": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/dancingscript/DancingScript%5Bwght%5D.ttf",
+   "sha256": "21808625578fe8d8cd10cb684be546dca077b27cd03a53a2f1ec11dc743c924c",
+   "licenseSha256": "6f090277c00af96651ce6dbcc38ff1591047a3bffef486e80b6a32e8276a8201",
+   "verdict": "runner-up; hairline connectors thin out in fast monochrome updates; not traced by Tom's pen"
+  },
+  "HomemadeApple-Regular.ttf": {
+   "license": "Apache License 2.0",
+   "source": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/apache/homemadeapple/HomemadeApple-Regular.ttf",
+   "sha256": "dd1baaca3cde1b1f8415aed3b0aea6808655c9d9ca5a99c7282d9accc16c1a58",
+   "licenseSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+   "verdict": "rejected; sets 1.49x the plain line width, so it would reflow"
+  },
+  "PlaywriteGBS[wght].ttf": {
+   "license": "SIL Open Font License 1.1",
+   "source": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/playwritegbs/PlaywriteGBS%5Bwght%5D.ttf",
+   "sha256": "563b1d961356f9116b550935f27b0cb55466ffba3b9176066a5d9d9ceda6753b",
+   "licenseSha256": "0370f5946020846b0ca65e44950d11411ea3bd3c4c0d755916470f9f96cd8cb8",
+   "verdict": "rejected; sets 1.37x the plain line width, so it would reflow"
+  }
  }
 }
