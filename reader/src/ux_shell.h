@@ -190,7 +190,14 @@ public:
  bool generatedPlaying()const noexcept{return (notes_&&notes_->active()&&notes_->generatedPlaying())||(tom_&&tom_->active()&&tom_->generatedPlaying());}bool generatedQuiet()const noexcept{return (!notes_||!notes_->active()||notes_->generatedQuiet())&&(!tom_||!tom_->active()||tom_->generatedQuiet());}
  bool inkSettled()const noexcept{return !styled_||!styled_->status().busy;} // D2: no ink save/redraw pending
  bool inkAdmission()const noexcept{if(!writable())return false;if((tom_&&tom_->active())||(notes_&&notes_->active())||styled_)return true;return document_&&document_->inkAdmissible();} // styled ink is gated inside writable()
- bool writable()const noexcept{if(stop_)return false;if(timezoneView_.active()||viewControls_.active()||quickSettings_||wifiView_.active())return false;if(tom_&&tom_->active())return tom_->writable();if(notes_&&notes_->active())return !notesClosing_&&notes_->writable();return document_&&(state_==State::Clean||state_==State::Chrome)&&document_->writable()&&(!styled_||styled_->admissionOpen());}
+ // Ink admission must agree with reserve(): the session treats a refused reserve after an admitted contact as fatal,
+ // so every condition reserve() checks before accepting a contact is checked here first (the lock, and the reader's
+ // external-contact gate behind Notes and Tom).
+ // A library sheet (or the lock) owns the screen and its taps: the library under it must not repaint over it. Each
+ // sheet repaints the library when it closes, so notices posted meanwhile appear then.
+ bool exitAfterNavigation_{}; // the close was tapped while a page turned: return to the library when it settles
+ bool librarySheetOpen()const noexcept{return libraryManage_.active()||companionView_.active()||notebook_.active()||wifiView_.active()||timezoneView_.active()||lock_!=Lock::None||(tom_&&tom_->active());}
+ bool writable()const noexcept{if(stop_||lock_!=Lock::None)return false;if(timezoneView_.active()||viewControls_.active()||quickSettings_||wifiView_.active())return false;if(tom_&&tom_->active())return tom_->writable()&&(!document_||document_->writable());if(notes_&&notes_->active())return !notesClosing_&&notes_->writable()&&document_&&document_->writable();return document_&&(state_==State::Clean||state_==State::Chrome)&&document_->writable()&&(!styled_||styled_->admissionOpen());}
  // D2 user-ended sessions (V2 reader): an on-screen Exit never ends the session (only the power button does); in a
  // document it returns to the library, in the library it shows how to leave.
  void setUserEnded(bool v)noexcept{userEnded_=v;}bool userEnded()const noexcept{return userEnded_;}bool statusAvailable()const noexcept{return libraryMode_&&!timezoneView_.active()&&!stop_&&!returning_&&!changingView_&&lock_==Lock::None&&!wifiView_.active()&&!(notes_&&notes_->active())&&!(tom_&&tom_->active())&&!libraryManage_.active()&&!companionView_.active()&&!notebook_.active()&&((!document_&&state_==State::Picker)||(document_&&(state_==State::Clean||state_==State::Chrome||state_==State::NavigationPending)));}

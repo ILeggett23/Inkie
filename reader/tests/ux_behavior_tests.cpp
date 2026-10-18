@@ -5,6 +5,7 @@
 #include "owned/DictionaryProvider.h"
 #include "offline_dictionary.h"
 #include "ui_targets.h"
+#include "passcode.h"
 #include <QCoreApplication>
 #include <QProcess>
 #include <QJsonDocument>
@@ -122,6 +123,11 @@ int main(int argc,char** argv){QCoreApplication core(argc,argv);if(argc!=5)retur
  });
  test("shared_history_cleans_human_ink_locally_after_contact",[&]{auto root=data/"human-history";importBook(app,source,root);Harness h(app,root);settle(h);const auto full=h.calls.full;h.calls.requests.clear();h.stroke(350,900,450,900,120);CHECK(ux::DisplayTestAccess::historyPending(h.display));settle(h);CHECK(!ux::DisplayTestAccess::historyPending(h.display)&&h.calls.full==full);CHECK(regionalQuality(h.calls,{340,890,460,910}));onlyRegional(h.calls);CHECK(h.shell.finish(5000));});
  test("local_cleanup_retry_does_not_resubmit_successful_regions",[&]{auto root=data/"cleanup-retry-prefix";importBook(app,source,root);Harness h(app,root);settle(h);const spike::Rect a{400,800,440,840},b{1100,0,1140,32};h.calls.requests.clear();ux::DisplayTestAccess::qualityDebt(h.display,a,b);h.calls.revoke=&h.lease;h.calls.revokeAfter=1;h.boundary();CHECK(h.calls.requests.size()==1&&ux::DisplayTestAccess::pendingCleanup(h.display)==1);h.lease.live=true;h.calls.revoke=nullptr;until([&]{h.boundary();return ux::DisplayTestAccess::pendingCleanup(h.display)==0;});CHECK(h.calls.requests.size()==2&&overlap(h.calls.requests[0].rect,a)&&overlap(h.calls.requests[1].rect,b));onlyRegional(h.calls);CHECK(h.shell.finish(5000));});
+ // S1 (beta audit): the session ends on a refused reserve after an admitted contact, so while the passcode screen
+ // covers an open book the Marker must be refused at admission, never at reserve().
+ test("passcode_lock_over_a_book_closes_ink_admission_before_reserve",[&]{auto root=data/"lock-admission";importBook(app,source,root);Harness h(app,root);settle(h);security::save(root,"1234");
+  CHECK(h.shell.writable()&&h.display.admissionOpen());CHECK(h.shell.lockForSleep()&&h.shell.locked());
+  CHECK(!h.shell.writable()&&!h.shell.inkAdmission()&&!h.display.admissionOpen());CHECK(!h.display.reserve());CHECK(!h.shell.failed());});
  test("library_scene_changes_are_regional_and_complete_reasons_explicit",[&]{auto root=data/"library-smart-scenes";importBook(app,source,root);Harness h(app,root);settle(h);CHECK(h.vendor.completeRequests(ux::FullRefreshReason::Initialization)==1&&h.vendor.completeRequests(ux::FullRefreshReason::DocumentBinding)>=1);CHECK(h.shell.returnToLibrary());until([&]{h.boundary();return !h.shell.document()&&h.shell.state()==ux::State::Picker;});const auto full=h.calls.full;const auto opened=h.vendor.completeRequests(ux::FullRefreshReason::DocumentBinding);CHECK(opened>=2);h.calls.requests.clear();auto tap=[&](int id){const auto rect=h.shell.libraryView().targets().rect(id);CHECK(!rect.empty());CHECK(h.shell.finger((rect.x0+rect.x1)/2,(rect.y0+rect.y1)/2));h.boundary();};const bool grid=h.shell.libraryView().grid();tap(ib::library::ViewMode);CHECK(h.shell.libraryView().grid()!=grid);tap(ib::library::ViewMode);CHECK(h.shell.libraryView().grid()==grid);tap(ib::library::Create);tap(ib::library::Create);CHECK(h.calls.full==full&&h.vendor.completeRequests(ux::FullRefreshReason::DocumentBinding)==opened);onlyRegional(h.calls);auto canonical=h.calls.pixels;h.shell.compose({canonical,1620,2160,1632},{0,0,1620,2160});CHECK(canonical==h.calls.pixels);CHECK(h.shell.finish(5000));});
  std::printf("UX_REFRESH_SCENARIOS_PASS cases=%u production_Shell_Display=true provider_calls=NONE raw_input_opens=0 actual_vendor_calls=0 optical=NOT_RUN\n",passed);return 0;
  }catch(const std::exception& e){std::fprintf(stderr,"UX_REFRESH_SCENARIO_FAIL %s\n",e.what());return 1;}}

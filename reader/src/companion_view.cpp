@@ -77,7 +77,8 @@ CompanionView::Hit CompanionView::hit(int x,int y){
  if(a==Action::None)return {};
  if(a==Action::Unpair&&!confirmUnpair_){confirmUnpair_=true;painted_=false;return {Action::Changed,{},{}};} /* second tap confirms */
  confirmUnpair_=false;
- Hit result{a,{}, {}};if(a==Action::Approve||a==Action::Reject){result.expectedPairId=paintedPair_;result.expectedAccount=paintedAccount_;consumedPair_=paintedPair_;}
+ Hit result{a,{}, {}};priorConsumed_=consumedPair_;if(a==Action::Approve||a==Action::Reject){result.expectedPairId=paintedPair_;result.expectedAccount=paintedAccount_;consumedPair_=paintedPair_;}
  pending_=true;painted_=false;return result;
 }
+void CompanionView::refused(){pending_=false;painted_=false;consumedPair_=priorConsumed_;}
 }

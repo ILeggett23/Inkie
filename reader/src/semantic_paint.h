@@ -4,6 +4,7 @@
 #include "ux_paint.h"
 #include "ib/reader_screen.h"
 #include "highlight_blocks.h"
+#include "user_messages.h"
 #include <string>
 #include <algorithm>
 #include <cmath>
@@ -32,7 +33,7 @@ inline QByteArray displayText(const QString& value){QString out;for(auto u:value
 inline void wrapped(spike::Surface s,int x,int y,const QString& value,int cols=52,int rows=10){auto text=displayText(value);int at=0;for(int row=0;row<rows&&at<text.size();++row){int n=std::min(cols,int(text.size())-at);if(at+n<text.size()){int space=text.lastIndexOf(' ',at+n);if(space>at)n=space-at;}auto part=text.mid(at,n);ux::text(s,x,y+row*28,3,part.constData());at+=n;while(at<text.size()&&text[at]==' ')++at;}if(at<text.size())ux::text(s,x,y+rows*28,2,"MORE OMITTED");}
 inline int menuBand(const Controller& c,int x,int initial){auto g=c.geometry();if(!g)return initial;auto m=g->data["transform"].toArray();int y=initial;for(unsigned pass=0;pass<64&&y<=1900;++pass){int next=y;for(auto v:g->data["chars"].toArray()){auto q=v.toObject()["quad"].toArray();spike::Rect r{1620,2160,0,0};for(int i=0;i<8;i+=2){auto [px,py]=map(m,q[i].toDouble(),q[i+1].toDouble());r.x0=std::min(r.x0,px);r.y0=std::min(r.y0,py);r.x1=std::max(r.x1,px);r.y1=std::max(r.y1,py);}if(r.x1>x&&r.x0<x+960&&r.y1>y&&r.y0<y+120)next=std::max(next,r.y1+20);}if(next==y)return y;y=next;}return initial;}
 inline std::string utf8(const QString& v){auto b=v.toUtf8();return std::string(b.constData(),std::size_t(b.size()));}
-inline std::string attribution(const QJsonObject& d){auto p=d["provider"].toString();if(p=="princeton-wordnet-3.0")return "WordNet 3.0 \xC2\xB7 Princeton University";if(p=="inkbound-authored-test-v1")return "Test dictionary \xE2\x80\x94 eight entries";return utf8(d["attribution"].toString());}
+inline std::string attribution(const QJsonObject& d){auto p=d["provider"].toString();if(p=="princeton-wordnet-3.0")return "WordNet 3.0 \xC2\xB7 Princeton University";if(p=="inkbound-authored-test-v1")return "Test dictionary \xE2\x80\x94 eight entries";if(p.startsWith("gnu-gcide"))return "GCIDE \xC2\xB7 Webster 1913";return utf8(d["attribution"].toString());}
 inline Visual transient(spike::Surface overlay,const Controller& c,std::span<const std::uint32_t> backdrop={},TransientOptions o={}){probe(Work::Layout);Visual v;if(c.view()==View::None)return v; /* nothing composited without regions: skip the 14 MB clear on every page turn */ std::fill(overlay.pixels.begin(),overlay.pixels.end(),0u);
  ib::Canvas canvas(overlay);const spike::Rect available=ib::layout::popoverBounds(o.excluded);
  auto add=[&](spike::Rect r,bool multiply){r=clip(r);if(r.empty())return;const int rows=multiply?std::max(1,int(1620ULL*2160/4)/std::max(1,r.x1-r.x0)):2160;for(int y=r.y0;y<r.y1&&v.count<v.regions.size();y+=rows){v.regions[v.count]={r.x0,y,r.x1,std::min(r.y1,y+rows)};v.multiply[v.count++]=multiply;}};
@@ -53,7 +54,7 @@ inline Visual transient(spike::Surface overlay,const Controller& c,std::span<con
   if(c.view()==View::Menu){bool word=!s->data["word"].toString().isEmpty();
    v.menu=panel([&](ib::Targets& t){ib::reader::SelectionBar bar;bar.anchor=r;bar.define=word;bar.copy=o.library;bar.more=false;bar.note=o.styled;bar.tom=o.library&&o.styled;return ib::reader::selectionToolbar(canvas,t,bar,available);});return v;}
  }
- if(c.view()==View::Notice){auto message=ib::text::quiet(utf8(c.notice()));v.panel=panel([&](ib::Targets&){const ib::Font f{ib::Face::Text,30};int w=std::min(1300,int(ib::text::measure(f,message))+ib::theme::S5*2);spike::Rect r{810-w/2,1950,810+w/2,2034}; /* a slim hairline pill above the footer */ canvas.fillRound(r,42.f,ib::theme::Surface);canvas.strokeRound(r,42.f,ib::theme::Hairline,ib::theme::Border);ib::text::centeredLine(canvas,f,ib::inset(r,ib::theme::S4),message,ib::theme::InkSecondary);return r;});return v;}
+ if(c.view()==View::Notice){auto message=ib::text::quiet(utf8(ux::friendly(c.notice())));v.panel=panel([&](ib::Targets&){const ib::Font f{ib::Face::Text,float(ib::theme::Label.size)};int w=std::min(1300,int(ib::text::span(f,message))+ib::theme::S5*2);spike::Rect r{810-w/2,1950,810+w/2,2034}; /* a card above the footer, as every Inkie notice */ ib::panel(canvas,r,ib::theme::RadiusMedium);ib::text::centeredLine(canvas,f,ib::inset(r,ib::theme::S4),message,ib::theme::InkPrimary);return r;});return v;}
  ib::reader::Definition d;auto def=c.definition();d.loading=c.view()==View::Defining;d.actions=o.library&&o.styled&&!c.definitionOnly();d.expanded=c.definitionExpanded();d.lineOffset=c.definitionOffset();
  QString selected=c.hasSelection()?c.selection()->data["text"].toString():QString();d.word=utf8(def["key"].toString().isEmpty()?selected:def["key"].toString());
  if(def["status"].toString()=="FOUND"){d.partOfSpeech=utf8(def["partOfSpeech"].toString());auto senses=def["senses"].toArray();
