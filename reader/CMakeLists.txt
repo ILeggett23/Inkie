@@ -104,6 +104,9 @@ target_link_libraries(status-screen-tests PRIVATE inkbound-ui)
 find_package(ZLIB REQUIRED)
 add_executable(ib-preview tools/ib_preview.cpp)
 target_link_libraries(ib-preview PRIVATE inkbound-ui ZLIB::ZLIB)
+# Host timing baseline for the kit (every ib-preview surface plus text layout); compare trees on one machine.
+add_executable(ib-perf tools/ib_perf.cpp)
+target_link_libraries(ib-perf PRIVATE inkbound-ui ZLIB::ZLIB)
 # Zone geometry, popover placement and cursive/plain parity of the kit (docs/LAYOUT-ARCHITECTURE.md).
 add_executable(ib-layout-tests tests/ib_layout_tests.cpp)
 target_link_libraries(ib-layout-tests PRIVATE inkbound-ui)

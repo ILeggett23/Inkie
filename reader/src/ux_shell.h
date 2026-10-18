@@ -56,6 +56,7 @@ class Shell final:public spike::OperationSink {
  bool openQuickSettings();bool statusFinger(int,int);void refreshStatus(bool force=false);void pollClock(qint64);void compositeStatus(spike::Surface,spike::Rect)const noexcept;
  device::frontlight::Control light_;int pendingLight_{-1};covers::Service covers_;void coverTick();reader::lifecycle::Tracking canonicalTracking_,notesTracking_,tomTracking_,preparationTracking_,resumeTracking_;recovery::v2::progress::WorkToken openerTracking_,openerResumeTracking_;
  std::filesystem::path app_,data_,selectedData_;
+ bool releaseNetworking_{}; // release::policy(app).networking, read once at construction (it was re-read every tick)
  bool libraryMode_{},companionEnabled_{true},tomNetworkEnabled_{true},returning_{},syncing_{};LibraryView libraryView_;LibraryManage libraryManage_;unsigned libraryOffset_{};QVector<library::Document> books_;QString selectedId_,selectedTitle_,selectedFormat_,currentViewSet_,openingViewSet_;std::unique_ptr<library::Lease> openingLease_;void libraryPaint();void reloadLibrary();
  // Repaints the library and refreshes only the bands that changed (a popup, a row, the keyboard), not the whole panel.
  std::vector<std::uint32_t> libraryBefore_;void libraryRefresh();

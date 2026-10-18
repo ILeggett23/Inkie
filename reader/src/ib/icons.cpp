@@ -227,13 +227,13 @@ void drawPen(Canvas& c,Instrument kind,Rect box,std::uint32_t ink,bool selected,
 // of them on every tap. Each glyph depends only on its key, so it is rasterised once over the background it sits on
 // (paper, or the ink tile when selected) and copied after; pixels equal to that background are skipped, so the copy
 // composes over whatever is really beneath. Painters run on the shell thread; the lock keeps the cache safe anyway.
-struct PenKey {Instrument kind;int w,h;std::uint32_t ink;bool selected,disabled;bool operator==(const PenKey&)const=default;};
+struct PenKey {Instrument kind;int w,h;std::uint32_t ink,disabledInk;bool selected,disabled;bool operator==(const PenKey&)const=default;}; // disabledInk: High contrast changes theme::Disabled
 struct PenImage {PenKey key;std::uint32_t background;std::vector<std::uint32_t> px;};
 std::mutex penLock;std::vector<std::shared_ptr<const PenImage>> penCache;
 }
 void penGlyph(Canvas& c,Instrument kind,Rect box,std::uint32_t ink,bool selected,bool disabled){
  const int w=width(box),h=height(box);if(w<=0||h<=0||w>512||h>512)return;
- const PenKey key{kind,w,h,ink,selected,disabled};std::shared_ptr<const PenImage> image;
+ const PenKey key{kind,w,h,ink,theme::Disabled,selected,disabled};std::shared_ptr<const PenImage> image;
  {std::lock_guard g(penLock);for(const auto& e:penCache)if(e->key==key){image=e;break;}}
  if(!image){auto made=std::make_shared<PenImage>();made->key=key;made->background=selected?theme::ToolSelected:theme::Paper;made->px.assign(std::size_t(w)*h,made->background);
   Canvas scratch(spike::Surface{made->px,w,h,w});drawPen(scratch,kind,{0,0,w,h},ink,selected,disabled);image=made;

@@ -130,8 +130,12 @@ float drawAligned(Canvas& c,Font f,Rect box,float baseline,std::string_view s,st
 }
 std::string fit(Font f,std::string_view s,float width){
  if(measure(f,s)<=width)return std::string(s);
- const std::string_view dots="\xE2\x80\xA6";float limit=width-measure(f,dots);std::size_t keep=0;
- for(std::size_t i=0;i<s.size();){next(s,i);if(measure(f,s.substr(0,i))>limit)break;keep=i;}
+ const std::string_view dots="\xE2\x80\xA6";float limit=width-measure(f,dots);
+ // The longest code-point prefix that fits, found by bisection over code-point boundaries (prefix width grows with
+ // length), instead of measuring every prefix in turn: O(n log n) glyph walks rather than O(n^2).
+ std::vector<std::size_t> ends;for(std::size_t i=0;i<s.size();){next(s,i);ends.push_back(i);}
+ std::size_t lo=0,hi=ends.size();while(lo<hi){const std::size_t mid=(lo+hi)/2;if(measure(f,s.substr(0,ends[mid]))>limit)hi=mid;else lo=mid+1;}
+ const std::size_t keep=lo?ends[lo-1]:0;
  std::string out(s.substr(0,keep));while(!out.empty()&&out.back()==' ')out.pop_back();return out+std::string(dots);
 }
 std::vector<std::string> wrap(Font f,std::string_view s,float width,int maxLines){
