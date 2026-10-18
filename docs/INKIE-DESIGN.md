@@ -34,8 +34,12 @@ e-Reader article). The figures above are design inputs, not measurements on this
 5. **One colour per place**, the same everywhere the place appears: My files and Recents cyan, Notes magenta, Favorites
    yellow, Shared green, Tom blue, Trash red. Settings is ink, because it is a utility rather than a place.
 6. **Rules are dotted ink** (2 px dots every 6 px), never a grey line.
+   Writing guides under Note and Tom are the same dots, sparser (every 16 px), so they read as a guide and not a
+   divider.
 7. **No shadows.** A card's edge is one 2 px ink rule, and every surface paints only inside the rect it reports for
    damage.
+8. **Every target is at least 96 px** (`hitArea`). `ib-surface-tests` checks every target on every preview surface,
+   and CI diffs `ib-preview --targets` against `reader/tests/fixtures/ib-targets.txt`.
 
 ## 3. The look: a well-made notebook
 
@@ -55,6 +59,12 @@ e-Reader article). The figures above are design inputs, not measurements on this
 | Progress (footer, Quick Browse) | A solid ink line along a dotted rule. Quick Browse has an ink knob for this page and an open ring where you started. |
 | Lock screen | Paper keys with an ink rule. Digits are in Literal, because a passcode is read exactly. Entered digits are solid ink dots. |
 | Keyboard | Paper keys with printed characters (Literal); the modifiers and Done are ink. |
+| Placeholders | `HintFont`: printed italic sans at Meta size, so a hint never reads as a value. The book's serif italic stays for the book's words. |
+| Close | One 36 px glyph on a 96 px target at the same corner of every sheet and card. |
+| Confirmations | A question on the destructive control: "Delete note?", "Remove highlight?", "Delete conversation?". |
+| Wi-Fi | The network in use is an ink row. Signal bars are solid up to the level and hollow above it. A network this tablet can't join is dotted, with no bars. Network names are `Literal`. |
+| Note markers on the page | A kit-drawn sticky note with a 96 px target. |
+| Messages | Status codes never reach the screen: `ux::friendly` (`src/user_messages.h`) turns them into sentences. |
 | Battery | An ink gauge that turns red at 20% or below. |
 
 **Where the fun is:**
@@ -97,13 +107,11 @@ contract.
 
 ## 7. What moved
 
-`ib-preview --targets` on the shipping base compared with v2: **471 of 488 targets are identical** (v1: 434). The
-changes are:
-- the wordmark hit area, which follows the shorter name (127 × 112 px, still above `MinTarget`);
-- the six Auto-sleep choice cells, which move by up to 12 px because their labels are now printed at `Control` size.
-
-Toolbar slots, close, sheets, palette cells, rows, Notes filters and every fixed control are unchanged. No target moves
-between cursive and plain text.
+`ib-preview --targets` on the shipping base compared with Inkie v2 complete (beta pass): **446 of 500 base targets are
+identical**. The rest grew to the 96 px hit area (folders, document menu rows, zoom badge, keyboard clear, sheet source
+lines, Snap to text) or moved to the shared close position. The current listing (571 targets, both hands) is committed as
+`reader/tests/fixtures/ib-targets.txt`, and CI fails on any difference, so a moved control is always a deliberate
+baseline update. No target moves between cursive and plain text or in high contrast (`ib-surface-tests`).
 
 ## 8. Not changed, and open questions
 
