@@ -127,6 +127,7 @@ bool Shell::railAction(int id){if(!styled_||!document_||document_->contact())ret
  /* The chrome as it is on screen before this tap: a rail action may repaint the chrome on its way (semanticPaint,
     selection, eraser), so toolsPaint() must diff against what was shown, not against its own entry. */
  if(state_==State::Chrome&&!chromeStale_){libraryBefore_.assign(chrome_.begin(),chrome_.end());chromeBeforeHeld_=true;}
+ struct Release{bool& held;~Release(){held=false;}}release{chromeBeforeHeld_}; // paths that open a surface never diff
  syncToolShortcuts();using namespace ib::reader;bool ok=true;
  auto chooseShortcut=[&](unsigned slot){const bool selecting=selectMode_,erasing=styled_->eraser();selectMode_=false;
   if(activeShortcut_==slot&&!selecting&&!erasing){rememberShortcut();if(toolsView_.active())toolsView_={};else toolsView_.open(toolsSnapshot());return true;}
