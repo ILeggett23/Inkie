@@ -32,7 +32,7 @@ Compiling is never counted as verification.
 | Stability (S) | 13 + 3 | 12 | 1 (S13) | 3 | 0 |
 | Performance (P) | 8 + 6 | 5 | 2 (P2, P6) | 6 | 1 (P5) |
 | UI/UX (U) | 9 | 9 | 0 | 0 | 0 |
-| Tests (T) | 2 | 2 | 0 | 0 | 0 |
+| Tests (T) | 4 | 4 | 0 | 0 | 0 |
 
 **Beta readiness:** ready for a closed beta on the tablet, once the [device checklist](#10-physical-device-validation-checklist) passes. It is not ready for a wider beta until the refresh-policy proposals in §9 (P-R1 to P-R3) are decided on device.
 
@@ -95,6 +95,7 @@ Measurements are in §4.
 |---|---|---|
 | T1 | Most Qt view and route tests ran only in `run-local-tests.sh`, which is wired to the retired VM. `semantic_crop_tests` was never built. | CI now builds and runs library-view, library-manage, companion-view, wifi, timezone-view, tools-view, document-controls, tom-inline-panel, semantic-crop and user-messages, plus the library, notes, status, timezone and gesture route tests. |
 | T3 | Wiring the local-only tests into CI surfaced two stale or time-dependent checks. (a) `library_route_tests` asserted that High contrast changes `InkSecondary`, which Inkie v2 deliberately keeps ink. (b) `ux_behavior_tests` cleanup-retry counted requests exactly, and once on the tablet build a minute turn (`Shell::pollClock` repainting the reader clock) added a third request, stamped 01:47:00.406. | (a) Checks `Disabled`, the token High contrast changes. (b) Ignores at most one request wholly inside `ib::status::ReaderClock`; the cleanup counts stay exact. Neither is a timing or settled-state check. |
+| T4 | The newly enabled Selection-tool stylus drag route still expected endpoint words. | Derive complete touched-block text, glyph quads and UTF-16 bounds from immutable parser metadata, matching the user-selected shipping contract. Exact no-stored-ink and implicit-highlight checks remain. |
 | T2 | No global ≥96 px check. No `fit`/`wrap`/`quiet` tests. No target-baseline diff. | `ib-surface-tests` (1,377 checks) and `reader/tests/fixtures/ib-targets.txt`, diffed in CI. A moved control fails the build until the baseline is regenerated on purpose. |
 
 ## 3. Files changed (`22b97b7..HEAD`)
@@ -192,16 +193,18 @@ No timing or settled-state check was weakened.
 |---|---|---|---|---|---|
 | `d89477d` | Batch A, stability | pass | pass | pass | pass |
 | `d3a5e85` | Batch B, performance | **fail** (selection_activation_paints_selected_toolbar) | fail | pass | n/a |
-| `5c3cb68` | Chrome-hold fix | pass | pass | pass | RUN_5C |
-| FINAL | Batch D tests + guides | FINAL_HOST | FINAL_ASAN | FINAL_COMP | FINAL_TABLET |
+| `5c3cb68` | Chrome-hold fix (historical report) | reported pass | reported pass | reported pass | not recorded here |
+| `890eaa63` | Supplied beta handoff head | **fail**: stale exact-word expectation in `gesture-route-tests` | **fail**: same assertion | pass | [pass, run 39088152202](https://github.com/ILeggett23/Inkie/actions/runs/39088152202) |
 
-Installable candidate: FINAL_ARTIFACT
+The supplied head's [host run 39088152189](https://github.com/ILeggett23/Inkie/actions/runs/39088152189) passes the core suites but fails the newly enabled Selection-tool route assertion. The shipping Selection contract expands a drag to entire touched paragraphs/blocks. That test still expected endpoint words. Its expected full text, raw glyph quads and UTF-16 bounds now come independently from the parser's block metadata. Exact-word highlighter/finger-handle tests and no-stored-ink/highlight assertions remain intact; no timeout or settled-state check changed.
+
+Final qualification must be read from [PR #2 checks](https://github.com/ILeggett23/Inkie/pull/2/checks) at the exact current head: host release, ASan/UBSan, Companion and ARM must all pass. An older green tablet run does not qualify a different head or waive a red host gate. Record the selected run, commit, artifact digest and independent package verification before installation. No device checklist item is claimed by CI.
 
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
 |---|---|---|---|
-| P-R1 | `ux_display.h` (refresh policy) | Colour is classified from one pixel. The same rect is classified three times. Quality updates are quarter-banded. Queue overflow unions everything. | Classify once per rect from a sparse sample. Measure on device before changing banding. |
+| P-R1 | `ux_display.h` / `vendor.cpp` (refresh policy) | `qualityContent` scans the aligned footprint and exits early on colour; it is not a single-pixel classifier. Classification may repeat across retention and submission. `Display::live` bands its requests; the settled-cleanup loop does not impose that banding. Some overflow paths union debt, while `accumulateDamage` merges the least-cost pair. | Measure the specific repeated work, banding and overflow path on device before proposing a protected change. Sparse sampling is not equivalent to the current colour-preservation guarantee and is not approved here. |
 | P-R2 | Live ink | Live-ink damage is unioned with stale damage, so a stroke can trigger a larger refresh. | Keep live-ink damage separate. Needs the vendor-authority owner. |
 | P-R3 | Lock screen | A wrong passcode triggers a `FullRefreshReason::Security` flash. | A regional refresh for the error line. The full refresh stays for unlock. |
 | P-R4 | Session loop | The 2 ms loop plus 1–2 ms worker polls make ≈6–8 k wakeups/s idle. | Event-driven waits. Measure power on device first. |

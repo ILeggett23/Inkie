@@ -21,14 +21,16 @@ Starting from the shipping reader (`fix/ui-input-refresh`), the branch carries:
 | A: stability | `d89477d` | `writable()` respects the lock and the reader's contact gate (S1 Critical, S2). `retireFailedTom` keeps the current state (S3). Failed opens stop retrying (S4). `navigateTo` reports refusal (S5). Wi-Fi status read under its mutex (S6). `librarySheetOpen()` defers library repaints (S7). Refused Companion taps can be repeated (S8). Close during a page turn returns to the library (S9). Per-book state is cleared on close (S10). `ux::friendly` messages (S11). Typed text survives a refused send (S12). Tom history clamped (S13). |
 | B: performance | `d3a5e85`, `bc4dca6`, `5c3cb68` | Release policy read once (P1). Settings tick compares flags first (P2). Styled results repaint the chrome only (P3). Retained diff frame for the Wi-Fi and view sheets (P4). `text::fit` bisects (P6). Tool taps damage only changed rects, diffed against the frame held at `railAction` entry (`chromeBeforeHeld_`) (P7). Pen cache keyed on the disabled ink (P8). Scanline `fillPath` and per-segment `stroke`, pixel-identical. New `tools/ib_perf.cpp`. |
 | C: UI/UX | `2d5e914`, `f72483a` | Wi-Fi bars, rows and copy. Companion copy and `Literal`. Note markers ≥96. Notice card. `HintFont` placeholders. Every target ≥96. One close glyph. Question confirmations. Copy fixes. Writing guides as dotted ink. |
-| D: tests and CI | `41221ee`, `132152e`, `6b33315` | View and route tests that were local-only now run in CI. New `ib-surface-tests` and `user-messages-tests`. Wi-Fi paint checks. Committed target baseline with a CI diff. Two existing tests corrected (below). |
+| D: tests and CI | `41221ee`, `132152e`, `6b33315` | View and route tests that were local-only now run in CI. New `ib-surface-tests` and `user-messages-tests`. Wi-Fi paint checks. Committed target baseline with a CI diff. Three existing tests corrected (below). |
 | E: docs | this commit | Report, this handoff, design-doc updates. |
 
-### Two existing tests changed
+### Three existing tests changed
 
-Both were corrected, not weakened:
+These are contract/fixture corrections; timing and settled-state checks stay unchanged:
 - **`ux_behavior_tests` cleanup-retry scenario.** It ignores at most one request lying wholly inside `ib::status::ReaderClock`. The reader clock repaints when the minute turns, and this failed once on the tablet build at 01:47:00. The cleanup counts stay exact.
 - **`library_route_tests` high-contrast check.** It checks `theme::Disabled`, the only token High contrast changes under Inkie. It used to check `InkSecondary`.
+
+- **`gesture_route_tests` Selection-tool stylus drag.** A drag selects entire touched paragraphs/blocks by the shipping user contract. The expected full text, raw glyph quads and UTF-16 bounds come from parser block metadata. Highlighter/handle exact-word cases and no-stored-ink assertions remain exact. The supplied `890eaa63` host run failed this stale endpoint-word expectation even though its ARM run passed; require all current-head gates green before installation.
 
 ## Where things live
 
@@ -65,9 +67,9 @@ Both were corrected, not weakened:
 These are protected or policy areas, so they are proposed only, not changed. Details are in report §9.
 
 - **Refresh policy (`ux_display.h`):**
-  - single-pixel colour classification, done three times per rect;
-  - quarter-banding;
-  - queue-overflow union;
+  - possible repeated aligned-footprint colour classification (not single-pixel); measure the call paths before changing it;
+  - banding in `Display::live` (not the settled-cleanup loop);
+  - union fallbacks in some queues, versus least-cost merging in `accumulateDamage`;
   - live-ink damage unioned with stale damage;
   - the lock screen's full refresh on a wrong passcode.
 - **Power and memory:**
