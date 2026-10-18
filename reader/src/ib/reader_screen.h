@@ -16,7 +16,7 @@ enum ChromeId:int {Back=1,Title,PageLabel,Search,Bookmark,More,Footer,PreviousZo
 // Toolbar side (Side, ib/layout.h): one process-wide setting, applied by the shell from ui-toolbar.json before any
 // chrome is painted. Every rect below follows it; layout::zones() describes the same geometry.
 Side toolbarSide()noexcept;void setToolbarSide(Side)noexcept;
-inline constexpr int ToolbarWidth=112,ToolbarItem=layout::TopRow,ToolbarGlyph=48,HandleGlyph=44,ToolbarTile=84,PenGlyph=64; // tile: the selected tool's ink square; PenGlyph: writing tools
+inline constexpr int ToolbarWidth=112,ToolbarItem=layout::TopRow,ToolbarGlyph=48,HandleGlyph=44,ToolbarTile=84,PenGlyph=58; // tile: the selected tool's ink square; PenGlyph: writing tools
 inline constexpr Rect FooterRect{0,2060,1620,2160};
 inline constexpr int FooterInset=160; // footer text margin, clear of the toolbar column
 Rect toolbarRect()noexcept;  // the full-height column (page area) on the toolbar side

@@ -86,7 +86,7 @@ void penPanel(Canvas& c,Targets& tg,const Tools& m,Rect at){
  for(std::size_t i=0;i<Pens.size();++i){Rect cell=penCell(unsigned(i),r);
   bool sel=!m.eraser&&(Pens[i]==Instrument::Highlighter?m.highlighter:(!m.highlighter&&m.pen==Pens[i]));
   const bool available=m.colors||Pens[i]!=Instrument::Highlighter;
-  if(sel&&available)pick(cell);penGlyph(c,Pens[i],centered(cell,68,68),!m.colors?0:t::Ink[(Pens[i]==Instrument::Highlighter?m.highlightColor:m.color)%8],sel&&available,!available);if(available)tg.add(PenBase+int(i),cell);}
+  if(sel&&available)pick(cell);penGlyph(c,Pens[i],centered(cell,62,62),!m.colors?0:t::Ink[(Pens[i]==Instrument::Highlighter?m.highlightColor:m.color)%8],sel&&available,!available);if(available)tg.add(PenBase+int(i),cell);}
  int wy=widthTitleY(r);rule(wy-2);
  static constexpr std::array<const char*,3> WidthName{"Thin","Medium","Thick"};
  text::centeredLine(c,title,{r.x0+30,wy,r.x1-30,wy+PaletteTitle},WidthName[unsigned(m.width)%3],t::InkPrimary,Align::Left);

@@ -67,7 +67,7 @@ void note(Canvas& c,Targets& tg,const Note& m){
  const int ry=t::ScreenHeight-NoteToolRow;divider(c,70,1550,ry-8);
  auto tool=[&](int id,int k,bool selected,bool enabled,auto&& draw){Rect cell{70+k*t::MinTarget,ry+4,70+(k+1)*t::MinTarget,ry+4+t::MinTarget};if(selected)c.fillRound(centered(cell,80,80),t::RadiusMedium,t::ToolSelected);
   draw(centered(cell,40,40),selected?t::OnSelected:enabled?t::InkPrimary:t::Disabled);tg.add(id,cell);};
- tool(NoteInk,0,m.picker,m.editable,[&](Rect b,std::uint32_t){penGlyph(c,m.eraser?Instrument::Eraser:m.pen,outset(b,12),0,m.picker,!m.editable);});
+ tool(NoteInk,0,m.picker,m.editable,[&](Rect b,std::uint32_t){penGlyph(c,m.eraser?Instrument::Eraser:m.pen,outset(b,9),0,m.picker,!m.editable);});
  tool(NoteUndo,1,false,m.canUndo&&!m.busy,[&](Rect b,std::uint32_t col){icon(c,Icon::NativeUndo,b,col);});
  tool(NoteRedo,2,false,m.canRedo&&!m.busy,[&](Rect b,std::uint32_t col){icon(c,Icon::NativeRedo,b,col);});
  tool(NoteType,3,false,!m.busy,[&](Rect b,std::uint32_t col){icon(c,Icon::Keyboard,b,col);}); // typing stays available, quietly
