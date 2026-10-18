@@ -49,7 +49,9 @@ void sheetTitle(Canvas& c,Targets& tg,int top,int h,std::string_view title,std::
 void sheetQuote(Canvas& c,Rect r,std::string_view s,std::uint32_t rule){const Font qf{Face::SerifItalic,theme::Label.size}; // the book's words stay serif; the bar is the highlight's colour
  const Rect bar{r.x0+34,r.y0+8,r.x0+48,r.y1-8};c.fill(bar,rule);c.hairline(bar,t::InkPrimary,t::Hairline);
  Rect q{r.x0+68,r.y0,r.x1,r.y1};text::centeredLine(c,qf,q,text::fit(qf,s,float(width(q))),t::InkSecondary,Align::Left);}
-void ruledPaper(Canvas& c,Rect a,int gap){for(int y=a.y0+gap-6;y<a.y1-8;y+=gap)c.hline(a.x0,a.x1,y,0xffe2e2e2u,1);}
+// Writing guides are a sparse dotted ink rule (2 px dots every 16 px): the Gallery 3 panel has no clean grey, and a
+// rule this open reads as a guide, not a divider. Guides are background only; handwriting is captured as strokes.
+void ruledPaper(Canvas& c,Rect a,int gap){for(int y=a.y0+gap-6;y<a.y1-8;y+=gap)for(int x=a.x0+8;x+2<=a.x1-8;x+=16)c.fill({x,y,x+2,y+2},t::InkPrimary);}
 Rect primaryAction(Canvas& c,Targets& tg,int id,Rect r,std::string_view label,Icon leading,bool disabled){
  // Ink button with paper text, as the native Send and Done.
  const std::uint32_t fill=disabled?t::Surface:t::GoAccent,ink=disabled?t::Disabled:t::onPop(fill);
