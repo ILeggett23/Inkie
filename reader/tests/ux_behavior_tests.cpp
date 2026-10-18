@@ -6,6 +6,7 @@
 #include "offline_dictionary.h"
 #include "ui_targets.h"
 #include "passcode.h"
+#include "ib/status_screen.h"
 #include <QCoreApplication>
 #include <QProcess>
 #include <QJsonDocument>
@@ -71,6 +72,9 @@ static std::vector<std::uint32_t> crop(const Calls& c,spike::Rect r){std::vector
 static void settle(Harness& h){until([&]{h.boundary();CHECK(!h.shell.failed());return h.shell.unsaved()==0&&!h.shell.styledInk()->status().busy&&h.shell.styledInk()->status().ready&&!ux::DisplayTestAccess::pendingCleanup(h.display)&&!ux::DisplayTestAccess::removalDebt(h.display);});}
 static void color(Harness& h,const char* name){bool found=false;for(unsigned i=0;i<8;++i)if(std::string_view(styled::colorId(i))==name){CHECK(h.shell.styledInk()->selectColor(i));found=true;break;}CHECK(found);settle(h);}
 static bool regionalQuality(const Calls& c,spike::Rect r,int requiredContent=-1){for(const auto& q:c.requests)if(q.mode==3&&q.flags==0&&overlap(q.rect,r)&&(requiredContent<0||q.content==requiredContent))return true;return false;}
+// The reader clock repaints itself when the minute turns (Shell::pollClock), independently of any scenario. Count-exact
+// checks drop requests wholly inside the clock, at most one per window (one window never spans two minute turns).
+static std::vector<Calls::Request> withoutClockTurn(const std::vector<Calls::Request>& in){std::vector<Calls::Request> out;unsigned clock=0;constexpr auto c=ib::status::ReaderClock;for(const auto& q:in){if(q.rect.x0>=c.x0&&q.rect.y0>=c.y0&&q.rect.x1<=c.x1&&q.rect.y1<=c.y1){++clock;continue;}out.push_back(q);}CHECK(clock<=1);return out;}
 static void onlyRegional(const Calls& c){CHECK(!c.requests.empty());for(const auto& q:c.requests)CHECK(q.flags==0||(q.mode==0&&q.flags==2));}
 static void seed(Harness& h){color(h,"black");h.stroke(300,900,450,900,5);settle(h);color(h,"red");h.stroke(320,1200,460,1200,5);settle(h);}
 int main(int argc,char** argv){QCoreApplication core(argc,argv);if(argc!=5)return 64;try{
@@ -122,7 +126,7 @@ int main(int argc,char** argv){QCoreApplication core(argc,argv);if(argc!=5)retur
   CHECK(h.shell.styledInk()->snapshot()["documents"].toObject()[book.id].toObject()["strokes"].toArray()==strokes&&h.calls.full==full);onlyRegional(h.calls);CHECK(h.shell.finish(5000));
  });
  test("shared_history_cleans_human_ink_locally_after_contact",[&]{auto root=data/"human-history";importBook(app,source,root);Harness h(app,root);settle(h);const auto full=h.calls.full;h.calls.requests.clear();h.stroke(350,900,450,900,120);CHECK(ux::DisplayTestAccess::historyPending(h.display));settle(h);CHECK(!ux::DisplayTestAccess::historyPending(h.display)&&h.calls.full==full);CHECK(regionalQuality(h.calls,{340,890,460,910}));onlyRegional(h.calls);CHECK(h.shell.finish(5000));});
- test("local_cleanup_retry_does_not_resubmit_successful_regions",[&]{auto root=data/"cleanup-retry-prefix";importBook(app,source,root);Harness h(app,root);settle(h);const spike::Rect a{400,800,440,840},b{1100,0,1140,32};h.calls.requests.clear();ux::DisplayTestAccess::qualityDebt(h.display,a,b);h.calls.revoke=&h.lease;h.calls.revokeAfter=1;h.boundary();CHECK(h.calls.requests.size()==1&&ux::DisplayTestAccess::pendingCleanup(h.display)==1);h.lease.live=true;h.calls.revoke=nullptr;until([&]{h.boundary();return ux::DisplayTestAccess::pendingCleanup(h.display)==0;});CHECK(h.calls.requests.size()==2&&overlap(h.calls.requests[0].rect,a)&&overlap(h.calls.requests[1].rect,b));onlyRegional(h.calls);CHECK(h.shell.finish(5000));});
+ test("local_cleanup_retry_does_not_resubmit_successful_regions",[&]{auto root=data/"cleanup-retry-prefix";importBook(app,source,root);Harness h(app,root);settle(h);const spike::Rect a{400,800,440,840},b{1100,0,1140,32};h.calls.requests.clear();ux::DisplayTestAccess::qualityDebt(h.display,a,b);h.calls.revoke=&h.lease;h.calls.revokeAfter=1;h.boundary();CHECK(withoutClockTurn(h.calls.requests).size()==1&&ux::DisplayTestAccess::pendingCleanup(h.display)==1);h.lease.live=true;h.calls.revoke=nullptr;until([&]{h.boundary();return ux::DisplayTestAccess::pendingCleanup(h.display)==0;});{const auto cleanup=withoutClockTurn(h.calls.requests);CHECK(cleanup.size()==2&&overlap(cleanup[0].rect,a)&&overlap(cleanup[1].rect,b));}onlyRegional(h.calls);CHECK(h.shell.finish(5000));});
  // S1 (beta audit): the session ends on a refused reserve after an admitted contact, so while the passcode screen
  // covers an open book the Marker must be refused at admission, never at reserve().
  test("passcode_lock_over_a_book_closes_ink_admission_before_reserve",[&]{auto root=data/"lock-admission";importBook(app,source,root);Harness h(app,root);settle(h);security::save(root,"1234");
