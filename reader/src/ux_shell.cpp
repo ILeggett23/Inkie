@@ -277,6 +277,8 @@ void Shell::semanticPaint(){for(unsigned i=0;i<semanticVisual_.count;++i)tomDama
 // Strip and card taps (finger or Marker) reach the nearest command within StripSlop of the strip or card: a tap on a
 // divider or just past the card edge used to dismiss the selection instead. ui:semantic-tap = command id, 0 elsewhere.
 static constexpr int StripSlop=ib::theme::S3,MarkerTapTravel=40; /* a Marker press slides a few px on the glass */
+bool Shell::colorInk()const noexcept{if(!styled_||(tom_&&tom_->active())||(notes_&&notes_->active())||styled_->eraser())return false;const auto s=styled_->style();if(s.tool==styled::Tool::Highlighter)return true;
+ if(!s.exact)return s.color!=0; /* palette index 0 is black */const auto r=(s.rgb>>16)&255u,g=(s.rgb>>8)&255u,b=s.rgb&255u;return s.rgb!=ib::theme::Ink[0]&&!(r==g&&g==b);}
 bool Shell::onSemantic(int x,int y)const noexcept{auto near=[&](spike::Rect r){return !r.empty()&&ib::outset(r,StripSlop).contains(x,y);};return near(semanticVisual_.menu)||near(semanticVisual_.panel);}
 int Shell::semanticTarget(int x,int y)const noexcept{return onSemantic(x,y)?semanticVisual_.targets.nearest(x,y,StripSlop):-1;}
 bool Shell::semanticAction(int x,int y){using namespace ib::reader;const int id=semanticTarget(x,y);recovery::v2::e2::mark("ui:semantic-tap",unsigned(std::max(0,id)));

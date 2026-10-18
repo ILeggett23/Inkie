@@ -60,10 +60,12 @@ Details in report §8, "Device report follow-up 2".
 - **`ux_shell.*`:** done strip commands and `openNotes`/`openTom` present at once (`change_.preview`); strip and card
   taps reach the nearest command within 24 px (`onSemantic`, `semanticTarget`, `Targets::nearest`) for finger and
   Marker; opens wait while the previous panel finishes; `ui:semantic-tap`, `ui:semantic-pen-dropped`.
-- **`ux_display.h`:** the eraser's area gets one regional quality cleanup when it lifts (`liftCleanup_`), as stock does.
-  The earlier dark-flash attempt left a dark box on the device (fast and quality updates are not applied in order) and was removed.
+- **`ux_display.h`, `vendor.*` (protected, user-approved):** removal cleanups use Content mode (`cleanContent`): the
+  eraser's area as it lifts (`liftCleanup_`) and settled removals (`removal_`). In this plugin UI mode gets the lighter
+  waveform class (5) and Content the one stock uses on erased ink (2). Coloured strokes get one local quality update
+  once settled (`inkPlan_`). The dark-flash attempt (`1c67668`) was removed.
 - **`ib/tom_screen.cpp`:** no guides under Tom's answer.
-- `vendor.*` is unchanged; no new waveform, flag or timer.
+- No new flag, waveform constant or timer; Content mode is regional only.
 
 ## Where things live
 

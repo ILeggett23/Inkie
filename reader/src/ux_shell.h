@@ -190,6 +190,8 @@ public:
  // E2 diagnostics: bit mask of what still blocks a drained/saved shutdown (see ux_shell.cpp).
  unsigned drainBlockers()noexcept;
  std::size_t inkRoom()const noexcept{if(penSelect_.active||statusContact_)return 1u<<16;if(tom_&&tom_->active())return tom_->inkRoom();if(notes_&&notes_->active())return notes_->inkRoom();if(styled_)return styled_->room();return document_?document_->inkRoom():0;}
+ // The page's current ink is coloured (not black): its strokes get their own local quality update once the pen pauses.
+ bool colorInk()const noexcept;
  bool eraseMode()const noexcept{if(tom_&&tom_->active())return tom_->localEraser();if(notes_&&notes_->active())return notes_->localEraser();return styled_&&styled_->eraser();}
  bool cleanupSettled()const noexcept{return inkSettled()&&(!notes_||!notes_->active()||notes_->renderSettled())&&(!tom_||!tom_->active()||tom_->renderSettled());}
  bool generatedPlaying()const noexcept{return (notes_&&notes_->active()&&notes_->generatedPlaying())||(tom_&&tom_->active()&&tom_->generatedPlaying());}bool generatedQuiet()const noexcept{return (!notes_||!notes_->active()||notes_->generatedQuiet())&&(!tom_||!tom_->active()||tom_->generatedQuiet());}
