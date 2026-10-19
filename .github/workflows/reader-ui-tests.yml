@@ -144,13 +144,16 @@ jobs:
         run: |
           set -euo pipefail
           # Inkie's conversation store and memory, its event stream, PDF view planning and turned (landscape)
-          # pages, prepared-page storage, and touch gestures (docs/LANDSCAPE.md).
-          cmake --build .ci-build --parallel 2 --target tom-store-tests tom-session-tests touch-drag-tests pdf-viewport-tests prepare-document-view-tests
+          # pages, prepared-page storage, touch gestures, and EPUB layouts with their turned pages (docs/LANDSCAPE.md).
+          cmake --build .ci-build --parallel 2 --target tom-store-tests tom-session-tests touch-drag-tests pdf-viewport-tests prepare-document-view-tests epub-view-store-tests prepare-epub-view-tests epub-view-route-tests
           .ci-build/tom-store-tests
           .ci-build/tom-session-tests
           .ci-build/touch-drag-tests
           .ci-build/pdf-viewport-tests "$PWD/reader/fixtures/library/authored-three-pages.pdf"
           .ci-build/prepare-document-view-tests "$PWD/reader"
+          .ci-build/epub-view-store-tests
+          .ci-build/prepare-epub-view-tests "$PWD/reader"
+          .ci-build/epub-view-route-tests "$PWD/reader" "$PWD/.ci-test-data/epub-view-route" "$PWD/.ci-build" "$PWD/.ci-sysroot"
       - name: Render host previews of every kit surface
         run: |
           set -euo pipefail

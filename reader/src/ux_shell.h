@@ -174,6 +174,9 @@ public:
  // stay physical, while the reading chrome is laid out upright (ib::layout::setTurn), painted in turned_ and its targets
  // mapped to the panel, so every hit test keeps panel pixels. Surfaces without a landscape layout ask for portrait.
  ib::layout::Turn turn_{ib::layout::Turn::Portrait},openingTurn_{ib::layout::Turn::Portrait};bool turning_{};std::vector<std::uint32_t> turned_;
+ // An EPUB turns into a landscape twin of its layout (wider lines, same type size); portraitEpubSet_ is the layout it
+ // returns to. Leaving a turned EPUB turns it back first, so its own layout keeps the reading position.
+ QString portraitEpubSet_;bool leaveTurned_{};std::atomic<bool> turnRefused_{false};
  static unsigned degrees(ib::layout::Turn t)noexcept{return t==ib::layout::Turn::Clockwise?90u:t==ib::layout::Turn::Anticlockwise?270u:0u;}
  bool turned()const noexcept{return turn_!=ib::layout::Turn::Portrait;}
  spike::Rect physical(spike::Rect logical)const noexcept{return ib::layout::Frame{turn_}.physical(logical);}

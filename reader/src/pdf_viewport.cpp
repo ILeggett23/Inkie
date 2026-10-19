@@ -11,7 +11,6 @@ Rect transformed(Rect r,const Affine& m){std::array<Point,4> points{{m.map({r.x,
 
 }
 Point Affine::map(Point p)const noexcept{auto [a,b,c,d,e,f]=value;return {a*p.x+c*p.y+e,b*p.x+d*p.y+f};}
-Viewport viewport(unsigned orientation)noexcept{if(orientation==Clockwise)return {0,0,1520,2160};if(orientation==Anticlockwise)return {100,0,1520,2160};return {};}
 Plan plan(Rect source,const View& view,unsigned orientation){
  need(finiteRect(source),Error::InvalidBounds,"pdf-bounds-invalid");for(double v:{source.x,source.y,source.x+source.width,source.y+source.height})need(std::abs(v)<=MaxCoordinate,Error::Capacity,"pdf-coordinate-capacity");
  need(std::isfinite(view.zoom)&&view.zoom>=1&&view.zoom<=4&&(view.rotation==0||view.rotation==90||view.rotation==180||view.rotation==270)&&std::isfinite(view.pan.x)&&std::isfinite(view.pan.y)&&(orientation==Portrait||orientation==Clockwise||orientation==Anticlockwise),Error::InvalidView,"pdf-view-invalid");
