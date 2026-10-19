@@ -5,6 +5,7 @@
 // sheet. The handwriting area keeps the Tom canvas geometry exactly (stored
 // question ink is relative to it).
 #include "ib/components.h"
+#include "ib/layout.h"
 #include <string>
 #include <vector>
 namespace ib::tom {
@@ -12,7 +13,7 @@ namespace ib::tom {
 // area-relative logical coordinates, so the writing area keeps its size (1480 x 680, or 1360 tall) wherever it sits.
 // Native lower sheet: header (title, subtitle, tools), the quoted passage, ruled paper, then a footer row.
 inline constexpr Rect WritingArea{70,1360,1550,2040},ExpandedWritingArea{70,680,1550,2040};
-inline constexpr int SheetTop=1160,ExpandedSheetTop=480,HeaderHeight=136,FooterTop=2048;
+inline constexpr int SheetTop=layout::SheetTop,ExpandedSheetTop=480,HeaderHeight=layout::SheetHeader,FooterTop=2048;
 inline constexpr unsigned HistoryRows=4;
 struct Turn {std::string question,answer;bool operator==(const Turn&)const=default;};
 struct Thread {std::string title,metadata;bool operator==(const Thread&)const=default;};
