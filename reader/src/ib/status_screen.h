@@ -1,5 +1,6 @@
 #pragma once
 #include "ib/components.h"
+#include "ib/layout.h"
 namespace ib::status {
 inline constexpr Rect LibraryBar{1080,40,1580,152},ReaderBar{1080,8,1496,104},ReaderClock{1280,8,1496,104},Panel{876,160,1580,920};
 inline constexpr int LitLevels=5;
@@ -10,5 +11,7 @@ struct Model {int battery{-1},wifi{-1},light{-1},maximum{-1},degrees{-1000},rota
 int nativeLevel(int step,int maximum)noexcept;
 int nearestStep(int level,int maximum)noexcept;
 void bar(Canvas&,Targets&,const Model&,Rect);
+// The quick-settings panel in the current turn (ib::layout::turn): Panel in portrait, at the reader's top right in landscape.
+Rect panelRect()noexcept;
 void panel(Canvas&,Targets&,const Model&);
 }

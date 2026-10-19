@@ -159,7 +159,7 @@ Rect menu(Canvas& c,Targets& tg,Rect anchor,const std::vector<MenuItem>& items,i
 }
 Rect documentMenu(Canvas& c,Targets& tg,Rect tile,std::string_view title,const std::vector<MenuItem>& items,std::size_t separator){
  const int pad=30,head=78,sep=separator<items.size()?24:0;const int h=25+head+int(items.size())*DocumentMenuRow+sep+25;
- const bool left=tile.x0<t::ScreenWidth/2;int x0=left?tile.x1-2:tile.x0-DocumentMenuWidth+2;int y0=std::clamp(tile.y0,t::S2,t::PageFitHeight-t::S2-h);
+ const bool left=tile.x0<layout::screenWidth()/2;int x0=left?tile.x1-2:tile.x0-DocumentMenuWidth+2;int y0=std::clamp(tile.y0,t::S2,layout::pageHeight()-t::S2-h); /* the current turn (ib/layout.h) */
  Rect r{x0,y0,x0+DocumentMenuWidth,y0+h};popover(c,r);const Font titleFont{Face::TextSemibold,theme::Body.size},rowFont{Face::Text,theme::Label.size};
  text::centeredLine(c,titleFont,{r.x0+pad,r.y0+25,r.x1-pad,r.y0+25+head-16},text::fit(titleFont,title,float(width(r)-pad*2)),t::InkPrimary,Align::Left);
  int y=r.y0+25+head;
