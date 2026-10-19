@@ -290,6 +290,17 @@ Not changed (proposed, needs measurement first): reasoning effort for typed answ
 `composition_plan.test.mjs` as "legacy requests retain their payload"), raising `TOM_MAX_OUTPUT_TOKENS` from 800, one
 model call for read-and-answer, a long-lived helper across requests.
 
+### Landscape, PR 1 (user request, 2026-10-19; docs/LANDSCAPE.md)
+
+Native, staged landscape as the user chose: an open PDF's reading view turns with the tablet when Auto-rotate (quick
+settings) is on. The orientation is a presentation parameter of page planning and caching, never a stored view setting.
+That change to the protected prepared-page storage was approved. Turned pages live in `<document>/turn-<o>/`, carry
+`orientation` in their identity, and are re-planned and checked by the loader. Ink stays in source coordinates. The
+chrome is laid out from the landscape zones and painted upright, with targets kept in panel pixels. Selection, sheets,
+menus and the palette are portrait only for now (a notice). EPUB reflow is PR 2. [auto] status-screen, ib-layout,
+pdf-viewport, prepare-document-view, touch-drag and the `pdf_turns_with_the_tablet_and_keeps_ink_written_turned`
+route. Device checks 29–33; the first run also confirms the accelerometer's axis signs (`ui:orientation`).
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -339,6 +350,11 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 26 | Settings → Inkie: Forget one note; Clear all (tap twice) | The note goes; Clear asks once more, then the list is empty | `tom:memory-forget`, `tom:memory-clear` |
 | 27 | Write a question by hand and Send; time it | Shorter than the 16 s reading time recorded before (needs the new Companion deployed) | `tom:read-answer-start` → `tom:ocr-end` |
 | 28 | Ask for a drawing of a red apple and of a labelled diagram | The apple is coloured; the diagram stays ink | — |
+| 29 | Quick settings: turn Auto-rotate on; open a PDF; turn the tablet clockwise, then anticlockwise | The page turns upright and sharp after the tilt settles; toolbar, close, footer and clock sit on the landscape edges | `ui:orientation` (raw angle), `ui:turn`, `ui:turned` |
+| 30 | In landscape: write and erase, then turn back upright | The ink is where it was written, in both orientations | — |
+| 31 | In landscape: swipe left and right; tap the footer | Pages turn in the reading direction; the footer shows the toolbar | `reader:gesture` |
+| 32 | In landscape: long-press a word, tap the palette's active pen, swipe down from the top | "Turn the tablet upright for this"; nothing opens sideways | `ui:turn-portrait-only` |
+| 33 | Turn Auto-rotate off, or open an EPUB or the library while turned | Nothing turns; EPUBs and the library stay portrait | — |
 
 ## 11. Beta-readiness recommendation
 
