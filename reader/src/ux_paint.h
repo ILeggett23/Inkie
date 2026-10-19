@@ -12,18 +12,20 @@ enum class Action {None,Open,Show,Hide,Previous,Next,Exit};
 // handedness setting, so the toolbar-side rects are functions. Regions are the partial refresh areas
 // for clean<->chrome changes: 0 top strip (handle, close), 1 toolbar column, 2 footer, 3 picker row.
 inline constexpr spike::Rect PickerRow{100,560,1520,820},Reveal=ib::reader::FooterRect;
-inline spike::Rect topStrip()noexcept{return ib::reader::topRect();}
-inline spike::Rect toolbarColumn()noexcept{auto r=ib::reader::toolbarRect();return {r.x0,ib::reader::ToolbarItem,r.x1,r.y1};}
-inline spike::Rect closeTarget()noexcept{return ib::reader::closeRect();}
-inline spike::Rect handleTarget()noexcept{return ib::reader::toolHandleRect();}
-inline std::array<spike::Rect,4> regions()noexcept{return {topStrip(),toolbarColumn(),Reveal,PickerRow};}
+// On the panel: the reader chrome is laid out in the current turn (docs/LANDSCAPE.md); these are its panel pixels.
+inline spike::Rect onPanel(spike::Rect logical)noexcept{return ib::layout::Frame{ib::layout::turn()}.physical(logical);}
+inline spike::Rect topStrip()noexcept{return onPanel(ib::reader::topRect());}
+inline spike::Rect toolbarColumn()noexcept{auto r=ib::reader::toolbarRect();return onPanel({r.x0,ib::reader::ToolbarItem,r.x1,r.y1});}
+inline spike::Rect closeTarget()noexcept{return onPanel(ib::reader::closeRect());}
+inline spike::Rect handleTarget()noexcept{return onPanel(ib::reader::toolHandleRect());}
+inline std::array<spike::Rect,4> regions()noexcept{return {topStrip(),toolbarColumn(),onPanel(ib::reader::footerRect()),PickerRow};}
 inline constexpr unsigned RegionCount=4,ChromeRegions=1u|2u|4u;
 // Clean: only the footer reveals chrome (the shell routes the visible handle itself); page taps do
 // nothing and pages turn by swipe, as on the native reader. Chrome: the circled close leaves, the
 // handle hides the toolbar; taps on the page stay inert so a stray finger never hides tools.
 inline Action hit(State state,int x,int y){
  if(state==State::Picker||state==State::Loading){if(state==State::Picker&&PickerRow.contains(x,y))return Action::Open;if(spike::Rect{1380,0,1620,130}.contains(x,y))return Action::Exit;return Action::None;}
- if(state==State::Clean)return Reveal.contains(x,y)?Action::Show:Action::None;
+ if(state==State::Clean)return onPanel(ib::reader::footerRect()).contains(x,y)?Action::Show:Action::None; /* Reveal in portrait */
  if(state==State::Chrome){if(closeTarget().contains(x,y))return Action::Exit;if(handleTarget().contains(x,y))return Action::Hide;return Action::None;}
  if(state==State::NavigationPending&&closeTarget().contains(x,y))return Action::Exit;
  return Action::None;

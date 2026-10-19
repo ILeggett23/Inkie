@@ -137,6 +137,9 @@ run receiver-interactive-tests
 run tom-session-tests
 run companion-view-tests
 run wifi-tests
+run user-messages-tests
+run semantic-crop-tests
+run ib-surface-tests "$r"
 run sleep-settings-tests
 ( unset OPENSSL_CONF OPENSSL_MODULES LD_LIBRARY_PATH; /usr/bin/openssl req -x509 -newkey rsa:2048 -nodes -keyout "$d/tls-key.pem" -out "$d/tls-cert.pem" -days 1 -subj /CN=127.0.0.1 -addext subjectAltName=IP:127.0.0.1 ) >"$d/tls-fixture.log" 2>&1
 OPENSSL_CONF=/etc/ssl/openssl.cnf QT_PLUGIN_PATH="$sys/usr/lib/plugins" run companion-http-tests "$d/tls-cert.pem" "$d/tls-key.pem"

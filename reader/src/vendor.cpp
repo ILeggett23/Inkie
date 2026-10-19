@@ -78,6 +78,16 @@ Submit VendorDisplay::cleanRemoval(Rect r,int previousContent)noexcept{
  if(!ready(r)||(previousContent!=ContentMono&&previousContent!=ContentGrayscale&&previousContent!=ContentColor))return Submit::Failed;
  return submitChecked(r,std::max(previousContent,qualityContent(r)),ModeUi,0)?Submit::Accepted:Submit::Failed;
 }
+// Removal cleanup in Content mode. This plugin (libqsgepaper 3800e9f3...) splits a regional swap by screen mode:
+// below its temperature threshold (EPFB_* threshold, auto waveform on) Content regions get the content waveform class
+// (2 / auto -2) and UI regions the lighter UI class (5 / auto -1), each with PixelMode 15 and flags 0; content class does
+// not change the waveform (swapBuffers_impl 0x35900-0x35f60). Stock cleans erased ink with lower waveform 2 over the
+// erased bounds (three-dot erase pilot); UI-mode cleanup left yellow pigment behind. Regional only: flags 0, never the
+// complete bit (Content-mode complete swaps once blocked, see vendor.h).
+Submit VendorDisplay::cleanContent(Rect r,int previousContent)noexcept{
+ if(!ready(r)||(previousContent!=ContentMono&&previousContent!=ContentGrayscale&&previousContent!=ContentColor))return Submit::Failed;
+ return submitChecked(r,std::max(previousContent,qualityContent(r)),ModeContent,0)?Submit::Accepted:Submit::Failed;
+}
 Submit VendorDisplay::ui(Rect r)noexcept{return clean(r);}
 bool VendorDisplay::initialPreparedPage(std::span<const std::uint32_t> prepared)noexcept{
  Surface s=surface();if(!s.valid()||submissions_!=0||prepared.size()!=s.pixels.size())return false;
