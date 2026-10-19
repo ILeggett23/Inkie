@@ -2,6 +2,7 @@
 #pragma once
 // Notes linked to content (concept #7) and the reading-note sheet (#17).
 #include "ib/library_screen.h"
+#include "ib/layout.h"
 #include <string>
 #include <vector>
 namespace ib::notes {
@@ -17,7 +18,7 @@ void hub(Canvas&,Targets&,const Hub&);
 // A note is a compact sheet over the page (the book stays in view above it): one slim header (Note, linked
 // context, star, all notes, delete, close), the quoted passage, paper to write on, and one row of pen tools
 // with Save. Strokes are stored relative to the writing area, so its width (1480) is what must not shrink.
-inline constexpr int NoteSheetTop=1160,NoteExpandedTop=300,NoteHeader=136,NoteToolRow=104;
+inline constexpr int NoteSheetTop=layout::SheetTop,NoteExpandedTop=layout::SheetExpandedTop,NoteHeader=layout::SheetHeader,NoteToolRow=104;
 inline constexpr Rect NoteArea{70,NoteSheetTop+NoteHeader+64,1550,theme::ScreenHeight-NoteToolRow-16},NoteExpandedArea{70,NoteExpandedTop+NoteHeader+64,1550,theme::ScreenHeight-NoteToolRow-16};
 Rect notePicker(bool expanded)noexcept; // the pen picker, opened from the tool row
 struct Note {

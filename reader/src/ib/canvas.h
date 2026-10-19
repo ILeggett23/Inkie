@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 #pragma once
-// Inkbound presentation kit: anti-aliased drawing on a borrowed RGB32 surface.
+// Inkie presentation kit: anti-aliased drawing on a borrowed RGB32 surface.
 // Pure C++ (no Qt) so the identical painters run in the device build and in the
 // host preview harness. Never used on the Marker contact path.
 #include "core.h"

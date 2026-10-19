@@ -39,7 +39,8 @@ class VendorDisplay final:public SessionDisplay {
  // Paper Pro (libqsgepaper acep2) swapBuffers(QRect, EPContentType, EPScreenMode, UpdateFlags), read from the
  // library's own tables: content Mono=0 Grayscale=1 Color=3; screen mode Pen=0 Mono=1 Animation=2 UI=3 Content=4.
  // UpdateFlags 1 = full (flashing) update. Until D2 every update was sent as Mono content.
- // ModeContent (4) is NOT used: on the Paper Pro a Content-mode page swap after the first one blocked the
+ // ModeContent (4) is used only for regional removal cleanup (cleanContent). Full pages stay in UI mode: on the Paper Pro
+ // a Content-mode complete page swap after the first one blocked the
  // main thread forever (run 13, session 2b4e36d0); full pages use UI mode (3) as in every earlier run.
  // Regional quality classifies composed RGB as Mono/Grayscale/Color and uses
  // UI3/flags0. The owned maintenance timer is adapted to defer a busy batch lock
@@ -71,6 +72,8 @@ public:
  // Removal quality retains the richer of the old footprint and new pixels.
  int removalContent(Rect r)const noexcept{return ready(r)?qualityContent(r):ContentMono;}
  Submit cleanRemoval(Rect,int previousContent)noexcept;
+ // cleanRemoval in Content mode: the waveform stock uses to clean erased ink (see vendor.cpp).
+ Submit cleanContent(Rect,int previousContent)noexcept;
  // Regional UI quality, sharing clean()'s RGB and extent semantics.
  Submit ui(Rect)noexcept;
  void pump()noexcept override;
