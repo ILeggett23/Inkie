@@ -254,6 +254,21 @@ ink.
 Not changed, pending the user's decision: erasing a freehand highlighter stroke whole (it is cut along the eraser path in
 the protected `styled_ink.cpp`).
 
+### Temperature warning (user request, 2026-10-19)
+
+Xochitl's `tempindicator` module (strings and disassembly of the local stock copy): a status-bar temperature indicator,
+a quick-settings entry, `TempWarningPopupWindow` and a configured `warningDegrees` (read from module configuration with a
+code default of 0; the configured value is not in a plain file on this tablet). Inkie now:
+
+- reads the panel sensor (`rm_hwmon_temp`, the one the display driver uses), the CPU and the battery gauge
+  (`device::readTemperature`), every 60 s, every 10 s while warm;
+- calls the tablet too warm when the gauge reports `Overheat`/`Hot` or the panel reads 40 °C or more, and clears it at
+  37 °C or below (`device::HeatWatch`; 40/37 are Inkie's choice, not a recovered stock value);
+- shows a red-bulb thermometer in the status bar (also the reader's clock-only bar), says how warm it is in quick
+  settings, and shows a notice once per warm episode; `ui:temperature-warning` / `ui:temperature-cleared` journal it.
+
+[auto] `status-screen-tests` (sysfs fixtures, hysteresis edges, the bulb only while warm). Device check 23.
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -297,6 +312,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 20 | Draw colour and black strokes; erase them with the Marker eraser and the toolbar eraser; undo and redo | As the eraser lifts, only the erased area refreshes and comes back clean with no yellow tint; no dark box, no full-screen flash; the app never stalls | `ui:erase-lift-cleanup`, `ui:removal-content-cleanup` |
 | 21 | Ask Tom; read the answer | No dotted guides under the answer; the writing area keeps them | — |
 | 22 | Write a word in red across the middle of the page, then pause | The whole word settles to full colour, not half; black writing never flashes | `ui:retirement-quality-submit` |
+| 23 | Warm the tablet (a warm room, or a hair dryer at a distance), then let it cool | A notice and a red-bulb thermometer appear at 40 °C (panel sensor) or when the battery reports overheating; quick settings says how warm; both clear below 37 °C | `ui:temperature-warning`, `ui:temperature-cleared` |
 
 ## 11. Beta-readiness recommendation
 
