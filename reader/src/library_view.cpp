@@ -89,20 +89,20 @@ void LibraryView::paint(spike::Surface s,const QVector<library::Document>& docs,
  if(section_==Section::Notes||section_==Section::Settings){m.pages=1;m.documents.clear();}
  m.drawer=menu_;m.create=create_;m.battery=battery_;m.charging=charging_;m.wifi=wifi_;m.clock=clock_;m.clockZone=clockZone_;
  m.createItems={{MenuNotebook,ib::Icon::Note,"Notebook","Lined, grid, dot or blank pages"}};
- if(userEnded_)m.drawerExtras.push_back({MenuWifi,ib::Icon::Wifi,"Wi-Fi",{}});else m.drawerExtras.push_back({MenuLeave,ib::Icon::Back,"Leave Inkbound",{}}); /* D2: a user-ended session is left only with the power button */
+ if(userEnded_)m.drawerExtras.push_back({MenuWifi,ib::Icon::Wifi,"Wi-Fi",{}});else m.drawerExtras.push_back({MenuLeave,ib::Icon::Back,"Leave Inkie",{}}); /* D2: a user-ended session is left only with the power button */
  ib::library::base(c,targets_,m);
  if(section_==Section::Notes){
   ib::notes::Hub hub;hub.embedded=true;hub.favorites=true;hub.canCreate=false;hub.filter=noteFilter_;hub.idOffset=HubOffset;
   for(int index:visibleNotes_){const auto& n=notes_[index];ib::notes::Entry e;e.title=utf8(n.title);e.excerpt=utf8(n.excerpt);e.body=utf8(n.body);e.source=utf8(n.source);e.color=t::Ink[n.color%8];e.favorite=n.favorite;e.linked=n.linked;e.handwriting=n.handwriting;e.tom=n.tom;e.unresolved=n.unresolved;hub.entries.push_back(std::move(e));}
   hub.page=noteOffset_/ib::notes::HubPageSize;hub.pages=std::max(1,int((filteredNotes_.size()+ib::notes::HubPageSize-1)/ib::notes::HubPageSize));ib::notes::hub(c,targets_,hub);}
  if(section_==Section::Settings){ /* Settings (mockup 25): the kit draws the pages from real settings and readings */
-  S::Model st;st.page=settingsPage_;st.effects=effects_;st.toolHandle=toolHandle_;st.leftHanded=leftHanded_;st.progress=progress_;st.snap=snap_;st.passcode=passcode_;st.companion=companion_;st.highContrast=highContrast_;st.reduceMotion=reduceMotion_;st.tomTyped=tomTyped_;st.tomHand=tomHand_;st.tomReveal=tomReveal_;st.tomOnline=tomOnline_;st.sleepCover=sleepCover_;st.sleepIdle=sleepIdle_;st.idleChoices.assign(SleepIdleChoices.begin(),SleepIdleChoices.end());st.userEnded=userEnded_;st.timeZone=timeZone_;
+  S::Model st;st.page=settingsPage_;st.effects=effects_;st.toolHandle=toolHandle_;st.leftHanded=leftHanded_;st.progress=progress_;st.snap=snap_;st.passcode=passcode_;st.companion=companion_;st.highContrast=highContrast_;st.reduceMotion=reduceMotion_;st.plainText=plainText_;st.tomTyped=tomTyped_;st.tomHand=tomHand_;st.tomReveal=tomReveal_;st.tomOnline=tomOnline_;st.sleepCover=sleepCover_;st.sleepIdle=sleepIdle_;st.idleChoices.assign(SleepIdleChoices.begin(),SleepIdleChoices.end());st.userEnded=userEnded_;st.timeZone=timeZone_;
   if(device_.percent)st.battery=*device_.percent;
   switch(device_.charge){case device::Charge::Charging:st.charge="Charging";break;case device::Charge::Full:st.charge="Full";break;case device::Charge::Discharging:st.charge="On battery";break;case device::Charge::NotCharging:st.charge="Not charging";break;case device::Charge::Unknown:break;}
   if(device_.percent||device_.charge!=device::Charge::Unknown)st.externalPower=device_.external?1:0;
   if(wifiLink_)st.wifiLink=*wifiLink_?1:0;
   st.storageTotal=storage_.total;st.storageFree=storage_.available;st.documents=int(std::count_if(all_.begin(),all_.end(),[](const auto& d){return !d.trashed;}));st.notes=int(notes_.size());st.firmware=firmware_;
-  st.about={{"Typefaces","Source Serif 4, Source Sans 3"},{"Font license","SIL Open Font License"},{"Dictionary","WordNet 3.0 \xC2\xB7 offline"},{"Dictionary source","Princeton University"}};
+  st.about={{"Typefaces","Caveat, Source Serif 4, Source Sans 3"},{"Font license","SIL Open Font License"},{"Dictionary","WordNet 3.0 and GCIDE \xC2\xB7 offline"},{"Dictionary source","Princeton University; GNU GCIDE (Webster 1913)"}};
   S::paint(c,targets_,st);}
  ib::library::overlays(c,targets_,m);
  if(keyboard_){ib::KeyboardModel k;k.title="Search titles";k.value=utf8(query_);k.hint="Type a title";k.shift=shift_;k.symbols=symbols_;ib::keyboard(c,targets_,k);}
@@ -145,7 +145,7 @@ LibraryView::Hit LibraryView::hit(int x,int y){
   case S::ReadingProgress:return {Action::ReadingProgress,{},-1};case S::SnapHighlights:return {Action::SnapHighlights,{},-1};
   case S::TomStyleBase:case S::TomStyleBase+1:return {Action::TomStyle,{},id-S::TomStyleBase};
   case S::TomHandBase:case S::TomHandBase+1:case S::TomHandBase+2:return {Action::TomHand,{},id-S::TomHandBase};
-  case S::TomReveal:return {Action::TomReveal,{},-1};case S::HighContrast:return {Action::HighContrast,{},-1};case S::ReduceMotion:return {Action::ReduceMotion,{},-1};
+  case S::TomReveal:return {Action::TomReveal,{},-1};case S::HighContrast:return {Action::HighContrast,{},-1};case S::PlainText:return {Action::PlainText,{},-1};case S::ReduceMotion:return {Action::ReduceMotion,{},-1};
   case S::TimeZone:return {Action::TimeZone,{},-1};
   case S::PasscodeSet:return {Action::PasscodeSet,{},-1};case S::PasscodeOff:return {Action::PasscodeOff,{},-1};case S::CompanionManage:return {Action::Shared,{},-1};
   case SettingPageBase:case SettingPageBase+1:case SettingPageBase+2:case SettingPageBase+3:case SettingPageBase+4:case SettingPageBase+5:case SettingPageBase+6:case SettingPageBase+7:case SettingPageBase+8:

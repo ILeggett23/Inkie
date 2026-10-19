@@ -17,7 +17,7 @@ namespace ux {
 class LibraryView {
 public:
  using Section=ib::library::Section;
- enum class Action {None,Changed,Open,Exit,Tom,Shared,Import,NewNotebook,Effects,OpenNote,NotesChanged,Favorite,Wifi,NoteFavorite,SleepCover,SleepIdle,ToolHandle,LeftHanded,ReadingProgress,SnapHighlights,TomStyle,TomHand,TomReveal,HighContrast,ReduceMotion,PasscodeSet,PasscodeOff,TimeZone};
+ enum class Action {None,Changed,Open,Exit,Tom,Shared,Import,NewNotebook,Effects,OpenNote,NotesChanged,Favorite,Wifi,NoteFavorite,SleepCover,SleepIdle,ToolHandle,LeftHanded,ReadingProgress,SnapHighlights,TomStyle,TomHand,TomReveal,HighContrast,ReduceMotion,PlainText,PasscodeSet,PasscodeOff,TimeZone};
  struct Hit {Action action{Action::None};QString id;int index{-1};int note{-1};};
  // Library-wide notes (concept #7) supplied by the caller for the Notes section.
  struct NoteEntry {QString document,noteId,title,excerpt,body,source;QJsonObject anchor;qint64 created{};int page{-1};unsigned color{4};bool favorite{},linked{},handwriting{},tom{},unresolved{};};
@@ -30,7 +30,7 @@ public:
  // Sleep rows in Settings (Inkbound's own sleep settings; the Shell owns and saves them).
  void setSleep(bool cover,int idleMinutes){sleepCover_=cover;sleepIdle_=idleMinutes;}void setToolHandle(bool shown){toolHandle_=shown;}void setLeftHanded(bool left){leftHanded_=left;}void setReading(bool progress,bool snap){progress_=progress;snap_=snap;}
  // Settings > Security, Accessibility, Tom.
- void setPreferences(bool passcode,int companion,bool highContrast,bool reduceMotion,bool tomTyped,unsigned tomHand,bool tomReveal,int tomOnline){passcode_=passcode;companion_=companion;highContrast_=highContrast;reduceMotion_=reduceMotion;tomTyped_=tomTyped;tomHand_=tomHand;tomReveal_=tomReveal;tomOnline_=tomOnline;}void setBattery(int percent,bool charging,bool wifi=false){battery_=percent;charging_=charging;wifi_=wifi;}
+ void setPreferences(bool passcode,int companion,bool highContrast,bool reduceMotion,bool tomTyped,unsigned tomHand,bool tomReveal,int tomOnline,bool plainText=false){passcode_=passcode;companion_=companion;highContrast_=highContrast;reduceMotion_=reduceMotion;plainText_=plainText;tomTyped_=tomTyped;tomHand_=tomHand;tomReveal_=tomReveal;tomOnline_=tomOnline;}void setBattery(int percent,bool charging,bool wifi=false){battery_=percent;charging_=charging;wifi_=wifi;}
  // Settings pages: the real device readings (unknown readings leave their rows out).
  void setCoverSource(std::function<std::shared_ptr<const covers::Image>(const QString&,const QString&)> source){coverSource_=std::move(source);}
  void setTimeZone(std::string zone){timeZone_=std::move(zone);}
@@ -54,7 +54,7 @@ private:
  QVector<NoteEntry> notes_;QVector<int> filteredNotes_,visibleNotes_;ib::notes::Filter noteFilter_{ib::notes::Filter::All};int noteOffset_{};
  QString query_,folder_,notice_;Section section_{Section::MyFiles};bool recent_{true},grid_{true},keyboard_{},shift_{},symbols_{},menu_{},create_{},effects_{},shared_{true},tom_{true},userEnded_{},sleepCover_{true},toolHandle_{true},leftHanded_{},charging_{},wifi_{},progress_{true},snap_{true};int sleepIdle_{15};int battery_{-1};
  int offset_{};ib::Targets targets_;
- bool passcode_{},highContrast_{},reduceMotion_{},tomTyped_{},tomReveal_{true};int companion_{-1},tomOnline_{-1};unsigned tomHand_{1};
+ bool passcode_{},highContrast_{},reduceMotion_{},plainText_{},tomTyped_{},tomReveal_{true};int companion_{-1},tomOnline_{-1};unsigned tomHand_{1};
  ib::settings::Page settingsPage_{ib::settings::Page::Reading};device::Battery device_{};std::optional<bool> wifiLink_;device::Storage storage_{};std::string firmware_,clock_,clockZone_,timeZone_;
  using Cover=covers::Image;std::function<std::shared_ptr<const Cover>(const QString&,const QString&)> coverSource_;QHash<QString,std::shared_ptr<const Cover>> covers_;
  int capacity()const;void rebuild();std::shared_ptr<const Cover> cover(const std::filesystem::path&,const QString&);
