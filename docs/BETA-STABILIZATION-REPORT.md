@@ -239,6 +239,21 @@ Copy (123) never ran. Each Note opened at once in state, but its first screen up
 
 Device checks 19–21 below.
 
+### Device report follow-up 3: Note from a selection, highlight residue, failed pages
+
+From the 2026-10-19 tablet session on `56d39cb` (journal read with the user's approval): the strip tap ran Note
+(`ui:selection-action` 1201 at 00:17:00); the Notes runtime then showed no progress, the sheet read "Saving…" and took no
+ink.
+
+| # | Issue | Root cause | Fix | Verified |
+|---|---|---|---|---|
+| D12 | Note from a selection opens frozen, "Saving…", no ink | (a) `Panel::open` bound, then queued `native.create`, then `native.window`: three commands, each re-reading the shared store and `create` writing it twice, with the canvas off until all three ran. (b) The Notes worker ran at nice 19 and lost the CPU to page rendering right after a book opened (page helpers run at nice 10; one store write is ~0.6 s at normal priority, `styled:batch-write-us`). (c) A refused first command left an open sheet with no binding. (d) "Saving…" was drawn whenever no note existed yet. (e) Page ink results were not taken while Notes was open, so the ink stayed "busy" and nothing counted as settled. | One `native.bind` with `create` and `window` creates the note in one store session; the canvas takes ink at once (`creating_`), and the worker runs a queued command before ink while no note is bound; early ink with no note (create failed) is dropped with a message, never failing the session. Worker at the page-ink priority. A refused open closes the sheet. Status "New note — write any time" / "Opening…". Page ink results are taken under the sheet and presented when it closes. `NOTES_COMMAND op=… ms=…` and `notes:command-ms` journal every command. A failed create removes the highlight it added (no orphan). | [auto] `selection_note_takes_ink_at_once`. Timing [device] |
+| D13 | Erasing a highlight still leaves yellow | A coloured stroke's own refresh (UI mode) and the erase of that stroke (Content mode) could go out in the same pass; only the fast plan was cut, so the UI-mode update could land last. | Removed areas also leave the UI quality set; if they cannot be cut out, that debt is cleaned with the removal. | [auto] `erased_fresh_highlighter_ends_with_removal_cleanup`. Optics [device] |
+| D14 | A page that failed to render once stays refused (report S-R1) | `errors_[page]` was never cleared. | An explicit turn clears it and retries; prefetch still skips the page. | [inspect] |
+
+Not changed, pending the user's decision: erasing a freehand highlighter stroke whole (it is cut along the eraser path in
+the protected `styled_ink.cpp`).
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -248,7 +263,7 @@ Device checks 19–21 below.
 | P-R3 | Lock screen | A wrong passcode triggers a `FullRefreshReason::Security` flash. | A regional refresh for the error line. The full refresh stays for unlock. |
 | P-R4 | Session loop | The 2 ms loop plus 1–2 ms worker polls make ≈6–8 k wakeups/s idle. | Event-driven waits. Measure power on device first. |
 | P-R5 | `styled_ink` | 45.8 MB raster per stroke. Resident memory ≈350–500 MB. | Tile the raster. Protected. |
-| S-R1 | `reader.cpp` | `errors_[page]` is never cleared after a failed prefetch, so a transient error sticks. | Clear on a successful re-render. |
+| S-R1 | `reader.cpp` | Fixed (D14): an explicit turn retries a failed page. | — |
 | S-R2 | Passcode | A corrupt `ui-passcode.json` disables the lock. `lockFailures_` is held only in memory, so a restart resets the back-off. | Fail closed on corruption. Persist the failure count. Storage format, so it needs approval. |
 | R1 | Route tests | The five route tests are new to CI. A failure that only appears under CI timing would show here first. | Fix the root cause. Never loosen the timing. |
 | R2 | Colour rendering | Gallery 3 rendering of the dotted guides and hollow Wi-Fi bars is untested on the panel. | Device checklist items 6–7. |

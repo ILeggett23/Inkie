@@ -138,7 +138,7 @@ class Shell final:public spike::OperationSink {
  // now, so the e-ink panel shows it (not the page) while the tablet sleeps.
  bool lockForSleep();private:
  struct SnapStroke {spike::Point first,last;bool active{},complete{};};
- bool cleanupNext_{};void expectRemoval()noexcept{cleanupNext_=true;} /* the next ink result removes something: request a cleanup */
+ bool cleanupNext_{},notesStyledDirty_{};void expectRemoval()noexcept{cleanupNext_=true;} /* the next ink result removes something: request a cleanup */
  // Selection tool with the pen: the contact selects text instead of writing (no ink, nothing saved).
  // probe: a Marker contact while a selection or definition is up without the Selection tool. On the strip or card it
  // is a tap (the action runs after pen-up); anywhere else it becomes ordinary ink at pen-down.
