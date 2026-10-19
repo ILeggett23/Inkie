@@ -354,7 +354,11 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 30 | In landscape: write and erase, then turn back upright | The ink is where it was written, in both orientations | — |
 | 31 | In landscape: swipe left and right; tap the footer | Pages turn in the reading direction; the footer shows the toolbar | `reader:gesture` |
 | 32 | In landscape: long-press a word, tap the palette's active pen, swipe down from the top | "Turn the tablet upright for this"; nothing opens sideways | `ui:turn-portrait-only` |
-| 33 | Turn Auto-rotate off, or open an EPUB or the library while turned | Nothing turns; EPUBs and the library stay portrait | — |
+| 33 | Turn Auto-rotate off; open the library while turned | Nothing turns while Auto-rotate is off; the library stays portrait | — |
+| 34 | In landscape: open the pen palette, pick a colour and width; open the document menu; open quick settings from the clock | Each opens upright beside the landscape toolbar or at the top right, and acts | — |
+| 35 | In landscape: long-press a word; select a passage and highlight it | The definition card and the selection strip are upright on the page; the highlight lands on the text | — |
+| 36 | Open an EPUB with Auto-rotate on and turn the tablet; read a few pages; turn back | Longer lines at the same type size; the same passage after each turn | `ui:turn`, `ui:turned` |
+| 37 | Turn an EPUB, read on, then close it and reopen it upright | The book reopens where you stopped reading | — |
 
 ## 11. Beta-readiness recommendation
 

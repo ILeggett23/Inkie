@@ -96,6 +96,36 @@ The page, ink, styled ink and semantic text stay physical. The chrome and its ta
   - flat or upside down keeps the last orientation.
 - The first device run journals the raw readings (`ui:orientation`) to confirm the axis signs.
 
+## PR 2 (`feat/landscape-b`): upright surfaces and EPUB
+
+**Upright in landscape now:** the pen palette, the document and reading-light menus, quick settings (status-corner
+swipe or the clock), text selection with its strip and highlight colours, Define, and notices. Each is laid out in the
+reader's frame, painted upright, and hit on the panel:
+- The palette and menus attach to the landscape toolbar.
+- `ib::status::panelRect()` puts quick settings at the reader's top right.
+- `semantic::transient` places its panels from the passage turned upright; the washes stay in panel pixels.
+
+**EPUBs turn.**
+- **Turning:** stages a landscape twin of the book's layout through the existing stage helper: lines a third longer,
+  the same type size, 590 tall instead of 800. The text-anchor mapping carries the reading position; turning back
+  stages the book's own layout (the same id).
+- **Nothing is activated.** Leaving a turned EPUB turns it upright first, so the book's own layout keeps the position.
+- **Ink** stays on the layout it was written on, as with any layout change.
+- **Rendering:** turned pages use `pdfview::fitTurned` (`turn_fit.h`, shared with the PDF planner and the loader: exact
+  float coefficients) and live in `<document>/turn-<o>/epub-views/<id>/page-N`. The EPUB store's reclaim and strict
+  inspection cover that tree.
+
+**Still portrait (a notice), with why:**
+- **Notes and Inkie sheets.** Their standard sheet (1620×1000) would fit at the bottom of the landscape screen with
+  its 1480×680 writing area unchanged. But Inkie shows every answer in its expanded sheet (top 480, 1680 tall), Notes
+  expands to 1860, and Inkie's history and zoom use the whole height. None of that fits in 1620. They need landscape
+  layouts inside `tom_panel`/`notes_panel` (expanded writing areas, header, history rows, keyboard), designed with the
+  stored-stroke geometry in mind.
+- **Pen input in a sheet.** The fast path would need the Marker transform to map into the sheet: a turn and offset in
+  `spike::Transform` set through a `SessionDisplay` hook (the approved `session.*` change). That is designed but not
+  built until the sheets have their layouts.
+- **Document settings, Quick Browse and recents:** full-height portrait sheets; same reason.
+
 ## Delivery (commits on `feat/landscape-a`, one draft PR)
 
 1. Sensor, watch and rotation lock (quick settings, `ui-prefs.json`). [auto] fixture sysfs tests.

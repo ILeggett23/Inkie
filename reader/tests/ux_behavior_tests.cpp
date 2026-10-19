@@ -125,7 +125,7 @@ int main(int argc,char** argv){QCoreApplication core(argc,argv);if(argc!=5)retur
   tap(ux::TurnTestAccess::chrome(h.shell).rect(ib::reader::RailPen));CHECK(!ux::TurnTestAccess::palette(h.shell));
   tap(ux::TurnTestAccess::chrome(h.shell).rect(ib::reader::RailMore));CHECK(ux::TurnTestAccess::menu(h.shell)&&inside(ux::TurnTestAccess::menuRect(h.shell),page));
   tap({page.x0+200,page.y0+700,page.x0+260,page.y0+760});CHECK(!ux::TurnTestAccess::menu(h.shell)); /* a tap on the page closes it */
-  tap(ux::TurnTestAccess::statusBar(h.shell));CHECK(ux::TurnTestAccess::quick(h.shell));const auto panel=f.physical(ib::status::panelRect());CHECK(inside(ux::TurnTestAccess::statusTarget(h.shell,ib::status::Close),panel));
+  tap(ux::TurnTestAccess::statusBar(h.shell));CHECK(ux::TurnTestAccess::quick(h.shell));until([&]{h.boundary();return !ux::TurnTestAccess::statusTarget(h.shell,ib::status::Close).empty();}); /* the first open paints once the light level is known */const auto panel=f.physical(ib::status::panelRect());CHECK(inside(ux::TurnTestAccess::statusTarget(h.shell,ib::status::Close),panel));
   tap(ux::TurnTestAccess::statusTarget(h.shell,ib::status::Close));CHECK(!ux::TurnTestAccess::quick(h.shell));
   {auto geometry=h.shell.semantics().geometry();CHECK(geometry);auto word=geometry->data["words"].toArray().first().toArray();auto q=geometry->data["chars"].toArray()[word[0].toInt()].toObject()["quad"].toArray();auto m=geometry->data["transform"].toArray();const double px=(q[0].toDouble()+q[6].toDouble())/2,py=(q[1].toDouble()+q[7].toDouble())/2;
    const int x=int(m[0].toDouble()*px+m[2].toDouble()*py+m[4].toDouble()),y=int(m[1].toDouble()*px+m[3].toDouble()*py+m[5].toDouble());CHECK(page.contains(x,y));
