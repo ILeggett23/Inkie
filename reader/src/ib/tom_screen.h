@@ -5,6 +5,7 @@
 // sheet. The handwriting area keeps the Tom canvas geometry exactly (stored
 // question ink is relative to it).
 #include "ib/components.h"
+#include "ib/layout.h"
 #include <string>
 #include <vector>
 namespace ib::tom {
@@ -12,7 +13,7 @@ namespace ib::tom {
 // area-relative logical coordinates, so the writing area keeps its size (1480 x 680, or 1360 tall) wherever it sits.
 // Native lower sheet: header (title, subtitle, tools), the quoted passage, ruled paper, then a footer row.
 inline constexpr Rect WritingArea{70,1360,1550,2040},ExpandedWritingArea{70,680,1550,2040};
-inline constexpr int SheetTop=1160,ExpandedSheetTop=480,HeaderHeight=136,FooterTop=2048;
+inline constexpr int SheetTop=layout::SheetTop,ExpandedSheetTop=480,HeaderHeight=layout::SheetHeader,FooterTop=2048;
 inline constexpr unsigned HistoryRows=4;
 struct Turn {std::string question,answer;bool operator==(const Turn&)const=default;};
 struct Thread {std::string title,metadata;bool operator==(const Thread&)const=default;};
@@ -26,6 +27,10 @@ struct Model {
  bool canSend{},canInterpret{},canStop{},canRetry{},confirmRetry{},canClear{},busy{},saved{};
  std::string status;bool failed{};
  unsigned answerScroll{};int zoomPercent{};
+ // Turned (docs/LANDSCAPE.md, PR 3): laid out in sheet pixels as upright, shown through layout::SheetMap. The tall
+ // sheets start at TurnedSheetTop (the writing and answer areas keep their place); the one line between header and
+ // paper, when it no longer fits, moves into the header; the zoom badge sits in the header, left of the tools.
+ bool turned{};
  // History overlay
  bool history{};std::vector<Thread> threads;std::vector<Turn> turns;unsigned threadOffset{},turnOffset{};bool confirmDelete{};
  bool outputPicker{},detailedInk{},nativeReply{},hasNativeOutput{};unsigned outputMode{};std::string illustrationModel;bool canSaveNote{};bool canExplain{}; /* a selected passage and nothing written yet: ask Tom to explain it */
@@ -50,6 +55,8 @@ HandProgress handProgress(const Model&,float ink);
 // Where answer line i (absolute) is drawn, for line-sized damage during the reveal.
 Rect answerLineBox(const Model&,unsigned line);
 int sheetTop(const Model&); // where the sheet starts for this model (compact, or tall for long writing)
+// Where the reply zoom badge is drawn and tapped: the top chrome row above the sheet, or (turned) the sheet's header.
+Rect zoomBadgeRect(const Model&);
 void paint(Canvas&,Targets&,const Model&);
 }
 namespace ib {

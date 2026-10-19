@@ -4,6 +4,8 @@
 #include <QSslCertificate>
 #include <QUrl>
 #include <functional>
+#include <memory>
+class QNetworkAccessManager;class QThread;
 #include <stdexcept>
 namespace companion {
 struct HttpResponse {int status{};QMap<QByteArray,QByteArray> headers;QByteArray body;bool stopped{},expired{}; /* expired: a 200 event stream reached its time budget (resumable, not an error) */};
@@ -14,6 +16,9 @@ class HttpTransport {public:virtual ~HttpTransport()=default;virtual HttpRespons
 };
 class VerifiedHttpTransport final:public HttpTransport {
  QUrl origin_;QSslCertificate fixtureCA_;
+ // One connection manager for the transport's life, in the thread that first used it, so successive requests (a helper
+ // run's config, create, status and stream) reuse one TLS connection instead of a new handshake each.
+ std::shared_ptr<QNetworkAccessManager> manager_;QThread* managerThread_{};
  HttpResponse perform(const QByteArray&,const QString&,const QByteArray&,const QMap<QByteArray,QByteArray>&,qint64,int,const HttpChunkSink*);
 public:
  VerifiedHttpTransport();

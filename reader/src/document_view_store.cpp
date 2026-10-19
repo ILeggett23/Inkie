@@ -43,6 +43,11 @@ void pageIndex(const ViewSet& s,int page){need(page>=0&&page<s.receipt["base_pag
 }
 std::optional<PdfPage> pageEntry(const ViewSet& s,int page){validate(s);pageIndex(s,page);auto entries=s.receipt["page_views"].toObject();auto key=QString::number(page);if(!entries.contains(key))return {};return decodeEntry(entries[key]);}
 QString pageConfigId(const ViewSet& s,int page){auto entry=pageEntry(s,page);if(!entry)return {};return hash(bytes({{"version",1},{"document",s.receipt["document"]},{"source_sha",s.receipt["source_sha"]},{"page",page},{"bounds",rect(entry->bounds)},{"view",encodeView(entry->view)}}));}
+QJsonObject viewSettings(const ViewSet& s,int page){auto entry=pageEntry(s,page);return encodeView(entry?entry->view:pdfview::View{});}
+QString turnedConfigId(const ViewSet& s,int page,const QJsonArray& bounds,unsigned orientation){need(orientation==pdfview::Clockwise||orientation==pdfview::Anticlockwise,"view-turn");pageIndex(s,page);
+ return hash(bytes({{"version",1},{"document",s.receipt["document"]},{"source_sha",s.receipt["source_sha"]},{"page",page},{"bounds",bounds},{"view",viewSettings(s,page)},{"orientation",int(orientation)}}));}
+std::filesystem::path turnedStoragePath(const std::filesystem::path& root,const ViewSet& s,int page,unsigned orientation){auto portrait=storagePath(root,s,page);if(!orientation)return portrait;need(orientation==pdfview::Clockwise||orientation==pdfview::Anticlockwise,"view-turn");
+ const auto document=root/s.receipt["document"].toString().toStdString();return document/("turn-"+std::to_string(orientation))/portrait.lexically_relative(document);}
 std::filesystem::path storagePath(const std::filesystem::path& root,const ViewSet& s,int page){auto directory=rootFd(root);auto b=base(directory.n,root);validate(s,&b);pageIndex(s,page);auto path=root/s.receipt["document"].toString().toStdString();auto config=pageConfigId(s,page);if(!config.isEmpty())path/="views"/std::filesystem::path(config.toStdString());return path/("page-"+std::to_string(page));}
 ViewSet readSet(const std::filesystem::path& root,const QString& id){auto directory=rootFd(root);auto b=base(directory.n,root);return readSetAt(directory.n,id,b);}
 ViewSet activeSet(const std::filesystem::path& root){auto directory=rootFd(root);auto b=base(directory.n,root);return readSetAt(directory.n,activeId(directory.n,b),b);}

@@ -7,7 +7,7 @@ namespace notes {
 class Layers final {
  unsigned offset_{};QString selected_;bool confirmDelete_{};int menuFor_{-1};
 public:
- void paint(spike::Surface,const View&,ib::Targets&,std::string status={});
+ void paint(spike::Surface,const View&,ib::Targets&,std::string status={},bool turned=false); // turned: ib::sheets::TurnedLayersRect
  // id is a target recorded by paint; returns a runtime op or a ui.* request.
  QJsonObject finger(int id,const View&);
  QString selected()const{return selected_;}void select(QString id){selected_=std::move(id);confirmDelete_=false;}

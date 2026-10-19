@@ -174,7 +174,7 @@ int main(int argc,char** argv){QCoreApplication app(argc,argv);if(argc!=5)return
   CHECK(chmod(index.c_str(),0644)==0); /* the Tom store refuses to open: its runtime fails as soon as Tom opens */
   CHECK(s.action(ux::Action::Show));c.changes();CHECK(uitest::menu(s,ux::MenuTom));c.changes();
   until([&]{s.tick();c.changes();CHECK(!s.failed());return !s.tomPanel();});
-  CHECK(!s.failed()&&s.state()==ux::State::Clean&&s.notice().startsWith("Tom stopped"));until([&]{s.tick();c.changes();CHECK(!s.failed());return s.writable();});
+  CHECK(!s.failed()&&s.state()==ux::State::Clean&&s.notice().startsWith("Inkie stopped"));until([&]{s.tick();c.changes();CHECK(!s.failed());return s.writable();});
   CHECK(chmod(index.c_str(),0600)==0);
   CHECK(s.action(ux::Action::Show));c.changes();CHECK(uitest::menu(s,ux::MenuTom));c.changes();until([&]{s.tick();c.changes();CHECK(!s.failed());return s.tomPanel()&&s.tomPanel()->active()&&s.writable();}); /* Tom opens again afterwards */
   until([&]{s.tick();c.changes();CHECK(!s.failed());return s.tomPanel()->canLeave();});CHECK(uitest::tom(s,ib::tom::Close));until([&]{s.tick();c.changes();CHECK(!s.failed());return !s.tomPanel()->active();});
