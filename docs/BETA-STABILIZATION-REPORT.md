@@ -269,6 +269,27 @@ code default of 0; the configured value is not in a plain file on this tablet). 
 
 [auto] `status-screen-tests` (sysfs fixtures, hysteresis edges, the bulb only while warm). Device check 23.
 
+### Inkie memory, speed and reliability (user request, 2026-10-19)
+
+From a recorded device question (journal, 2ae400e): Send → Inkie knew what was written after 16.3 s, first words 2.4 s
+later, done 1.6 s after that. The reading window covers the helper start, a config re-check, the create POST, the queue,
+the provider reading the handwriting and the event stream.
+
+| # | Change | Where | Verified |
+|---|---|---|---|
+| M1 | Whole conversation: every completed turn is sent, tagged with where it was asked (a page change no longer drops history); a new conversation starts with the last two exchanges of the most recent ones; transcription carries none | `tom_store.cpp` `history()` | [auto] `tom-store-tests` |
+| M2 | Long-term notes: `<library>/inkie/memory.json` (60 notes, 240 chars, 4096 total); a `memory` event once per request before the final status; sent with each question and part of consent; Settings → Inkie shows, forgets and clears them | `tom_store.*`, `tom_stream.cpp`, `companion_client.*`, `tom_runtime.cpp`, `ib/settings_screen.*`, `library_view.*`, `ux_shell.cpp`; Companion `memory.mjs`, `worker.mjs` | [auto] store, client, session, runtime, library route, `tom_memory.test.mjs` |
+| S1 | A Send during the 5-minute connection check waits for it instead of being refused | `tom_runtime.cpp` | [inspect] (the check runs every 5 min; not reachable in a host test) |
+| S2 | One TLS connection per helper run (config, create, status, stream) instead of a handshake each | `companion_http.*` | [auto] existing HTTP/receiver suites |
+| S3 | Provider 429/5xx and network errors before anything streams are retried twice (Retry-After up to 5 s); used-up quota and client errors are not; partial streams are never retried | Companion `worker.mjs` | [auto] `tom_reliability.test.mjs` |
+| S4 | Reading handwriting asks the model for low reasoning effort (as drawing requests already do); answers unchanged | Companion `worker.mjs` | [auto]; timing [device] |
+| S5 | Drawings use flat colour where the subject naturally has it or a textbook convention exists; diagrams stay ink | `picture_style.inc`, Companion `picture_plan.mjs` (byte-identical; parity fixtures regenerated) | [auto] picture parity |
+| S6 | `TOM_DIAGNOSTICS=true` logs reading time and first-text time per request | Companion `worker.mjs` | [inspect] |
+
+Not changed (proposed, needs measurement first): reasoning effort for typed answers (pinned by
+`composition_plan.test.mjs` as "legacy requests retain their payload"), raising `TOM_MAX_OUTPUT_TOKENS` from 800, one
+model call for read-and-answer, a long-lived helper across requests.
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -313,6 +334,11 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 21 | Ask Tom; read the answer | No dotted guides under the answer; the writing area keeps them | — |
 | 22 | Write a word in red across the middle of the page, then pause | The whole word settles to full colour, not half; black writing never flashes | `ui:retirement-quality-submit` |
 | 23 | Warm the tablet (a warm room, or a hair dryer at a distance), then let it cool | A notice and a red-bulb thermometer appear at 40 °C (panel sensor) or when the battery reports overheating; quick settings says how warm; both clear below 37 °C | `ui:temperature-warning`, `ui:temperature-cleared` |
+| 24 | Ask Inkie something on one page, turn several pages, ask "what did I ask you before?" | Inkie answers from the earlier turn | `tom:first-text` |
+| 25 | Tell Inkie "My name is Sam and I like short answers"; start a new conversation; ask "what's my name?" | Inkie says Sam; Settings → Inkie lists the notes | — |
+| 26 | Settings → Inkie: Forget one note; Clear all (tap twice) | The note goes; Clear asks once more, then the list is empty | `tom:memory-forget`, `tom:memory-clear` |
+| 27 | Write a question by hand and Send; time it | Shorter than the 16 s reading time recorded before (needs the new Companion deployed) | `tom:read-answer-start` → `tom:ocr-end` |
+| 28 | Ask for a drawing of a red apple and of a labelled diagram | The apple is coloured; the diagram stays ink | — |
 
 ## 11. Beta-readiness recommendation
 
