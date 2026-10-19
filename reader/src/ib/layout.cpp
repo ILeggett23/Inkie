@@ -4,6 +4,19 @@
 #include "ib/sheets.h"
 namespace ib::layout {
 namespace t=theme;
+namespace {Turn turn_{Turn::Portrait};}
+Turn turn()noexcept{return turn_;}void setTurn(Turn t)noexcept{turn_=t;}
+int screenWidth()noexcept{return Frame{turn_}.width();}int screenHeight()noexcept{return Frame{turn_}.height();}
+int pageHeight()noexcept{return screenHeight()-(t::ScreenHeight-t::PageFitHeight);}
+// Clockwise: logical (x,y) is physical (y, 2159-x); anticlockwise: physical (1619-y, x).
+Rect Frame::physical(Rect r)const noexcept{switch(turn){case Turn::Clockwise:return {r.y0,t::ScreenHeight-r.x1,r.y1,t::ScreenHeight-r.x0};case Turn::Anticlockwise:return {t::ScreenWidth-r.y1,r.x0,t::ScreenWidth-r.y0,r.x1};default:return r;}}
+Rect Frame::logical(Rect r)const noexcept{switch(turn){case Turn::Clockwise:return {t::ScreenHeight-r.y1,r.x0,t::ScreenHeight-r.y0,r.x1};case Turn::Anticlockwise:return {r.y0,t::ScreenWidth-r.x1,r.y1,t::ScreenWidth-r.x0};default:return r;}}
+void Frame::physical(int x,int y,int& px,int& py)const noexcept{switch(turn){case Turn::Clockwise:px=y;py=t::ScreenHeight-1-x;break;case Turn::Anticlockwise:px=t::ScreenWidth-1-y;py=x;break;default:px=x;py=y;}}
+void Frame::logical(int px,int py,int& x,int& y)const noexcept{switch(turn){case Turn::Clockwise:x=t::ScreenHeight-1-py;y=px;break;case Turn::Anticlockwise:x=py;y=t::ScreenWidth-1-px;break;default:x=px;y=py;}}
+void Frame::toLogical(const std::uint32_t* from,int fromStride,std::uint32_t* to,int toStride,Rect r)const noexcept{r=intersect(r,{0,0,width(),height()});
+ for(int y=r.y0;y<r.y1;++y)for(int x=r.x0;x<r.x1;++x){int px,py;physical(x,y,px,py);to[std::size_t(y)*toStride+x]=from[std::size_t(py)*fromStride+px];}}
+void Frame::toPhysical(const std::uint32_t* from,int fromStride,std::uint32_t* to,int toStride,Rect r)const noexcept{r=intersect(r,{0,0,width(),height()});
+ for(int y=r.y0;y<r.y1;++y)for(int x=r.x0;x<r.x1;++x){int px,py;physical(x,y,px,py);to[std::size_t(py)*toStride+px]=from[std::size_t(y)*fromStride+x];}}
 Zones zones(reader::Side side,Orientation o)noexcept{
  namespace R=reader;const bool left=side==R::Side::Left;
  const int w=o==Orientation::Portrait?t::ScreenWidth:t::ScreenHeight,h=o==Orientation::Portrait?t::ScreenHeight:t::ScreenWidth;
@@ -24,8 +37,8 @@ Zones zones(reader::Side side,Orientation o)noexcept{
  return z;
 }
 Rect popoverBounds(Rect excluded)noexcept{
- Rect a{0,TopRow,t::ScreenWidth,t::PageFitHeight};
- if(!excluded.empty()){if(excluded.x0==0)a.x0=excluded.x1;else if(excluded.x1==t::ScreenWidth)a.x1=excluded.x0;}
+ Rect a{0,TopRow,screenWidth(),pageHeight()};
+ if(!excluded.empty()){if(excluded.x0==0)a.x0=excluded.x1;else if(excluded.x1==screenWidth())a.x1=excluded.x0;}
  return a;
 }
 }

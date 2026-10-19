@@ -86,7 +86,7 @@ library::Model libraryModel(){library::Model m;m.battery=73;m.wifi=true;m.clock=
 tom::Model tomModel(){tom::Model m;m.contextLine="A Tale of Two Cities \xC2\xB7 page 12";m.excerpt="It was the best of times, it was the worst of times";m.hasSource=true;m.writable=true;m.empty=true;m.canSend=false;
  m.disclosure="Inkie sees this passage and your question.";return m;}
 const char* Answer="Dickens opens with paired opposites to show a society pulled two ways at once. The rhythm makes the reader feel the instability of 1775 before any character appears.";
-struct Surface {std::string name;std::function<void(Canvas&,Targets&)> paint;bool sided{};};
+struct Surface {std::string name;std::function<void(Canvas&,Targets&)> paint;bool sided{};bool landscape{}; /* painted upright on 2160x1620 in a landscape turn */};
 std::vector<Surface> surfaces(){
  std::vector<Surface> s;
  s.push_back({"library-grid",[](Canvas& c,Targets& tg){library::paint(c,tg,libraryModel());}});
@@ -106,6 +106,15 @@ std::vector<Surface> surfaces(){
  for(bool armed:{false,true})
   s.push_back({std::string("settings-Inkie-memory")+(armed?"-armed":""),[armed](Canvas& c,Targets& tg){auto m=libraryModel();m.section=library::Section::Settings;m.documents.clear();m.folders.clear();library::base(c,tg,m);settings::Model sm;sm.page=settings::Page::Tom;sm.tomOnline=1;sm.tomMemoryArmed=armed;
    sm.tomMemory={"The reader's name is Sam.","Sam is studying for a biology exam in December.","Sam prefers short answers with one example.","Sam is reading A Tale of Two Cities for a book club that meets on Thursdays and wants to keep track of the Manette family.","Sam likes drawings in colour.","Sam's cat is called Pip.","Sam finds Dickens's long sentences hard and likes them paraphrased."};settings::paint(c,tg,sm);library::overlays(c,tg,m);}});
+ s.push_back({"reader-chrome-landscape",[](Canvas& c,Targets& tg){c.fill({0,0,2160,1520},t::Paper);
+#if __has_include("ib/type.h")
+  const bool plain=text::plainScript();text::setPlainScript(true);
+#endif
+  int y=160;for(int i=0;i<4&&y<1400;++i)y=text::block(c,{Face::Serif,36},{300,y,1860,1480},"It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness.",t::InkPrimary,58,5)+40;
+#if __has_include("ib/type.h")
+  text::setPlainScript(plain);
+#endif
+  reader::Chrome ch;ch.chapter="Book the First \xE2\x80\x94 Recalled to Life";ch.page=11;ch.total=412;reader::footer(c,tg,ch);reader::Tools tools;tools.canUndo=true;reader::toolbar(c,tg,tools);reader::closeButton(c,tg);},true,true});
  s.push_back({"reader-clean",[](Canvas& c,Targets& tg){page(c);reader::Chrome ch;ch.chapter="Book the First \xE2\x80\x94 Recalled to Life";ch.page=11;ch.total=412;reader::footer(c,tg,ch);reader::Tools tools;reader::toolHandle(c,tg,tools);}});
  s.push_back({"reader-chrome",[](Canvas& c,Targets& tg){page(c);reader::Chrome ch;ch.chapter="Book the First \xE2\x80\x94 Recalled to Life";ch.page=11;ch.total=412;reader::footer(c,tg,ch);reader::Tools tools;tools.canUndo=true;reader::toolbar(c,tg,tools);reader::closeButton(c,tg);},true});
  s.push_back({"reader-palette",[](Canvas& c,Targets& tg){page(c);reader::Tools tools;tools.activeShortcut=0;tools.panel=true;reader::toolbar(c,tg,tools);reader::closeButton(c,tg);reader::penPanel(c,tg,tools);},true});
@@ -194,7 +203,7 @@ int main(int argc,char** argv){
  std::filesystem::create_directories(out);unsigned written=0;
  if(targetsOnly){std::ofstream list(out/"targets.txt");
   for(const auto& s:surfaces())for(auto side:{reader::Side::Left,reader::Side::Right}){if(!s.sided&&side==reader::Side::Right)continue;reader::setToolbarSide(side);
-   Image im;auto c=im.canvas();Targets tg;s.paint(c,tg);for(unsigned i=0;i<tg.size();++i){const auto& x=tg[i];list<<s.name<<(side==reader::Side::Left?"":"-left-handed")<<' '<<x.id<<' '<<x.rect.x0<<' '<<x.rect.y0<<' '<<x.rect.x1<<' '<<x.rect.y1<<'\n';}}
+   layout::setTurn(s.landscape?layout::Turn::Clockwise:layout::Turn::Portrait);Image im(s.landscape?2160:W,s.landscape?1620:H);auto c=im.canvas();Targets tg;s.paint(c,tg);layout::setTurn(layout::Turn::Portrait);for(unsigned i=0;i<tg.size();++i){const auto& x=tg[i];list<<s.name<<(side==reader::Side::Left?"":"-left-handed")<<' '<<x.id<<' '<<x.rect.x0<<' '<<x.rect.y0<<' '<<x.rect.x1<<' '<<x.rect.y1<<'\n';}}
   std::printf("IB_PREVIEW_TARGETS written\n");return 0;}
  auto save=[&](const Image& im,const std::string& name){if(!png(out/(name+".png"),im)){std::fprintf(stderr,"write failed %s\n",name.c_str());std::exit(1);}++written;};
 #ifdef IB_PREVIEW_SCRIPT
@@ -211,7 +220,7 @@ int main(int argc,char** argv){
   text::setPlainScript(v.plain);
 #endif
   for(const auto& s:surfaces())for(auto side:{reader::Side::Left,reader::Side::Right}){if(!s.sided&&side==reader::Side::Right)continue;reader::setToolbarSide(side);
-   Image im;auto c=im.canvas();Targets tg;s.paint(c,tg);const std::string name=s.name+(s.sided?(side==reader::Side::Left?"-right-handed":"-left-handed"):"");save(im,name+v.suffix);
+   layout::setTurn(s.landscape?layout::Turn::Clockwise:layout::Turn::Portrait);Image im(s.landscape?2160:W,s.landscape?1620:H);auto c=im.canvas();Targets tg;s.paint(c,tg);layout::setTurn(layout::Turn::Portrait);const std::string name=s.name+(s.sided?(side==reader::Side::Left?"-right-handed":"-left-handed"):"");save(im,name+v.suffix);
    if(v.suffix.empty())save(panelView(im),name+"-panel");}}
  t::setHighContrast(false);reader::setToolbarSide(reader::Side::Left);
 #if __has_include("ib/type.h")
@@ -220,7 +229,7 @@ int main(int argc,char** argv){
 #ifdef IB_PREVIEW_LAYOUT
  for(auto o:{layout::Orientation::Portrait,layout::Orientation::Landscape})for(auto side:{reader::Side::Left,reader::Side::Right}){
   const auto z=layout::zones(side,o);Image im(width(z.screen),height(z.screen));const bool land=o==layout::Orientation::Landscape;
-  zoneMap(im,z,std::string(land?"Landscape (specification; not reachable at runtime)":"Portrait")+(side==reader::Side::Left?" \xC2\xB7 right-handed":" \xC2\xB7 left-handed"));
+  zoneMap(im,z,std::string(land?"Landscape (reading view)":"Portrait")+(side==reader::Side::Left?" \xC2\xB7 right-handed":" \xC2\xB7 left-handed"));
   save(im,std::string("zones-")+(land?"landscape":"portrait")+(side==reader::Side::Left?"-right-handed":"-left-handed"));}
 #endif
  std::printf("IB_PREVIEW_PASS images=%u\n",written);return 0;

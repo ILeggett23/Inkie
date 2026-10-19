@@ -59,6 +59,27 @@ int main(int argc,char** argv){try{
   check(width(z.screen)==t::ScreenHeight&&height(z.screen)==t::ScreenWidth,"landscape screen");
   for(Rect r:{z.content,z.footer,z.toolbar,z.close,z.palette,z.strip,z.sheet,z.reservedTop,z.reservedStatus,z.reservedBottom})check(inside(r,z.screen),"landscape zone on screen");
   check(!overlaps(z.toolbar,z.sheet)&&!overlaps(z.toolbar,z.strip)&&inside(z.palette,z.content),"landscape zones disjoint where they must be");}
+ // 2b. The reading view turns (docs/LANDSCAPE.md): in either landscape turn the reader chrome is the landscape zones,
+ //     painters keep their targets inside them on an upright 2160x1620 canvas, and Frame maps both ways exactly.
+ for(L::Turn turn:{L::Turn::Clockwise,L::Turn::Anticlockwise})for(Side side:{Side::Left,Side::Right}){L::setTurn(turn);reader::setToolbarSide(side);const auto z=L::zones(side,L::Orientation::Landscape);
+  check(L::screenWidth()==2160&&L::screenHeight()==1620&&L::pageHeight()==1520,"landscape logical screen");
+  check(same(reader::toolbarRect(),z.toolbar)&&same(reader::closeRect(),z.close)&&same(reader::footerRect(),z.footer)&&same(reader::penPanelRect(),z.palette)&&same(L::popoverBounds(z.toolbar),z.popover),"landscape chrome is the landscape zones");
+  for(unsigned k=0;k<reader::ToolbarSlots;++k)check(inside(reader::toolbarSlot(k),z.toolbar),"landscape slot inside the toolbar");
+  std::vector<std::uint32_t> px(std::size_t(L::logicalStride(turn))*1620,t::Paper);Canvas c({px,2160,1620,L::logicalStride(turn)});Targets tg;reader::Tools tools;tools.canUndo=tools.canRedo=true;reader::toolbar(c,tg,tools);for(auto x:list(tg))check(inside(x.rect,z.toolbar),"landscape toolbar targets inside the toolbar");
+  Targets pt;reader::penPanel(c,pt,tools);for(auto x:list(pt))check(inside(x.rect,z.palette),"landscape palette targets inside the palette");
+  Targets ft;reader::Chrome m;m.chapter="Chapter";m.page=3;m.total=40;reader::footer(c,ft,m);for(auto x:list(ft))check(inside(x.rect,z.footer),"landscape footer targets inside the footer");
+  for(int y=140;y<1460;y+=170)for(int x=140;x<2040;x+=260){const Rect anchor{x,y,std::min(x+400,2120),y+56};Targets st;reader::SelectionBar bar;bar.anchor=anchor;bar.define=true;check(inside(reader::selectionToolbar(c,st,bar,L::popoverBounds(z.toolbar)),z.popover),"landscape strip inside the popover zone");}
+  const L::Frame f{turn};check(f.width()==2160&&f.height()==1620,"frame size");
+  // Corners and edges: the logical top edge is the panel's left (clockwise) or right (anticlockwise) edge.
+  int px0,py0;f.physical(0,0,px0,py0);check(turn==L::Turn::Clockwise?(px0==0&&py0==2159):(px0==1619&&py0==0),"frame origin");
+  check(same(f.physical(z.footer),turn==L::Turn::Clockwise?Rect{1520,0,1620,2160}:Rect{0,0,100,2160}),"landscape footer on the panel");
+  check(same(f.physical(z.content),turn==L::Turn::Clockwise?Rect{0,0,1520,2160}:Rect{100,0,1620,2160}),"landscape page on the panel");
+  for(Rect r:{z.toolbar,z.close,z.palette,Rect{17,23,1001,707}}){check(same(f.logical(f.physical(r)),r)&&width(f.physical(r))==height(r)&&height(f.physical(r))==width(r),"rect round trip");}
+  for(int y=0;y<1620;y+=97)for(int x=0;x<2160;x+=113){int a,b,x2,y2;f.physical(x,y,a,b);check(a>=0&&a<1620&&b>=0&&b<2160&&f.physical(Rect{x,y,x+1,y+1}).x0==a&&f.physical(Rect{x,y,x+1,y+1}).y0==b,"point and pixel rect agree");f.logical(a,b,x2,y2);check(x2==x&&y2==y,"point round trip");}
+  // Pixels: a logical rect copied out to the panel and back is unchanged, and lands where the rect maps.
+  std::vector<std::uint32_t> panel(1632*2160,0),back(std::size_t(L::logicalStride(turn))*1620,0);for(std::size_t i=0;i<px.size();++i)px[i]=std::uint32_t(i*2654435761u);const Rect r{300,200,900,700};f.toPhysical(px.data(),L::logicalStride(turn),panel.data(),1632,r);f.toLogical(panel.data(),1632,back.data(),L::logicalStride(turn),r);
+  bool ok=true;for(int y=r.y0;y<r.y1;++y)for(int x=r.x0;x<r.x1;++x){const auto i=std::size_t(y)*L::logicalStride(turn)+x;ok&=back[i]==px[i];int a,b;f.physical(x,y,a,b);ok&=panel[std::size_t(b)*1632+a]==px[i];}check(ok,"pixels round trip");}
+ L::setTurn(L::Turn::Portrait);reader::setToolbarSide(Side::Left);check(L::screenWidth()==1620&&L::pageHeight()==2060&&same(reader::footerRect(),reader::FooterRect)&&same(L::Frame{}.physical(Rect{1,2,3,4}),Rect{1,2,3,4}),"portrait unchanged");
  // 3. Every role size is at least the smallest permitted text.
  for(auto r:{t::Code,t::Display,t::Title,t::Heading,t::Subhead,t::Body,t::Label,t::Control,t::Meta,t::Caption})check(r.size>=t::Caption.size&&r.line>r.size,"role sizes");
  // 4. Cursive roles: the face swap is resolved in the shared text path, sizes stay legible, widths stay close.

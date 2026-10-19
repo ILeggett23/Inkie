@@ -13,16 +13,17 @@ std::string pageText(const Chrome& c){return std::to_string(c.page+1)+" of "+std
 namespace {Side side_=Side::Left;}
 Side toolbarSide()noexcept{return side_;}
 void setToolbarSide(Side s)noexcept{side_=s;}
-Rect toolbarRect()noexcept{int x0=side_==Side::Left?0:t::ScreenWidth-ToolbarWidth;return {x0,0,x0+ToolbarWidth,t::PageFitHeight};}
+Rect toolbarRect()noexcept{int x0=side_==Side::Left?0:layout::screenWidth()-ToolbarWidth;return {x0,0,x0+ToolbarWidth,layout::pageHeight()};}
+Rect footerRect()noexcept{return {0,layout::pageHeight(),layout::screenWidth(),layout::screenHeight()};}
 Rect toolbarSlot(unsigned k)noexcept{if(k>=ToolbarSlots)return {};Rect r=toolbarRect();int y=int(k)*ToolbarItem;return {r.x0,y,r.x1,y+ToolbarItem};}
-Rect closeRect()noexcept{return side_==Side::Left?Rect{t::ScreenWidth-ToolbarItem,0,t::ScreenWidth,ToolbarItem}:Rect{0,0,ToolbarItem,ToolbarItem};}
-Rect topRect()noexcept{return {0,0,t::ScreenWidth,ToolbarItem};}
+Rect closeRect()noexcept{const int w=layout::screenWidth();return side_==Side::Left?Rect{w-ToolbarItem,0,w,ToolbarItem}:Rect{0,0,ToolbarItem,ToolbarItem};}
+Rect topRect()noexcept{return {0,0,layout::screenWidth(),ToolbarItem};}
 Rect toolHandleRect()noexcept{return toolbarSlot(SlotHandle);}
 void closeButton(Canvas& c,Targets& tg){Rect r=closeRect();c.fill(r,t::Paper);icon(c,Icon::CloseCircle,centered(r,ToolbarGlyph,ToolbarGlyph),t::ToolbarInk);tg.add(Back,r);}
 void zoomBadge(Canvas& c,Targets& tg,int percent){const Rect r=ZoomBadgeRect;c.fill(r,t::Paper);const Rect b=inset(r,3);c.strokeRound(b,t::RadiusSmall,float(t::Outline),t::InkPrimary);text::centeredLine(c,{Face::SansSemibold,theme::Control.size},r,std::to_string(percent)+"%",t::InkPrimary,Align::Center);tg.add(ZoomBadge,hitArea(r));}
 void footer(Canvas& c,Targets& tg,const Chrome& m){
  // Quiet metadata under the page, as in the native reader: title or chapter left, position right.
- Rect r=FooterRect;c.fill(r,t::Paper);Rect text{FooterInset,r.y0,r.x1-FooterInset,r.y1};const Font f{Face::Text,theme::Meta.size};
+ Rect r=footerRect();c.fill(r,t::Paper);Rect text{FooterInset,r.y0,r.x1-FooterInset,r.y1};const Font f{Face::Text,theme::Meta.size};
  if(!m.status.empty()){text::centeredLine(c,Caption,text,text::fit(Caption,text::quiet(m.status),float(width(text))),t::InkSecondary,Align::Center);tg.add(Footer,r);return;}
  // Reading progress off: no chapter or position (notices above still show; the menu mark stays the way to the tools).
  if(!m.progress&&!m.loading){if(m.menuMark){int mid=(r.y0+r.y1)/2;icon(c,Icon::Menu,{text.x1-t::IconSmall,mid-t::IconSmall/2,text.x1,mid+t::IconSmall/2},t::InkSecondary);}tg.add(Footer,r);return;}
@@ -36,7 +37,7 @@ void footer(Canvas& c,Targets& tg,const Chrome& m){
  text::centeredLine(c,f,{text.x0,r.y0,right,r.y1},text::fit(f,m.chapter,float(right-text.x0)),t::InkSecondary,Align::Left);
  tg.add(Footer,r);
 }
-void cleanZones(Targets& tg){tg.add(RevealZone,FooterRect);}
+void cleanZones(Targets& tg){tg.add(RevealZone,footerRect());}
 // Palette layout (reference mockup): title row, 3x3 tips, rule, width title, three widths, rule, 3x3 colors.
 Rect penPanelRect()noexcept{Rect tb=toolbarRect();int y=toolbarSlot(SlotPen).y0;int x0=side_==Side::Left?tb.x1-2:tb.x0-PenPanelWidth+2;return {x0,y,x0+PenPanelWidth,y+PenPanelHeight};}
 namespace {
@@ -129,8 +130,8 @@ Rect highlightColors(Canvas& c,Targets& tg,Rect bar,Rect passage,unsigned select
  // A card of swatches beside the selection bar, no caption.
  const int h=112,cw=88;int n=int(t::HighlightOrder.size())+(removable?1:0);int w=n*cw+t::S3*2;bool above=bar.y1<=passage.y0+4;
  Rect r=above?Rect{bar.x0,bar.y0-t::S2-h,bar.x0+w,bar.y0-t::S2}:Rect{bar.x0,bar.y1+t::S2,bar.x0+w,bar.y1+t::S2+h};
- if(r.x1>t::ScreenWidth-t::S3){r.x0-=r.x1-(t::ScreenWidth-t::S3);r.x1=t::ScreenWidth-t::S3;}
- if(r.y0<0||r.y1>t::PageFitHeight){r={r.x0,passage.y1+t::S2,r.x1,passage.y1+t::S2+h};}
+ if(r.x1>layout::screenWidth()-t::S3){r.x0-=r.x1-(layout::screenWidth()-t::S3);r.x1=layout::screenWidth()-t::S3;}
+ if(r.y0<0||r.y1>layout::pageHeight()){r={r.x0,passage.y1+t::S2,r.x1,passage.y1+t::S2+h};}
  popover(c,r);
  for(int i=0;i<int(t::HighlightOrder.size());++i){unsigned idx=t::HighlightOrder[std::size_t(i)];Rect cell{r.x0+t::S3+i*cw,r.y0+8,r.x0+t::S3+(i+1)*cw,r.y1-8};swatch(c,tg,HighlightColorBase+int(idx),cell,t::Ink[idx],idx==selected,false,48);}
  if(removable){Rect cell{r.x0+t::S3+int(t::HighlightOrder.size())*cw,r.y0+8,r.x0+t::S3+(int(t::HighlightOrder.size())+1)*cw,r.y1-8};icon(c,Icon::Trash,centered(cell,40,40),t::InkPrimary);tg.add(HighlightRemove,hitArea(cell));}

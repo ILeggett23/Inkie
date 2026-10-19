@@ -57,10 +57,13 @@ Mirror image: toolbar {1508,0,1620,2060}, close {0,0,112,112}, palette {1038,112
 {0,112,1508,2060}. Content, footer, sheets and reserved bands are unchanged (the status corner stays top-right: it is the
 device's, not the hand's).
 
-### Landscape (specification only)
+### Landscape (the reading view; docs/LANDSCAPE.md)
 
-The runtime has no rotation: every buffer is 1620×2160 and `spike::Transform` rotates input only. These zones are computed by
-the same function so docs and previews stay consistent, but no landscape layout is reachable and no landscape control exists.
+The panel stays physical portrait (every buffer 1620×2160). In landscape the reading chrome is laid out in an upright
+logical frame of 2160×1620 from these zones (`layout::setTurn`, `reader::toolbarRect`/`closeRect`/`footerRect`/
+`toolbarSlot`/`penPanelRect`, `layout::popoverBounds`) and mapped to the panel by `layout::Frame`. The page, ink and text
+geometry stay physical. `ib-layout-tests` checks that the landscape chrome equals these zones in both turns and that
+Frame round-trips points, rects and pixels; `ib-preview` renders `reader-chrome-landscape`.
 
 | Zone | Right-handed | Left-handed |
 | --- | --- | --- |
