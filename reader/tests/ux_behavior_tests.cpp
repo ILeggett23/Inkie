@@ -10,6 +10,7 @@
 #include <QCoreApplication>
 #include <QProcess>
 #include <QJsonDocument>
+#include <cmath>
 #include <cstdio>
 #include <memory>
 #include <cstdlib>
@@ -56,7 +57,8 @@ struct Harness {
  void boundary(){CHECK(display.readerBoundary());if(display.pageVersion()!=version){version=display.pageVersion();display.pageInstalled();}}
  void settled(){until([&]{boundary();CHECK(!shell.failed());return shell.styledInk()->status().ready&&!shell.styledInk()->status().busy&&shell.styledInk()->damage().empty();});}
  void stroke(int x0,int y0,int x1,int y1,unsigned segments=1,bool hardwareEraser=false){
-  auto engine=std::make_unique<spike::Engine>(spike::Transform{{0,1619},{0,2159},1620,2160,0,false},shell.ink(),display);
+  // The Engine as the session builds it: the panel mapping with the display's input frame (a turned sheet's pixels).
+  auto engine=std::make_unique<spike::Engine>(spike::engineTransform(spike::Transform{{0,1619},{0,2159},1620,2160,0,false},display),shell.ink(),display);
   CHECK(display.reserve());auto time=spike::monotonic();
   for(unsigned n=0;n<=segments+1;++n){unsigned step=std::min(n,segments);int x=x0+(x1-x0)*int(step)/int(segments),y=y0+(y1-y0)*int(step)/int(segments);auto phase=n==0?spike::Phase::Down:n==segments+1?spike::Phase::Up:spike::Phase::Move;
    spike::Sample sample{x,y,phase,time+n+1};sample.eraser=hardwareEraser;CHECK(engine->accept(sample));CHECK(display.append(engine->points().back()));CHECK(engine->flush()==spike::Submit::Accepted);
@@ -139,6 +141,51 @@ int main(int argc,char** argv){QCoreApplication core(argc,argv);if(argc!=5)retur
   const auto turned=h.shell.document()->active().prepared.metadata;CHECK(turned["orientation"]==90&&turned["documentFormat"]=="epub"&&turned["view_receipt"].toObject()["layout"].toObject()["height"]==590&&ux::TurnTestAccess::viewSet(h.shell)!=portrait);
   hold(0,1000);until([&]{h.boundary();CHECK(!h.shell.failed());return ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Portrait&&h.shell.writable();});settle(h);
   CHECK(ux::TurnTestAccess::viewSet(h.shell)==portrait&&!h.shell.document()->active().prepared.metadata.contains("orientation"));CHECK(h.shell.finish(5000));});
+ // Turned (PR 3): Notes and Inkie open upright at the foot of the landscape screen (ib::layout::SheetMap), their controls
+ // are where they are drawn, and the pen writes through the session's Engine frame (SessionDisplay::inputFrame) into the
+ // writing area: the stored strokes are the same sheet-relative points either way up, and they show where they were
+ // written, turned and after turning back. Opening, writing and closing a turned sheet stay regional.
+ {auto turnedSheet=[&](const char* id,ib::layout::Turn turn,bool tom){test(id,[&]{auto root=data/id;importBook(app,source,root);Harness h(app,root);settle(h);
+   const auto accel=data/(std::string(id)+"-accel");std::filesystem::create_directories(accel);auto hold=[&](int x,int y){std::ofstream(accel/"in_accel_x_raw")<<x<<"\n";std::ofstream(accel/"in_accel_y_raw")<<y<<"\n";std::ofstream(accel/"in_accel_z_raw")<<0<<"\n";};
+   turn==ib::layout::Turn::Clockwise?hold(-1000,0):hold(1000,0);ux::TurnTestAccess::sensor(h.shell,accel);until([&]{h.boundary();CHECK(!h.shell.failed());return ux::TurnTestAccess::turn(h.shell)==turn&&h.shell.writable();});settle(h);
+   const ib::layout::SheetMap map{turn};const auto full=h.calls.full;h.calls.requests.clear();
+   auto panel=[&](int x,int y){int px,py;map.physical(x,y,px,py);return std::pair{px,py};};
+   auto tapSheet=[&](spike::Rect r){CHECK(!r.empty());const auto [x,y]=panel((r.x0+r.x1)/2,(r.y0+r.y1)/2);CHECK(h.shell.finger(x,y,false));h.boundary();};
+   auto frame=[&]{spike::Transform t{{0,1619},{0,2159},1620,2160,0,false};h.display.inputFrame(t);return t;};
+   auto dark=[&](spike::Rect area){area=ib::intersect(area,{0,0,1620,2160});h.shell.compose(h.vendor.surface(),area);unsigned n=0;for(int y=area.y0;y<area.y1;++y)for(int x=area.x0;x<area.x1;++x)n+=(h.calls.pixels[std::size_t(y)*1632+x]&0xffu)<96;return n;};
+   auto around=[&](int x,int y,bool turned){if(!turned)return spike::Rect{x-40,y-30,x+40,y+30};const auto [px,py]=panel(x,y);return spike::Rect{px-30,py-40,px+30,py+40};};
+   // The sheet's writing area and two points in it (sheet pixels): a stroke 300 px long along the paper's line.
+   const spike::Rect area=tom?ib::tom::WritingArea:ib::notes::NoteArea;const int ax=area.x0+100,ay=area.y0+150,bx=area.x0+400;
+   CHECK(h.shell.action(ux::Action::Show));h.boundary();CHECK(uitest::menu(h.shell,tom?ux::MenuTom:ux::MenuNotes));h.boundary();
+   if(tom){until([&]{h.boundary();CHECK(!h.shell.failed());return h.shell.tomPanel()&&h.shell.tomPanel()->active()&&h.shell.writable();});CHECK(h.shell.tomPanel()->turned());}
+   else{until([&]{h.boundary();return h.shell.notesPanel()&&h.shell.notesPanel()->view().ready&&h.shell.notesPanel()->canLeave();});CHECK(h.shell.notesPanel()->turned()&&h.shell.notesPanel()->mode()==notes::Mode::Hub);
+    tapSheet(uitest::notesRect(h.shell,ib::notes::HubCreate));until([&]{h.boundary();CHECK(!h.shell.failed());return h.shell.notesPanel()->canLeave()&&h.shell.notesPanel()->writable();});
+    const auto window=h.shell.notesPanel()->view().window.area;CHECK(window.x0==area.x0&&window.y0==area.y0&&window.x1==area.x1&&window.y1==area.y1);}
+   {const auto t=frame();CHECK(t.turn==int(ux::Shell::degrees(turn))&&t.offsetX==-ib::layout::TurnedSheetLeft&&t.offsetY==ib::layout::TurnedSheetTop);} /* the pen writes in the sheet's pixels */
+   const auto a=panel(ax,ay),b=panel(bx,ay);h.stroke(a.first,a.second,b.first,b.second,10);
+   QJsonArray written;auto at=[](const QJsonValue& v){const auto p=v.toArray();return std::pair{int(std::lround(p[0].toDouble())),int(std::lround(p[1].toDouble()))};};
+   if(tom){until([&]{h.boundary();CHECK(!h.shell.failed());return h.shell.tomPanel()->view().handwriting.size()==1&&!h.shell.tomPanel()->unsaved()&&h.shell.tomPanel()->canLeave();});
+    written=h.shell.tomPanel()->view().handwriting;const auto stroke=written[0].toObject();const auto points=stroke["points"].toArray();
+    CHECK(stroke["coordinateSpace"]=="tom-logical-v2"&&at(points.first())==std::pair(ax-area.x0,ay-area.y0)&&at(points.last())==std::pair(bx-area.x0,ay-area.y0));}
+   else{until([&]{h.boundary();CHECK(!h.shell.failed());return h.shell.notesPanel()->canLeave()&&h.shell.notesPanel()->view().note["strokes"].toArray().size()==1;});
+    written=h.shell.notesPanel()->view().note["strokes"].toArray();const auto points=written[0].toObject()["points"].toArray();
+    CHECK(at(points.first())==std::pair(ax-area.x0,ay-area.y0)&&at(points.last())==std::pair(bx-area.x0,ay-area.y0));}
+   CHECK(dark(around((ax+bx)/2,ay,true))>20); /* the ink shows on the panel where the pen wrote */
+   tapSheet(tom?uitest::tomRect(h.shell,ib::tom::Close):uitest::notesRect(h.shell,ib::notes::NoteDone));
+   until([&]{h.boundary();CHECK(!h.shell.failed());return tom?!h.shell.tomPanel()->active():!h.shell.notesPanel()->active();});settle(h);
+   {const auto t=frame();CHECK(!t.turn&&!t.offsetX&&!t.offsetY);} /* closed: the pen writes on the page again */
+   CHECK(h.calls.full==full);onlyRegional(h.calls); /* the turned sheet opened, took ink and closed with regional updates only */
+   // Upright again: the same strokes, shown at the same place on the paper.
+   hold(0,1000);until([&]{h.boundary();CHECK(!h.shell.failed());return ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Portrait&&h.shell.writable();});settle(h);
+   CHECK(h.shell.action(ux::Action::Show));h.boundary();CHECK(uitest::menu(h.shell,tom?ux::MenuTom:ux::MenuNotes));h.boundary();
+   if(tom){until([&]{h.boundary();CHECK(!h.shell.failed());return h.shell.tomPanel()->active()&&h.shell.writable()&&h.shell.tomPanel()->renderSettled();});CHECK(!h.shell.tomPanel()->turned()&&h.shell.tomPanel()->view().handwriting==written);}
+   else{until([&]{h.boundary();return h.shell.notesPanel()->view().ready&&h.shell.notesPanel()->canLeave();});CHECK(!h.shell.notesPanel()->turned());CHECK(uitest::notes(h.shell,ib::notes::EntryBase));
+    until([&]{h.boundary();CHECK(!h.shell.failed());return h.shell.notesPanel()->mode()==notes::Mode::Note&&h.shell.notesPanel()->canLeave()&&!h.shell.notesPanel()->view().note.isEmpty()&&h.shell.notesPanel()->renderSettled();});
+    CHECK(h.shell.notesPanel()->view().note["strokes"].toArray()==written);}
+   for(int n=0;n<10;++n)h.boundary();CHECK(dark(around((ax+bx)/2,ay,false))>20);
+   CHECK(h.shell.finish(5000));});};
+  turnedSheet("turned_note_sheet_takes_ink_that_stays_put_upright",ib::layout::Turn::Clockwise,false);
+  turnedSheet("turned_inkie_sheet_takes_ink_that_stays_put_upright",ib::layout::Turn::Anticlockwise,true);}
  test("old_ink_binding_never_composites_into_current_viewport",[&]{auto root=data/"old-viewport-binding";importBook(app,source,root);Harness h(app,root);settle(h);h.stroke(300,900,450,900,5);settle(h);const spike::Rect area{250,850,500,950};const auto marked=crop(h.calls,area);const auto old=ux::QolTestAccess::mismatched(h.shell);h.shell.compose(h.vendor.surface(),area);auto expected=h.calls.pixels;auto& prepared=h.shell.document()->active().prepared;underlay::compose({expected,1620,2160,1632},prepared.background,{prepared.ink,1620,2160,1632},area);for(int y=area.y0;y<area.y1;++y)for(int x=area.x0;x<area.x1;++x)CHECK(h.calls.pixels[std::size_t(y)*1632+x]==expected[std::size_t(y)*1632+x]);CHECK(crop(h.calls,area)!=marked);ux::QolTestAccess::restore(h.shell,old);h.shell.compose(h.vendor.surface(),area);CHECK(crop(h.calls,area)==marked&&h.shell.finish(5000));});
  test("highlighter_consecutive_erases_preserve_neighbor_and_cleanup",[&]{auto root=data/"highlighter-erase-cycles";importBook(app,source,root);Harness h(app,root);settle(h);h.stroke(300,1300,450,1300,5);settle(h);const spike::Rect target{250,850,500,950},neighbor{250,1250,500,1350};const auto kept=crop(h.calls,neighbor),clean=crop(h.calls,target);CHECK(h.shell.styledInk()->selectTool(styled::Tool::Highlighter));settle(h);color(h,"red");const auto full=h.calls.full;for(int cycle=0;cycle<5;++cycle){h.stroke(300,900,450,900,5);settle(h);CHECK(crop(h.calls,target)!=clean);h.calls.requests.clear();h.stroke(280,900,470,900,12,true);settle(h);CHECK(crop(h.calls,target)==clean&&crop(h.calls,neighbor)==kept&&h.calls.full==full);CHECK(regionalQuality(h.calls,target,3));onlyRegional(h.calls);}CHECK(h.shell.finish(5000));});
  test("erase_cleanup_covers_every_live_erase_submission",[&]{auto root=data/"erase-coverage";importBook(app,source,root);Harness h(app,root);settle(h);h.stroke(300,900,1100,900,12);settle(h);h.calls.requests.clear();h.stroke(290,900,1110,900,24,true);settle(h);CHECK(std::any_of(h.calls.requests.begin(),h.calls.requests.end(),[](const auto& q){return q.mode==0&&q.flags==2;}));for(const auto& q:h.calls.requests)if(q.mode==0)CHECK(q.flags==2);ux::RefreshPlan uncovered;for(const auto& q:h.calls.requests)if(q.mode==0)CHECK(uncovered.add(q.rect));for(const auto& q:h.calls.requests)if((q.mode==3||q.mode==4)&&q.flags==0)CHECK(uncovered.subtract(q.rect));CHECK(uncovered.count==0);CHECK(h.shell.finish(5000));});

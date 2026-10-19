@@ -38,6 +38,9 @@ class Panel final:public spike::OperationSink {
  bool starred(const QJsonObject& note)const{return favorites_&&favorites_->contains(note["id"].toString());}
  bool keep(const QJsonObject& note)const;
  std::array<spike::Rect,5> damage_{};unsigned damageCount_{};std::vector<std::uint32_t> shown_; /* the paper as last marked, for changed-region damage */
+ // Turned (docs/LANDSCAPE.md, PR 3): the sheets are laid out for ib::layout::SheetMap (tall ones start at TurnedSheetTop).
+ // Set by the shell before each open; the reader cannot turn while a sheet is open.
+ bool turned_{};int hubPage()const noexcept{return ib::notes::hubPageSize(turned_);}
  void paint();void mark();bool advanceClose();void requestSource(QJsonObject);bool send(QJsonObject);void keyboard(QString,QString,QJsonObject,unsigned=256);
 public:
  bool selectionEnabled()const noexcept{return open_&&selectInk_&&mode_==Mode::Note&&!textView_&&!keyboard_.active()&&!pendingCommand_&&!view_.busy&&!playback_.active()&&!finishingPlayback_&&view_.editable;}bool selectionDrag(int,int,int,int);
@@ -55,6 +58,7 @@ public:
  void setTitle(QString title){title_=std::move(title);}
  // Stars on notes (hub rows, Favorites filter, the note sheet). Owned by the shell; null hides stars.
  void setFavorites(ux::NoteFavorites* favorites){favorites_=favorites;}
+ void setTurned(bool turned)noexcept{turned_=turned;}bool turned()const noexcept{return turned_;}
  // After the note exists: set its title and typed text (e.g. saved from Tom).
  void queueInk(QString title,QJsonObject generation){if(!title.isEmpty())followUps_.push_back({{"op","note.title"},{"title",title.left(256)}});generation["op"]="native.generate";generation["generation"]=product::newId();generation["binding"]=page_;followUps_.push_back(std::move(generation));}
  void queueText(QString title,QString text){if(!title.isEmpty())followUps_.push_back({{"op","note.title"},{"title",title.left(256)}});if(!text.isEmpty())followUps_.push_back({{"op","note.text"},{"text",text.left(8192)}});}

@@ -72,7 +72,7 @@ class Display final:public spike::SessionDisplay,public spike::OperationSink {
   // local quality 2/16, 5/16; red appears after it). Inkie gave one only to grid cells that passed the 96-update counter,
   // so a stroke across two cells came out half in fast-mode colour. Each stroke's live damage is kept (strokeArea_) and
   // queued once the pen is up and ink is settled. Black ink keeps no extra update, as in stock's black-dot pilot.
-  if(!eraseSubmission_){if(p.phase==spike::Phase::Down){join(inkPlan_,strokeArea_);strokeArea_={};colorStroke_=shell_.colorInk();}return;}if(p.phase==spike::Phase::Down){erasing_=true;eraseArea_={};}ringX_=p.x;ringY_=p.y;grow(eraseArea_,around(p.x,p.y,int(std::ceil((EraserRing+10)*shell_.inputScale()))));if(p.phase==spike::Phase::Up){erasing_=false;grow(liftCleanup_,eraseArea_);eraseArea_={};}}
+  if(!eraseSubmission_){if(p.phase==spike::Phase::Down){join(inkPlan_,strokeArea_);strokeArea_={};colorStroke_=shell_.colorInk();}return;}if(p.phase==spike::Phase::Down){erasing_=true;eraseArea_={};}ringX_=p.x;ringY_=p.y;grow(eraseArea_,shell_.inputArea(around(p.x,p.y,int(std::ceil((EraserRing+10)*shell_.inputScale()))))); /* p is in the pen's frame (inputFrame) */if(p.phase==spike::Phase::Up){erasing_=false;grow(liftCleanup_,eraseArea_);eraseArea_={};}}
  void detach(const char* why)noexcept{detached_=true;std::fprintf(stderr,"INK_STROKE_TAIL_UNSAVED reason=%s splits=%llu\n",why,(unsigned long long)splits_);}
  bool appendSplit(const spike::Point& p)noexcept{
   penContact_=p.phase!=spike::Phase::Up;track(p);
@@ -157,6 +157,8 @@ public:
   if(sessionPower_&&!sessionPower_->tick(spike::monotonic(),l.valid()))powerEnd_=true;
   return startupWindow("reader:display-initialize-us",[&]{return vendor_.initialize(l);})&&touch_.open(l.valid());}
  spike::Surface surface()const noexcept override{return shell_.ink();}
+ // A turned Notes or Inkie sheet (docs/LANDSCAPE.md, PR 3): pen points arrive in its sheet pixels (Shell::inputFrame).
+ void inputFrame(spike::Transform& t)noexcept override{shell_.inputFrame(t);}
  bool initialPage()noexcept override{try{return startupWindow("reader:initial-page-us",[&]{compose({0,0,1620,2160});const bool accepted=vendor_.initialPreparedPage(vendor_.surface().pixels);if(accepted)refresh_.accepted({0,0,1620,2160},RefreshIntent::PageTransition);return accepted;});}catch(...){return false;}}
  spike::Submit submit(spike::Rect r)noexcept override{try{r=shell_.presentationDamage(r);const int shown=eraseSubmission_?vendor_.removalContent(r):-1;if(eraseSubmission_&&!vendor_.beginErase(r))return spike::Submit::Failed;compose(r);auto result=live(r,"reader:submit-failed",RefreshIntent::FastInk,false,eraseSubmission_);if(result==spike::Submit::Accepted){if(eraseSubmission_){grow(liftCleanup_,r);owe(r,std::max(0,shown));}else if(colorStroke_)grow(strokeArea_,r);shell_.presentationCovered(r);}return result;}catch(...){return spike::Submit::Failed;}}
  void pump()noexcept override{pumped_=true;cadence_.tick("reader:loop");vendor_.pump();if(foreground_)foreground_->publish(shell_.failed());logWorkers();if(sessionPower_&&!sessionPower_->tick(spike::monotonic(),lease_&&lease_->valid()))powerEnd_=true;sleepTick(false);}void shutdown()noexcept override{shell_.beginQuiesce();vendor_.shutdown();lease_=nullptr;}
