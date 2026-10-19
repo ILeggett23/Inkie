@@ -24,6 +24,9 @@ public:
  void preparePlayback(QRectF);bool playBegin(styled::Style s)noexcept{return !contact_&&!pending_&&(playbackPrepared_?(!generated_||generated_->begin(s,generatedMatrix_)):raster_.begin(s,matrix_));}bool playPoint(styled::Coordinate p,bool first)noexcept{return playbackPrepared_?(!generated_||generated_->point(p,first)):raster_.point(p,first);}void playEnd()noexcept{if(playbackPrepared_){if(generated_)generated_->end();}else raster_.end();}void playFill(const QJsonObject& s){if(playbackPrepared_){if(generated_)generated_->fill(s,generatedMatrix_);}else raster_.fill(s,matrix_);}
  void stop()noexcept;void setStyle(styled::Style style)noexcept{window_.style=style;}bool setEraser(bool value)noexcept{if(contact_)return false;eraser_=value;return true;}bool eraser()const noexcept{return eraser_;} /* Main-thread choice; queued slots already own their style. */
  bool take(unsigned&,QJsonObject&,bool& eraser);void acknowledge(unsigned,bool saved)noexcept;
+ // A queued stroke that has no note to go to (its note's create failed): freed without failing the canvas, so the
+ // sheet reports it and can close instead of ending the session.
+ void discard(unsigned)noexcept;
  // D2: points the current stroke piece can still take (0 when no stroke is active). The display
  // closes a piece before it reaches this bound and continues the stroke in a new piece.
  std::size_t room()const noexcept;

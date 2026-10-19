@@ -30,6 +30,25 @@ inline Battery readBattery(const std::filesystem::path& root="/sys/class/power_s
  try{for(const auto& e:std::filesystem::directory_iterator(root)){const auto name=e.path().filename().string();if(name=="max1726x_battery"||name.find("marker")!=std::string::npos)continue;if(auto v=detail::line(e.path()/"online");v&&*v=="1")b.external=true;}}catch(...){}
  return b;
 }
+// Temperatures (read-only), in degrees C: the panel/ambient sensor the display driver reads (hwmon "rm_hwmon_temp", the
+// one Xochitl's temperature module and the vendor waveform choice use), the CPU ("cpu_thermal"), and the battery fuel
+// gauge (power_supply max1726x_battery: "temp" in tenths, "health"). The gauge reports health "Overheat" (or "Hot")
+// itself when the battery is too warm. Unreadable values stay unknown.
+struct Temperature {std::optional<double> panel,cpu,battery;bool batteryHot{};bool operator==(const Temperature&)const=default;};
+inline Temperature readTemperature(const std::filesystem::path& hwmon="/sys/class/hwmon",const std::filesystem::path& supply="/sys/class/power_supply")noexcept{
+ Temperature t;auto milli=[](const std::filesystem::path& f)->std::optional<double>{auto v=detail::line(f);if(!v)return std::nullopt;try{std::size_t n=0;const long long x=std::stoll(*v,&n);if(n!=v->size()||x<-60000||x>150000)return std::nullopt;return double(x)/1000.;}catch(...){return std::nullopt;}};
+ try{for(const auto& e:std::filesystem::directory_iterator(hwmon)){const auto name=detail::line(e.path()/"name");if(!name)continue;if(*name=="rm_hwmon_temp")t.panel=milli(e.path()/"temp1_input");else if(*name=="cpu_thermal")t.cpu=milli(e.path()/"temp1_input");}}catch(...){}
+ const auto gauge=supply/"max1726x_battery";
+ if(auto v=detail::line(gauge/"temp")){try{std::size_t n=0;const long x=std::stol(*v,&n);if(n==v->size()&&x>-600&&x<1500)t.battery=double(x)/10.;}catch(...){}}
+ if(auto v=detail::line(gauge/"health"))t.batteryHot=*v=="Overheat"||*v=="Hot";
+ return t;
+}
+// "Too warm": the gauge says the battery is overheating, or the panel sensor reads WarmC or more. Cleared only at
+// ClearC or below with the gauge back to normal, so a reading near the limit does not make the warning flicker.
+// Xochitl's own limit (its tempindicator "warningDegrees") is set in configuration this tablet does not expose as a
+// file; WarmC is Inkie's choice, not a recovered stock value.
+struct HeatWatch {static constexpr double WarmC=40,ClearC=37;bool hot{};
+ bool update(const Temperature& t)noexcept{const bool before=hot;if(t.batteryHot||(t.panel&&*t.panel>=WarmC))hot=true;else if(!t.panel||*t.panel<=ClearC)hot=false;return hot!=before;}};
 // Wi-Fi radio link: true when wlan0 is up (associated), false when down or dormant, nothing when unknown.
 inline std::optional<bool> wifiLink(const std::filesystem::path& root="/sys/class/net")noexcept{
  if(auto v=detail::line(root/"wlan0"/"operstate")){if(*v=="up")return true;if(*v=="down"||*v=="dormant"||*v=="lowerlayerdown")return false;}

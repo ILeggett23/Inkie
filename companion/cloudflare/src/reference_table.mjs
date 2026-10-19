@@ -14,7 +14,7 @@ function historyReference(history){
  return null;
 }
 // A short request to color (or recolor) the drawing just made, in words that name nothing else: "Add color", "Can you color
-// it by family?", "Make it colorful". A confirmation ("yes", "go ahead") counts only when Tom's last turn itself asked about
+// it by family?", "Make it colorful". A confirmation ("yes", "go ahead") counts only when Inkie's last turn itself asked about
 // coloring a registered table, so a "yes" to an unrelated question never redraws one.
 const followUpWords=new Set('please can could would will you add use apply put give make it its color colors colour colours colored coloured colorful colourful colorize colourise color-coded colour-coded in with some the a to this that them table periodic elements element chart by family families category categories type types ok okay yes yeah sure great thanks thank now and again redraw draw show do also full'.split(' '));
 const affirmation=/^(?:yes|yeah|yep|sure|ok|okay|please|please\s+do|do\s+it|go\s+ahead|yes\s+please|sounds\s+good|that\s+works|perfect)(?:\s*,?\s*(?:please|thanks|thank\s+you|do\s+it|go\s+ahead))?[.!\s]*$/i;
