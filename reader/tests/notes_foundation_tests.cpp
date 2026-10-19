@@ -22,7 +22,7 @@
 namespace {thread_local bool tracking=false;thread_local unsigned allocations=0;}
 namespace {std::atomic<bool> failNotePriority{false},failPostCommitPublish{false};}
 extern "C" int renameat(int from,const char* old,int to,const char* next)noexcept{auto result=int(::syscall(SYS_renameat,from,old,to,next));if(result==0&&std::strcmp(next,"features.json")==0&&failPostCommitPublish.exchange(false)){if(::syscall(SYS_renameat,to,next,to,"features.saved-before-publish.json")||::mkdirat(to,next,0700))std::_Exit(79);}return result;}
-extern "C" int setpriority(__priority_which_t which,id_t who,int value)noexcept{if(failNotePriority.load()&&value==19){errno=EPERM;return -1;}return int(::syscall(SYS_setpriority,which,who,value));}
+extern "C" int setpriority(__priority_which_t which,id_t who,int value)noexcept{if(failNotePriority.load()&&value==notes::WorkerNice){errno=EPERM;return -1;}return int(::syscall(SYS_setpriority,which,who,value));}
 [[gnu::noinline]] void* operator new(std::size_t n){if(tracking)++allocations;if(auto p=std::malloc(n?n:1))return p;throw std::bad_alloc();}
 [[gnu::noinline]] void* operator new[](std::size_t n){return ::operator new(n);}[[gnu::noinline]] void operator delete(void*p)noexcept{std::free(p);}[[gnu::noinline]] void operator delete[](void*p)noexcept{std::free(p);}[[gnu::noinline]] void operator delete(void*p,std::size_t)noexcept{std::free(p);}[[gnu::noinline]] void operator delete[](void*p,std::size_t)noexcept{std::free(p);}
 [[gnu::noinline]] void* operator new(std::size_t n,const std::nothrow_t&)noexcept{try{return ::operator new(n);}catch(...){return nullptr;}}
