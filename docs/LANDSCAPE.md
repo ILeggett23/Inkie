@@ -95,6 +95,8 @@ The page, ink, styled ink and semantic text stay physical. The chrome and its ta
   - the reading must hold for 3 polls at 300 ms;
   - flat or upside down keeps the last orientation.
 - The first device run journals the raw readings (`ui:orientation`) to confirm the axis signs.
+- Readings come from their own thread (`device::AccelReader`). One reading takes about 0.75 s on the tablet; read on the
+  shell's thread it held up every tap while Auto-rotate was on (D16).
 
 ## PR 2 (`feat/landscape-b`): upright surfaces and EPUB
 

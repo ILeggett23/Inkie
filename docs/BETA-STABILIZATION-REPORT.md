@@ -314,6 +314,20 @@ How it looks: erased ink fades out in the quality waveform a moment behind the e
 of vanishing in the fast waveform. Not measured on the device yet: whether 100 ms between live removals feels right, and
 whether overlapping Content-mode removals stay as clean as one.
 
+### Device report follow-up 5: every tap takes seconds with Auto-rotate on (user report, 2026-10-19)
+
+The user, on `fbb431d`: "It takes a couple of seconds after clicking anything instead of it being instant." The
+journal (read with the user's approval) shows the session from 17:32 to 17:34 UTC: 150 shell ticks of 0.75–0.77 s each,
+all while Auto-rotate was on (`ui:auto-rotate` 1), none in the 5 s it was off. The earlier landscape build never had
+Auto-rotate turned on, so it felt instant.
+
+| # | Issue | Root cause | Fix | Verified |
+|---|---|---|---|---|
+| D16 | With Auto-rotate on, every tap and screen change waits up to about 0.75 s, and several in a row add up to seconds | `Shell::pollOrientation` read the accelerometer on the shell's own thread every 300 ms. On the Paper Pro one reading of the three raw axes takes about 0.75 s (`reader:slow-tick-us` 754 000–771 000), so most ticks blocked on it. | `device::AccelReader` reads on its own thread, one reading per 300 ms at most. The shell takes the newest reading without waiting. Off, the reader idles. `ui:orientation-read-ms` journals the first reading's duration. The watch is unchanged (three settled readings to turn). | [auto] `status-screen-tests`: `take()` and `run()` return at once while a 400 ms reading is under way, each reading is taken once, a paused reader reads nothing more, and fixture readings arrive through the thread. Also run locally under ThreadSanitizer and ASan/UBSan. The `pdf_turns_with_the_tablet…` route turns through the reader. Device check 39 |
+
+Turning takes about as long as before (three readings, each about 0.75 s on the tablet, so about 2 s), but nothing
+waits for it.
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -373,6 +387,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 36 | Open an EPUB with Auto-rotate on and turn the tablet; read a few pages; turn back | Longer lines at the same type size; the same passage after each turn | `ui:turn`, `ui:turned` |
 | 37 | Turn an EPUB, read on, then close it and reopen it upright | The book reopens where you stopped reading | — |
 | 38 | Write black and red ink; erase part of each with the Marker's eraser end, then with the toolbar eraser; erase a long scribble | The erased ink fades out behind the eraser and leaves no yellow, as Undo does; nothing flashes | `ui:erase-live-removals`, `ui:erase-lift-cleanup`, `ui:removal-content-cleanup` |
+| 39 | Turn Auto-rotate on in quick settings; tap the toolbar, menus and page turns; then turn the tablet | Taps respond at once, as with Auto-rotate off; the page turns about 2 s after the tilt settles | `ui:orientation-read-ms`, no `reader:slow-tick-us` near 750 000 |
 
 ## 11. Beta-readiness recommendation
 

@@ -1,6 +1,9 @@
 #include "ib/status_screen.h"
 #include "device_status.h"
 #include <fstream>
+#include <thread>
+#include <chrono>
+#include <atomic>
 #include <unistd.h>
 #include <algorithm>
 #include <cstdio>
@@ -28,6 +31,13 @@ int main(int argc,char**argv){try{if(argc!=2||!ib::text::load(std::filesystem::p
   check(!feed(1000,0,0)&&!feed(1000,0,0)&&!feed(0,1000,0)&&o.turn==T::Clockwise); /* interrupted: no turn */
   check(!feed(1000,0,0)&&!feed(1000,0,0)&&feed(1000,0,0)&&o.turn==T::Anticlockwise&&std::lround(device::OrientationWatch::angle({1000,0,0}))==90);
   check(!feed(-200,1000,0)&&!feed(-200,1000,0)&&feed(-200,1000,0)&&o.turn==T::Portrait); /* 11 degrees off upright */
+  // The reader thread: the caller never waits for a slow sensor (0.75 s a reading on the Paper Pro), each reading is
+  // taken once, and a paused reader reads nothing more (at most the reading already under way, then discarded).
+  {device::AccelReader r;std::atomic<int> reads{0};check(!r.take());r.run([&]{++reads;std::this_thread::sleep_for(std::chrono::milliseconds(400));return std::optional<device::Accel>(device::Accel{1,2,3});});
+   const auto t0=std::chrono::steady_clock::now();check(!r.take());r.run([&]{++reads;std::this_thread::sleep_for(std::chrono::milliseconds(400));return std::optional<device::Accel>(device::Accel{1,2,3});});check(std::chrono::steady_clock::now()-t0<std::chrono::milliseconds(100));
+   std::optional<device::Accel> got;for(int i=0;i<500&&!got;++i){got=r.take();if(!got)std::this_thread::sleep_for(std::chrono::milliseconds(10));}check(got&&got->x==1&&got->y==2&&got->z==3&&r.lastRead()>=std::chrono::milliseconds(400));check(!r.take());
+   r.pause();const int paused=reads.load();std::this_thread::sleep_for(std::chrono::milliseconds(1000));check(reads.load()<=paused+1&&!r.take());
+   axes(0,1000,0);r.run([acc]{return device::readAccel(acc);});got={};for(int i=0;i<500&&!got;++i){got=r.take();if(!got)std::this_thread::sleep_for(std::chrono::milliseconds(10));}check(got&&got->x==1000&&got->y==0);}
   put(acc/"in_accel_mount_matrix","garbage");a=axes(1,2,3);check(a&&a->x==1&&a->y==2&&a->z==3); /* identity when malformed */put(acc/"in_accel_z_raw","x");check(!device::readAccel(acc));
   std::filesystem::remove_all(root);
   std::vector<std::uint32_t> px(1632*2160,0xffffffffu);Canvas cv({px,1620,2160,1632});Targets tg;s::Model cool;cool.clock="12:00";cool.clockOnly=true;s::bar(cv,tg,cool,s::ReaderClock);auto red=[&]{for(int y=s::ReaderClock.y0;y<s::ReaderClock.y1;++y)for(int x=s::ReaderClock.x0;x<s::ReaderClock.x1;++x)if(px[std::size_t(y)*1632+x]==theme::Caution)return true;return false;};check(!red());

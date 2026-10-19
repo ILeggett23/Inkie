@@ -520,8 +520,12 @@ template<class F>void Shell::paintTurned(std::vector<std::uint32_t>& pixels,ib::
  const ib::layout::Frame f{turn_};const int stride=ib::layout::logicalStride(turn_);if(turned_.size()<underlay::Pixels)turned_.assign(underlay::Pixels,0xffffffffu);
  for(auto r:logical)f.toLogical(pixels.data(),1632,turned_.data(),stride,r);ib::Canvas c({turned_,2160,1620,stride});ib::Targets upright;paint(c,upright);
  for(auto r:logical)f.toPhysical(turned_.data(),stride,pixels.data(),1632,r);for(unsigned i=0;i<upright.size();++i)targets.add(upright[i].id,f.physical(upright[i].rect));}
-void Shell::pollOrientation(){if(!prefs_.autoRotate||!orientationSensor())return;const auto now=std::chrono::steady_clock::now();if(now-orientationAt_<std::chrono::milliseconds(300))return;orientationAt_=now;
- const auto a=device::readAccel(*accel_);if(!a)return;if(orientationWatch_.update(*a)){ /* value: turn*1000 + angle+180, so the first device run shows the axis signs */
+// The accelerometer is read on its own thread (device::AccelReader): one reading takes about 0.75 s on the tablet, and
+// read here it held up every tap and paint while Auto-rotate was on. Off, the reader idles.
+void Shell::pollOrientation(){if(!prefs_.autoRotate||!orientationSensor()){if(accelOn_){accelReader_.pause();accelOn_=false;}return;}
+ if(!accelOn_){accelReader_.run([path=*accel_]{return device::readAccel(path);});accelOn_=true;}
+ const auto a=accelReader_.take();if(!a)return;if(!accelTimed_){accelTimed_=true;recovery::v2::e2::mark("ui:orientation-read-ms",unsigned(accelReader_.lastRead().count()));}
+ if(orientationWatch_.update(*a)){ /* value: turn*1000 + angle+180, so the first device run shows the axis signs */
   recovery::v2::e2::mark("ui:orientation",static_cast<unsigned long long>(unsigned(orientationWatch_.turn)*1000u+unsigned(std::lround(device::OrientationWatch::angle(*a)+180))));}}
 void Shell::pollDevice(){const auto now=std::chrono::steady_clock::now();if(batteryAt_!=std::chrono::steady_clock::time_point{}&&now-batteryAt_<std::chrono::seconds(heat_.hot?10:60))return;batteryAt_=now; /* every 10 s while too warm, so the warning clears soon after it cools */
  // Temperature: warn once per warm episode (as Xochitl's temperature module does), show it in the status bar and quick

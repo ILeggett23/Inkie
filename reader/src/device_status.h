@@ -15,6 +15,11 @@
 #include <string>
 #include <cstdint>
 #include <sys/statvfs.h>
+#include <chrono>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <thread>
 namespace device {
 enum class Charge {Unknown,Discharging,Charging,Full,NotCharging};
 struct Battery {std::optional<int> percent;Charge charge{Charge::Unknown};bool external{};bool operator==(const Battery&)const=default;
@@ -71,6 +76,28 @@ inline std::optional<Accel> readAccel(const std::filesystem::path& device)noexce
   if(ok&&count==9)m=parsed;}
  return Accel{m[0]*raw[0]+m[1]*raw[1]+m[2]*raw[2],m[3]*raw[0]+m[4]*raw[1]+m[5]*raw[2],m[6]*raw[0]+m[7]*raw[1]+m[8]*raw[2]};
 }
+// Reads the accelerometer away from the caller's thread. On the Paper Pro one reading of the three raw axes takes about
+// 0.75 s (journal 2026-10-19, build fbb431d: with Auto-rotate on, every shell tick took 755 ms, so every tap waited
+// that long). The caller takes the newest reading without waiting; the reader thread takes one reading per Period at
+// most, and idles while paused. Each reading is taken once.
+class AccelReader {
+public:
+ using Read=std::function<std::optional<Accel>()>;
+ static constexpr std::chrono::milliseconds Period{300};
+ AccelReader()=default;AccelReader(const AccelReader&)=delete;AccelReader& operator=(const AccelReader&)=delete;
+ ~AccelReader(){{std::lock_guard<std::mutex> l(m_);stop_=true;}wake_.notify_all();if(thread_.joinable())thread_.join();}
+ // Read with r (on the reader thread) until paused; the thread starts on first use. Never waits for a reading.
+ void run(Read r)noexcept{{std::lock_guard<std::mutex> l(m_);read_=std::move(r);on_=true;}if(!thread_.joinable()){try{thread_=std::thread([this]{loop();});}catch(...){std::lock_guard<std::mutex> l(m_);on_=false;}}wake_.notify_all();}
+ void pause()noexcept{{std::lock_guard<std::mutex> l(m_);on_=false;fresh_=false;}wake_.notify_all();}
+ std::optional<Accel> take()noexcept{std::lock_guard<std::mutex> l(m_);if(!fresh_)return std::nullopt;fresh_=false;return latest_;}
+ std::chrono::milliseconds lastRead()const noexcept{std::lock_guard<std::mutex> l(m_);return took_;}
+private:
+ void loop()noexcept{std::unique_lock<std::mutex> l(m_);while(!stop_){if(!on_||!read_){wake_.wait(l,[&]{return stop_||(on_&&read_);});continue;}
+   auto read=read_;const auto start=std::chrono::steady_clock::now();l.unlock();std::optional<Accel> a;try{a=read();}catch(...){}l.lock();
+   took_=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start);if(a&&on_){latest_=*a;fresh_=true;}
+   wake_.wait_until(l,start+Period,[&]{return stop_||!on_;});}}
+ mutable std::mutex m_;std::condition_variable wake_;Read read_;bool on_{},stop_{},fresh_{};Accel latest_{};std::chrono::milliseconds took_{};std::thread thread_;
+};
 // Settles the way the tablet is held. A new orientation needs the tilt within 30 degrees of it for Polls readings in a
 // row, so a tablet held at an angle never flips; lying flat (the screen's plane carries under half of gravity) or upside
 // down keeps the last orientation. angle: 0 upright, -90 top edge to the right, +90 top edge to the left.

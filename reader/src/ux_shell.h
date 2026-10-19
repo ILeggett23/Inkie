@@ -187,7 +187,7 @@ public:
  spike::Rect statusPanel()const noexcept{return physical(ib::status::panelRect());} // quick settings on the panel
  void paintMenuOn(ib::Canvas&,ib::Targets&);
  template<class F>void paintTurned(std::vector<std::uint32_t>& pixels,ib::Targets& targets,std::initializer_list<spike::Rect> logical,F paint);
- void pollOrientation();std::optional<std::filesystem::path> accel_;bool accelSearched_{};device::OrientationWatch orientationWatch_;std::chrono::steady_clock::time_point orientationAt_{};
+ void pollOrientation();std::optional<std::filesystem::path> accel_;bool accelSearched_{};device::OrientationWatch orientationWatch_;device::AccelReader accelReader_;bool accelOn_{},accelTimed_{};
  bool orientationSensor()noexcept{if(!accelSearched_){accel_=device::accelerometer();accelSearched_=true;}return accel_.has_value();}
  void pollDevice();device::Battery battery_{};device::Temperature temperature_{};device::HeatWatch heat_{};std::optional<bool> wifiLink_;device::Storage storage_{};std::string firmware_;std::chrono::steady_clock::time_point batteryAt_{};bool lowBatteryShown_{};
  bool pinch(float scale,int focalX,int focalY);bool twoFingerPan(int dx,int dy,int originY);bool resetZoom();double pdfZoom();QString zoomKey_;double zoom_{1};
