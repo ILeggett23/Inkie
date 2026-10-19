@@ -185,7 +185,7 @@ std::string quiet(std::string_view s){
  auto word=[&](std::string_view from,std::string_view to){for(std::size_t at=0;(at=out.find(from,at))!=std::string::npos;at+=to.size()){
   bool left=at==0||!std::isalpha(static_cast<unsigned char>(out[at-1]));bool right=at+from.size()>=out.size()||!std::isalpha(static_cast<unsigned char>(out[at+from.size()]));
   if(left&&right)out.replace(at,from.size(),to);}};
- for(auto [a,b]:{std::pair<std::string_view,std::string_view>{"tom","Tom"},{"Tom","Tom"},{"wi-fi","Wi-Fi"},{"Wi-fi","Wi-Fi"},{"pdf","PDF"},{"Pdf","PDF"},{"epub","EPUB"},{"Epub","EPUB"},{"usb","USB"},{"Usb","USB"},{"ui","UI"}})word(a,b);
+ for(auto [a,b]:{std::pair<std::string_view,std::string_view>{"tom","Tom"},{"Tom","Tom"},{"inkie","Inkie"},{"Inkie","Inkie"},{"wi-fi","Wi-Fi"},{"Wi-fi","Wi-Fi"},{"pdf","PDF"},{"Pdf","PDF"},{"epub","EPUB"},{"Epub","EPUB"},{"usb","USB"},{"Usb","USB"},{"ui","UI"}})word(a,b);
  return out;
 }
 }

@@ -107,7 +107,7 @@ Rect selectionToolbar(Canvas& c,Targets& tg,const SelectionBar& m,Rect bounds){
  struct Item{int id;const char* label;Icon icon;bool nib;};std::array<Item,6> items{};unsigned n=0;
  if(m.define)items[n++]={SelDefine,"Define",Icon::BookOpen,false};
  if(m.highlight)items[n++]={SelHighlight,m.highlighted?"Color":"Highlight",Icon::Highlight,true};
- if(m.note)items[n++]={SelNote,"Note",Icon::Note,false};if(m.tom)items[n++]={SelTom,"Tom",Icon::Tom,false};
+ if(m.note)items[n++]={SelNote,"Note",Icon::Note,false};if(m.tom)items[n++]={SelTom,"Inkie",Icon::Tom,false};
  if(m.copy)items[n++]={SelCopy,"Copy",Icon::Copy,false};if(m.more)items[n++]={SelMore,"",Icon::More,false};
  const Font f{Face::Text,theme::Control.size};const int h=98,pad=t::S3+4,glyph=31,gap=14;std::array<int,6> ws{};int w=0;
  for(unsigned i=0;i<n;++i){ws[i]=items[i].label[0]?int(text::span(f,items[i].label))+glyph+gap+pad*2:t::MinTarget;w+=ws[i];}
@@ -166,7 +166,7 @@ Rect definitionCard(Canvas& c,Targets& tg,Rect anchor,const Definition& d,Rect b
  if(!source.empty()){text::draw(c,src,float(r.x0+pad),float(y+28),text::fit(src,source,float(w-pad*2)),t::InkSecondary);y+=50;}
  if(controls){textAction(c,tg,DefMore,{r.x0+pad,y,r.x0+pad+200,y+72},d.expanded?"Collapse":"Expand",false,false);
   if(d.expanded){textAction(c,tg,DefPrevious,{r.x1-pad-360,y,r.x1-pad-180,y+72},"Previous",false,start==0);textAction(c,tg,DefNext,{r.x1-pad-180,y,r.x1-pad,y+72},"Next",false,start+count>=all.size());}y+=72;}
- if(d.actions){y=r.y1-100;divider(c,r.x0+pad,r.x1-pad,y);textAction(c,tg,DefWriteNote,{r.x0+pad,y,r.x0+pad+260,r.y1},"Write a note",false,d.loading);textAction(c,tg,DefWriteTom,{r.x0+pad+280,y,r.x0+pad+520,r.y1},"Ask Tom",false,d.loading);}
+ if(d.actions){y=r.y1-100;divider(c,r.x0+pad,r.x1-pad,y);textAction(c,tg,DefWriteNote,{r.x0+pad,y,r.x0+pad+260,r.y1},"Write a note",false,d.loading);textAction(c,tg,DefWriteTom,{r.x0+pad+280,y,r.x0+pad+520,r.y1},"Ask Inkie",false,d.loading);}
  return r;
 }
 void selectionWash(Canvas& c,std::span<const Rect> lines){

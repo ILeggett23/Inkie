@@ -84,7 +84,7 @@ std::vector<library::Document> books(){std::vector<library::Document> d;const ch
 library::Model libraryModel(){library::Model m;m.battery=73;m.wifi=true;m.clock="9:41";m.folders={{"Reading",12},{"Research",4},{"Notebooks",7}};m.documents=books();m.pages=3;
  m.createItems={{900,Icon::Note,"Notebook","Lined, grid, dot or blank pages"}};m.drawerExtras={{901,Icon::Back,"Leave Inkie",{}}};return m;}
 tom::Model tomModel(){tom::Model m;m.contextLine="A Tale of Two Cities \xC2\xB7 page 12";m.excerpt="It was the best of times, it was the worst of times";m.hasSource=true;m.writable=true;m.empty=true;m.canSend=false;
- m.disclosure="Tom sees this passage and your question.";return m;}
+ m.disclosure="Inkie sees this passage and your question.";return m;}
 const char* Answer="Dickens opens with paired opposites to show a society pulled two ways at once. The rhythm makes the reader feel the instability of 1775 before any character appears.";
 struct Surface {std::string name;std::function<void(Canvas&,Targets&)> paint;bool sided{};};
 std::vector<Surface> surfaces(){
@@ -97,7 +97,7 @@ std::vector<Surface> surfaces(){
  s.push_back({"library-notes-hub",[](Canvas& c,Targets& tg){auto m=libraryModel();m.section=library::Section::Notes;m.heading="Notes";m.sortLabel.clear();m.documents.clear();m.folders.clear();library::base(c,tg,m);
   notes::Hub h;h.embedded=true;h.canCreate=false;
   auto entry=[&](std::string title,std::string excerpt,std::string body,std::string source,std::uint32_t color,bool favorite,bool tom){notes::Entry e;e.title=title;e.excerpt=excerpt;e.body=body;e.source=source;e.color=color;e.favorite=favorite;e.linked=!excerpt.empty();e.tom=tom;h.entries.push_back(e);};
-  entry("On paired opposites","It was the best of times","","A Tale of Two Cities \xC2\xB7 p. 12",t::Ink[4],true,false);entry("Reading list","","Finish Middlemarch, then Walden.","Notebook",t::Ink[6],false,false);entry("Ask about 1775","","","Tom \xC2\xB7 yesterday",t::Ink[0],false,true);
+  entry("On paired opposites","It was the best of times","","A Tale of Two Cities \xC2\xB7 p. 12",t::Ink[4],true,false);entry("Reading list","","Finish Middlemarch, then Walden.","Notebook",t::Ink[6],false,false);entry("Ask about 1775","","","Inkie \xC2\xB7 yesterday",t::Ink[0],false,true);
   notes::hub(c,tg,h);library::overlays(c,tg,m);}});
  s.push_back({"library-notes-empty",[](Canvas& c,Targets& tg){auto m=libraryModel();m.section=library::Section::Notes;m.heading="Notes";m.sortLabel.clear();m.documents.clear();m.folders.clear();library::base(c,tg,m);notes::Hub h;h.embedded=true;h.canCreate=false;notes::hub(c,tg,h);library::overlays(c,tg,m);}});
  for(auto p:{settings::Page::Reading,settings::Page::Accessibility,settings::Page::Tom})
@@ -107,7 +107,7 @@ std::vector<Surface> surfaces(){
  s.push_back({"reader-palette",[](Canvas& c,Targets& tg){page(c);reader::Tools tools;tools.activeShortcut=0;tools.panel=true;reader::toolbar(c,tg,tools);reader::closeButton(c,tg);reader::penPanel(c,tg,tools);},true});
  s.push_back({"reader-highlighter-palette",[](Canvas& c,Targets& tg){page(c);reader::Tools tools;tools.activeShortcut=1;tools.highlighter=true;tools.panel=true;reader::toolbar(c,tg,tools);reader::closeButton(c,tg);reader::penPanel(c,tg,tools);},true});
  s.push_back({"reader-document-menu",[](Canvas& c,Targets& tg){page(c);reader::Tools tools;tools.menu=true;reader::toolbar(c,tg,tools);reader::closeButton(c,tg);
-  std::vector<sheets::MenuItem> items{{1,Icon::BookOpen,"Text and layout"},{2,Icon::Pages,"Page overview"},{3,Icon::Bookmark,"Bookmark this page"},{4,Icon::Notes,"Document notes"},{5,Icon::Tom,"Ask Tom about this page"},{6,Icon::Info,"About this book"}};
+  std::vector<sheets::MenuItem> items{{1,Icon::BookOpen,"Text and layout"},{2,Icon::Pages,"Page overview"},{3,Icon::Bookmark,"Bookmark this page"},{4,Icon::Notes,"Document notes"},{5,Icon::Tom,"Ask Inkie about this page"},{6,Icon::Info,"About this book"}};
   sheets::documentMenu(c,tg,reader::toolbarSlot(reader::SlotDocument),"A Tale of Two Cities",items,3);},true});
  s.push_back({"reader-selection",[](Canvas& c,Targets& tg){page(c);Rect lines[]{{170,700,1450,758},{170,758,900,816}};reader::selectionWash(c,lines);reader::SelectionBar b;b.anchor={170,700,1450,816};b.define=false;auto bar=reader::selectionToolbar(c,tg,b);reader::highlightColors(c,tg,bar,b.anchor,4,false);}});
  s.push_back({"reader-definition",[](Canvas& c,Targets& tg){page(c);reader::Definition d;d.word="incredulity";d.pronunciation="noun";d.senses={{"noun","doubt about the truth of something; the state of being unwilling or unable to believe"}};d.attribution="WordNet 3.0 \xC2\xB7 Princeton University";reader::definitionCard(c,tg,{700,940,900,990},d);}});
@@ -156,7 +156,7 @@ void zoneMap(Image& im,const layout::Zones& z,std::string_view title){
 // pass) and 16 gray levels (the quality pass). Not optical: a host stand-in for what each waveform can represent.
 void quantize(Image& im,Rect r,int levels){for(int y=r.y0;y<r.y1;++y)for(int x=r.x0;x<r.x1;++x){auto& p=im.px[std::size_t(y)*im.w+x];
  const int g=(int(p>>16&255)*30+int(p>>8&255)*59+int(p&255)*11)/100;const int q=levels==2?(g<128?0:255):(g*(levels-1)+127)/255*255/(levels-1);p=0xff000000u|std::uint32_t(q)<<16|std::uint32_t(q)<<8|std::uint32_t(q);}}
-// Cursive candidate sheet: every proposed role size, its plain counterpart, Tom's pen strokes at the same size, and
+// Cursive candidate sheet: every proposed role size, its plain counterpart, Inkie's pen strokes at the same size, and
 // the same line after simulated fast and quality passes, in high contrast and over a colour wash. Measurements printed.
 void scriptSheet(Image& im,std::string_view name){
  auto c=im.canvas();c.fill({0,0,im.w,im.h},t::Paper);const Font label{Face::Text,float(t::Caption.size)};
@@ -174,7 +174,7 @@ void scriptSheet(Image& im,std::string_view name){
   auto row=[&](std::string_view tag,auto paint){text::draw(c,label,70,float(y+lh/2+8),tag,t::InkTertiary);const Rect band{300,y,im.w-40,y+lh};paint(band);return band;};
   const Rect live=row("cursive",[&](Rect b){text::draw(c,cursive,float(b.x0),float(b.y0)+text::ascent(cursive)+4,text::fit(cursive,line,float(width(b))),t::InkPrimary);});y+=lh;
   row("plain",[&](Rect b){const Font f{Face::Serif,float(role)};text::draw(c,f,float(b.x0),float(b.y0)+text::ascent(cursive)+4,text::fit(f,line,float(width(b))),t::InkPrimary);});y+=lh;
-  row("Tom's pen",[&](Rect b){float x=float(b.x0);for(std::string w:{"Nothing","here","yet","On","paired","opposites","1775"}){const auto& word=hand::word(w,drawn.size);hand::draw(c,word,x,float(b.y0)+text::ascent(cursive)+4,-1,t::InkPrimary);x+=word.advance+drawn.size*0.3f;}});y+=lh;
+  row("Inkie's pen",[&](Rect b){float x=float(b.x0);for(std::string w:{"Nothing","here","yet","On","paired","opposites","1775"}){const auto& word=hand::word(w,drawn.size);hand::draw(c,word,x,float(b.y0)+text::ascent(cursive)+4,-1,t::InkPrimary);x+=word.advance+drawn.size*0.3f;}});y+=lh;
   for(int levels:{2,16}){const Rect src=live;const Rect dst{src.x0,y,src.x1,y+lh};for(int yy=0;yy<lh;++yy)std::copy_n(im.px.begin()+std::ptrdiff_t((src.y0+yy)*im.w+src.x0),width(src),im.px.begin()+std::ptrdiff_t((dst.y0+yy)*im.w+dst.x0));quantize(im,dst,levels);
    text::draw(c,label,70,float(y+lh/2+8),levels==2?"fast 1-bit":"quality 16 gray",t::InkTertiary);y+=lh;}
   row("high contrast",[&](Rect b){t::setHighContrast(true);text::draw(c,cursive,float(b.x0),float(b.y0)+text::ascent(cursive)+4,text::fit(cursive,line,float(width(b))),t::InkSecondary);t::setHighContrast(false);});y+=lh;

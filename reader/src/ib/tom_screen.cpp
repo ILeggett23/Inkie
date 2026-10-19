@@ -46,21 +46,21 @@ void paint(Canvas& c,Targets& tg,const Model& m){
  // Header tools, right to left: close, history, expand (while writing).
  int right=Right+t::S3;auto tool=[&](int id,Icon ic,bool on=false){iconButton(c,tg,id,{right-t::MinTarget,head.y0+20,right,head.y0+20+t::MinTarget},ic,{on},36);right-=t::MinTarget;};
  tool(Close,Icon::Close);tool(History,Icon::Clock,m.history);if(!m.history&&m.composing&&!m.historyTurn){if(!m.inlineComposer)tool(Expand,m.expanded?Icon::ChevronDown:Icon::ChevronUp);else tool(Half,m.lowerHalf?Icon::ChevronUp:Icon::ChevronDown);tool(InkTools,Icon::Handwrite,m.picker);}
- sheetTitle(c,tg,top,HeaderHeight,"Tom",m.contextLine,m.hasSource?Source:-1,right);
+ sheetTitle(c,tg,top,HeaderHeight,"Inkie",m.contextLine,m.hasSource?Source:-1,right);
  int y=head.y1;
  if(m.history){
   // Saved conversations (left) and the questions of this conversation (right), four rows each.
   text::draw(c,Meta,float(Margin),float(y+40),"Conversations",t::InkSecondary);text::draw(c,Meta,float(830),float(y+40),"Questions in this conversation",t::InkSecondary);y+=64;
   constexpr int RowH=112;
   if(m.threads.empty())text::draw(c,type::ScriptEmpty,float(Margin),float(y+70),"No conversations yet",t::InkPrimary);
-  if(m.turns.empty())text::draw(c,type::ScriptEmpty,830.f,float(y+70),"Ask Tom a question to start",t::InkPrimary);
+  if(m.turns.empty())text::draw(c,type::ScriptEmpty,830.f,float(y+70),"Ask Inkie a question to start",t::InkPrimary);
   for(unsigned i=0;i<HistoryRows&&m.threadOffset+i<m.threads.size();++i){Rect r{Margin,y+int(i)*RowH,780,y+int(i)*RowH+RowH-8};divider(c,r.x0,r.x1,r.y1);text::centeredLine(c,{Face::Serif,theme::Body.size},Rect{r.x0+t::S2,r.y0+t::S2,r.x1-t::S2,r.y0+56},text::fit({Face::Serif,theme::Body.size},m.threads[m.threadOffset+i].title,float(width(r)-2*t::S2)),t::InkPrimary,Align::Left);text::centeredLine(c,Caption,{r.x0+t::S2,r.y0+56,r.x1-t::S2,r.y1-t::S2},m.threads[m.threadOffset+i].metadata,t::InkSecondary,Align::Left);tg.add(ThreadBase+int(m.threadOffset+i),r);}
   for(unsigned i=0;i<HistoryRows&&m.turnOffset+i<m.turns.size();++i){Rect r{830,y+int(i)*RowH,Right,y+int(i)*RowH+RowH-8};divider(c,r.x0,r.x1,r.y1);text::centeredLine(c,{Face::SerifItalic,theme::Body.size},inset(r,t::S2),m.turns[m.turns.size()-1-(m.turnOffset+i)].question,t::InkPrimary,Align::Left);tg.add(TurnBase+int(m.turns.size()-1-(m.turnOffset+i)),r);}
   int by=y+int(HistoryRows)*RowH+t::S2;
   iconButton(c,tg,ThreadsPrev,{Margin,by,Margin+t::MinTarget,by+t::MinTarget},Icon::ChevronUp,{false,m.threadOffset==0});iconButton(c,tg,ThreadsNext,{Margin+t::MinTarget,by,Margin+2*t::MinTarget,by+t::MinTarget},Icon::ChevronDown,{false,m.threadOffset+HistoryRows>=m.threads.size()});
   iconButton(c,tg,TurnsPrev,{830,by,830+t::MinTarget,by+t::MinTarget},Icon::ChevronUp,{false,m.turnOffset==0});iconButton(c,tg,TurnsNext,{830+t::MinTarget,by,830+2*t::MinTarget,by+t::MinTarget},Icon::ChevronDown,{false,m.turnOffset+HistoryRows>=m.turns.size()});
   by+=t::MinTarget+t::S2;
-  button(c,tg,HistoryBack,{Margin,by,Margin+380,by+t::MinTarget},"Back to Tom",ButtonKind::Quiet,false,Icon::Back);
+  button(c,tg,HistoryBack,{Margin,by,Margin+380,by+t::MinTarget},"Back to Inkie",ButtonKind::Quiet,false,Icon::Back);
   button(c,tg,NewChat,{Margin+400,by,Margin+760,by+t::MinTarget},"New conversation",ButtonKind::Quiet,false,Icon::Plus);
   button(c,tg,HistoryDelete,{Right-420,by,Right,by+t::MinTarget},m.confirmDelete?"Delete conversation?":"Delete conversation",m.confirmDelete?ButtonKind::Destructive:ButtonKind::Quiet,false,Icon::Trash);
   if(!m.status.empty())text::draw(c,Caption,float(Margin),float(t::ScreenHeight-26),text::fit(Caption,text::quiet(m.status),float(Right-Margin)),m.failed?t::InkPrimary:t::InkSecondary);
@@ -88,7 +88,7 @@ void paint(Canvas& c,Targets& tg,const Model& m){
  }else{
   ruledPaper(c,area);
   if(!m.question.empty())text::block(c,{Face::Serif,theme::Body.size},{area.x0+t::S3,area.y0+24,area.x1-t::S3,area.y1},m.question,t::InkPrimary,52,20); // a typed question
-  else if(m.empty&&!m.historyTurn)text::draw(c,HintFont,float(area.x0+t::S3),float(area.y0+60),"Write to Tom\xE2\x80\xA6",t::InkPrimary);}
+  else if(m.empty&&!m.historyTurn)text::draw(c,HintFont,float(area.x0+t::S3),float(area.y0+60),"Write to Inkie\xE2\x80\xA6",t::InkPrimary);}
  if(m.inlineComposer){divider(c,Margin,Right,1340);ruledPaper(c,WritingArea);if(!m.draftQuestion.empty())text::block(c,{Face::Serif,theme::Body.size},{WritingArea.x0+t::S3,WritingArea.y0+24,WritingArea.x1-t::S3,WritingArea.y1},m.draftQuestion,t::InkPrimary,52,12);else if(m.empty)text::draw(c,HintFont,float(WritingArea.x0+t::S3),float(WritingArea.y0+56),"Continue the conversation…",t::InkPrimary);}
  // Footer: tools on the left, one status line, the primary action on the right.
  divider(c,Margin,Right,FooterTop);const int fy=FooterTop+8,fh=t::MinTarget;const Rect primary{Right-180,fy+8,Right,fy+fh-8};

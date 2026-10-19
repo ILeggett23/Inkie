@@ -8,7 +8,7 @@ namespace ib::notes {
 namespace t=theme;
 namespace {
 const Font Caption{Face::Text,float(t::Caption.size)};
-constexpr std::array<std::string_view,5> Filters{"All","Linked","Pages","Favorites","Tom"};
+constexpr std::array<std::string_view,5> Filters{"All","Linked","Pages","Favorites","Inkie"};
 void status(Canvas& c,std::string_view s,bool warn=false){if(!s.empty())text::draw(c,Caption,70.f,float(t::ScreenHeight-26),text::fit(Caption,s,1480),warn?t::InkPrimary:t::InkTertiary);}
 }
 void hub(Canvas& c,Targets& tg,const Hub& m){const int o=m.idOffset;

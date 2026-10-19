@@ -32,7 +32,7 @@ struct Pane {
  void note(std::string_view s,int lines=2){text::block(c,Note,{x0,y+t::S3,x1,y+t::S3+lines*40+8},s,t::InkPrimary,40,lines);y+=t::S3+lines*40+t::S2;}
 };
 }
-const char* pageName(Page p)noexcept{static constexpr std::array<const char*,unsigned(Page::Count)> N{"General","Wi-Fi","Battery","Storage","Security","Accessibility","Reading","Tom","About"};return unsigned(p)<N.size()?N[unsigned(p)]:"";}
+const char* pageName(Page p)noexcept{static constexpr std::array<const char*,unsigned(Page::Count)> N{"General","Wi-Fi","Battery","Storage","Security","Accessibility","Reading","Inkie","About"};return unsigned(p)<N.size()?N[unsigned(p)]:"";}
 std::string size(std::int64_t bytes){char out[32];if(bytes<0)return {};if(bytes<1000000000)std::snprintf(out,sizeof out,"%lld MB",static_cast<long long>((bytes+500000)/1000000));else std::snprintf(out,sizeof out,"%.1f GB",double(bytes)/1e9);return out;}
 void paint(Canvas& c,Targets& tg,const Model& m){
  // Left: the title and the page list (the chosen page black, as in the mockup); a hairline divides it from the pane.
@@ -102,7 +102,7 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   if(m.companion<0)p.value("Companion","Off on this tablet");
   else{static constexpr std::array<const char*,4> S{"Not paired","Pairing","Paired","Needs attention"};Rect r=p.row("Companion");text::centeredLine(c,Value,{r.x0+380,r.y0,r.x1-330,r.y1},S[std::size_t(std::clamp(m.companion,0,3))],t::InkSecondary,Align::Right);
    button(c,tg,CompanionManage,{r.x1-300,r.y0+14,r.x1,r.y1-14},"Manage",ButtonKind::Secondary);}
-  p.group("What Tom sends");
+  p.group("What Inkie sends");
   p.note("Only when you send a question: your handwritten question, the book's title, the page and passage you are asking about, and the earlier questions and replies in that conversation. Your library, notes and other handwriting stay on this tablet.",3);
   break;}
  case Page::Accessibility:
@@ -111,19 +111,19 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   p.note("Darker disabled controls; text and lines are already black throughout Inkie.",1);
   p.group("Motion");
   p.toggleRow("Reduce motion",ReduceMotion,m.reduceMotion);
-  p.note("Tom's replies appear all at once instead of line by line, and page turn effects stay off.",1);
+  p.note("Inkie's replies appear all at once instead of line by line, and page turn effects stay off.",1);
   // Last on the page, so adding it moved no existing row.
   p.group("Text");
   p.toggleRow("Plain text instead of cursive",PlainText,m.plainText);
-  p.note("Inkie writes everything in cursive. This shows labels, headings and Tom's typed replies in Source Sans and Source Serif instead; the colours stay.",2);
+  p.note("Inkie writes everything in cursive. This shows labels, headings and Inkie's typed replies in Source Sans and Source Serif instead; the colours stay.",2);
   break;
  case Page::Tom:
   p.group("Replies");
-  p.choices("Tom replies in",{"Handwriting","Typed text"},m.tomTyped?1:0,{m.tomTyped?TomStyleBase:-1,m.tomTyped?-1:TomStyleBase+1});
+  p.choices("Inkie replies in",{"Handwriting","Typed text"},m.tomTyped?1:0,{m.tomTyped?TomStyleBase:-1,m.tomTyped?-1:TomStyleBase+1});
   p.choices("Handwriting size",{"Small","Medium","Large"},std::min(m.tomHand,2u),{m.tomHand==0?-1:TomHandBase,m.tomHand==1?-1:TomHandBase+1,m.tomHand==2?-1:TomHandBase+2});
   if(m.reduceMotion)p.value("Write replies line by line","Off (Reduce motion)");else p.toggleRow("Write replies line by line",TomReveal,m.tomReveal);
   p.note("These are how a reply first appears; the controls under a reply still switch it while you read.",1);
-  if(m.tomOnline>=0){p.group("Connection");p.value("Tom",m.tomOnline?"Online when Wi-Fi is connected":"Offline on this tablet");}
+  if(m.tomOnline>=0){p.group("Connection");p.value("Inkie",m.tomOnline?"Online when Wi-Fi is connected":"Offline on this tablet");}
   break;
  case Page::About:
   p.group("Inkie");

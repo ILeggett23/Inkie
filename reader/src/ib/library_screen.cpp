@@ -29,7 +29,7 @@ void thumbnail(Canvas& c,Rect r,const Document& d){
   Path tri;tri.move(float(page.x1)-k,float(page.y0)).line(float(page.x1)-k,float(page.y0)+k).line(float(page.x1),float(page.y0)+k);c.stroke(tri,float(t::Outline),t::InkPrimary);}
 }
 }
-const char* sectionName(Section s)noexcept{static constexpr std::array<const char*,unsigned(Section::Count)> N{"My files","Notes","Favorites","Recents","Shared","Tom","Trash","Settings"};return unsigned(s)<N.size()?N[unsigned(s)]:"";}
+const char* sectionName(Section s)noexcept{static constexpr std::array<const char*,unsigned(Section::Count)> N{"My files","Notes","Favorites","Recents","Shared","Inkie","Trash","Settings"};return unsigned(s)<N.size()?N[unsigned(s)]:"";}
 int folderCapacity()noexcept{return FolderCols*FolderRows;}
 int capacity(bool grid,int folders)noexcept{int top=documentsTop(folders);return grid?std::max(1,(BottomLimit-top+GridGapY)/(GridRowH+GridGapY))*GridCols:std::max(1,(BottomLimit-top)/ListRowH);}
 Rect createMenuRect(std::size_t rows)noexcept{int h=36+56+int(rows)*120+20;return {CreateRect.x0,CreateRect.y1-h,CreateRect.x1,CreateRect.y1};}
@@ -115,7 +115,7 @@ void overlays(Canvas& c,Targets& tg,const Model& m){
    icon(c,ic,{q.x0+24,q.y0+28,q.x0+68,q.y0+72},ink);text::centeredLine(c,{Face::Text,theme::Label.size},{q.x0+28+35+26,q.y0,q.x1,q.y1},label,ink,Align::Left);tg.add(id,q);};
   int y=180;for(Section s:{Section::MyFiles,Section::Notes,Section::Favorites,Section::Recents}){row(NavBase+int(s),NavIcons[unsigned(s)],sectionName(s),y,s==m.section,t::SectionColor[unsigned(s)]);y+=100;}
   y+=24;divider(c,r.x0+40,r.x1-40,y);y+=24;
-  if(m.tomAvailable){row(NavBase+int(Section::Tom),Icon::Tom,"Tom",y,false,t::SectionColor[unsigned(Section::Tom)]);y+=100;}
+  if(m.tomAvailable){row(NavBase+int(Section::Tom),Icon::Tom,"Inkie",y,false,t::SectionColor[unsigned(Section::Tom)]);y+=100;}
   if(m.sharedAvailable){row(NavBase+int(Section::Shared),Icon::Shared,"Shared",y,false,t::SectionColor[unsigned(Section::Shared)]);y+=100;}
   int by=r.y1-70-int(2+m.drawerExtras.size())*100;
   for(const auto& it:m.drawerExtras){row(it.id,it.icon,it.label,by,false,t::InkPrimary);by+=100;}

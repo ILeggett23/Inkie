@@ -7,6 +7,9 @@
 // calm generic one. Never used for progress or state labels, only for failures and refusals.
 #include <QString>
 namespace ux {
+// The assistant is Inkie (it was Tom). Titles saved by earlier builds ("Conversation with Tom", "Tom — …" notes) are
+// shown under the new name; the saved records are not rewritten.
+inline QString inkieTitle(const QString& title){if(title==QStringLiteral("Conversation with Tom"))return QStringLiteral("Conversation with Inkie");if(title.startsWith(QStringLiteral("Tom \u2014 ")))return QStringLiteral("Inkie \u2014 ")+title.mid(6);if(title.startsWith(QStringLiteral("Tom: ")))return QStringLiteral("Inkie: ")+title.mid(5);return title;}
 inline QString friendly(const QString& raw){
  const QString s=raw.trimmed();if(s.isEmpty())return s;
  const bool code=!s.contains(QLatin1Char(' '))||s==s.toUpper();
