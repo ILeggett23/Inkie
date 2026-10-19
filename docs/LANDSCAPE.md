@@ -6,7 +6,8 @@ prepared-page/view storage to add an orientation.
 
 - **PR 1 (this work):** PDFs in landscape, with landscape reading chrome, the orientation sensor and the rotation lock.
 - **PR 2:** EPUB landscape reflow.
-- **Later:** library, settings, Notes and Inkie sheets.
+- **PR 3:** Notes and Inkie sheets upright, with the pen's fast path in them.
+- **Later:** library, settings, document settings, Quick Browse and recents.
 
 ## What the code fixes today (studied before designing)
 
@@ -116,15 +117,55 @@ reader's frame, painted upright, and hit on the panel:
   inspection cover that tree.
 
 **Still portrait (a notice), with why:**
-- **Notes and Inkie sheets.** Their standard sheet (1620×1000) would fit at the bottom of the landscape screen with
-  its 1480×680 writing area unchanged. But Inkie shows every answer in its expanded sheet (top 480, 1680 tall), Notes
-  expands to 1860, and Inkie's history and zoom use the whole height. None of that fits in 1620. They need landscape
-  layouts inside `tom_panel`/`notes_panel` (expanded writing areas, header, history rows, keyboard), designed with the
-  stored-stroke geometry in mind.
-- **Pen input in a sheet.** The fast path would need the Marker transform to map into the sheet: a turn and offset in
-  `spike::Transform` set through a `SessionDisplay` hook (the approved `session.*` change). That is designed but not
-  built until the sheets have their layouts.
-- **Document settings, Quick Browse and recents:** full-height portrait sheets; same reason.
+- **Notes and Inkie sheets** were portrait here; PR 3 turns them (below).
+- **Document settings, Quick Browse and recents:** full-height portrait sheets with no landscape layout yet.
+
+## PR 3 (`feat/landscape-c`): Notes and Inkie upright
+
+**One sheet frame.** Notes and Inkie keep laying out and composing in their own portrait pixels ("sheet pixels",
+1620×2160), so their stored geometry is untouched. Turned, `ib::layout::SheetMap` shows the sheet's lower 1620 rows
+upright at the foot of the landscape screen, centred: sheet (x, y) is logical (x + 270, y − 540), and logical maps to
+the panel through `ib::layout::Frame`. A turned sheet's top is never above `TurnedSheetTop` (540).
+
+| Sheet | Upright top | Turned |
+|---|---|---|
+| Note, Inkie compact, Highlight, Inkie history | 1160 | unchanged; the 1480×680 writing area keeps its place |
+| Inkie answer sheet and tall composer | 480 | 540; answer area {70,680,1550,1320} and writing areas unchanged; the one line between header and paper ("You asked: …") becomes the header's subtitle |
+| Note expanded | 300 | 540; area {70,740,1550,2040} (note ink is relative to the area's top-left and scroll, so only the 1480 width is stored geometry) |
+| Notes hub | 120 | 540, four notes a page |
+| Layers | {720,120,1596,1640} | the same side sheet, {720,540,1596,2060} |
+| Keyboard, pen pickers, ink actions | — | unchanged (all in the lower 900 rows) |
+
+- Turned sheets have ink side rules (`contextSheet`), since they stand on the page.
+- Inkie's reply zoom works turned: pinch and two-finger pan reach it through the same frame, and its badge sits in the
+  sheet header, left of the tools (there is no page row above a tall turned sheet).
+
+**Presentation.** The shell maps every path of an open sheet through `SheetMap`:
+- compose: the shown window is composed by the panel in sheet pixels and put upright on the panel; the strips beside it
+  show the reader scene the sheet opened over. The panel's own backdrop is that scene brought into sheet pixels.
+- damage (`repaintArea`, `takeDamage`, `inkDamage`, `presentationDamage`, reply cleanup, picker regions): split into
+  full-width sheet bands before mapping, so each presented piece covers whole sheet rows and Inkie retires its damage
+  band by band as upright;
+- `presentationCovered`: presented panel rects mapped back (rows above the shown window count as covered);
+- finger taps, ink-selection drags, reply scrolling, pinch and pan. A tap on the page beside a turned sheet reaches it
+  as a tap above the sheet, so it closes the sheet as a tap on the page above it does upright.
+
+**Pen fast path** (approved protected change, `core.*` and `session.*` only):
+- `spike::Transform` gains an optional `turn` (0, 90, 270) and `offsetX/offsetY`: after the marker mapping, the point
+  is brought upright and offset, then kept on the surface. All zero is today's mapping, unchanged.
+- `SessionDisplay::inputFrame(Transform&)` lets the display set them; `spike::engineTransform()` applies it whenever the
+  session builds an Engine, keeping the marker's axes, size, rotation and mirror.
+- `ux::Display` forwards to `Shell::inputFrame`: while a turned sheet is open, pen points arrive in sheet pixels, so the
+  canvases, fast ink and damage need no other change. The shell moves its presented version on whenever that frame
+  changes, so the session builds its next Engine before it admits another contact.
+- `styled_ink.*`, `marker.*` and `touch.*` are unchanged.
+
+**Tests.** `sustained-session-tests` (the frame's mapping, clamping and validity; `engineTransform` keeps the marker's
+axes; the session's sink and fast ink in sheet pixels); `ib-layout-tests` (SheetMap round trips; every turned sheet
+paints and hits only in the shown rows; Inkie's areas keep their place); `ib-preview` turned surfaces (targets baseline
+extended, portrait unchanged); ux-behavior routes `turned_note_sheet_takes_ink_that_stays_put_upright` and
+`turned_inkie_sheet_takes_ink_that_stays_put_upright` (open from the menu while turned, controls hit where drawn, write
+through the session's Engine frame, stored points and pixels, regional updates only, the same ink after turning back).
 
 ## Delivery (commits on `feat/landscape-a`, one draft PR)
 
@@ -144,4 +185,5 @@ reader's frame, painted upright, and hit on the panel:
 - Long-press a word, open the palette or swipe down in landscape. A notice asks for portrait; nothing opens sideways.
 - Swipe left and right. Pages turn in the direction the page reads.
 - Lock rotation in quick settings and turn the tablet. Nothing rotates.
-- Open the library, an EPUB, Notes or Inkie while turned. They show in portrait.
+- Open the library while turned. It shows in portrait. (EPUBs turn since PR 2; Notes and Inkie since PR 3: device checks
+  38–42 in the stabilization report.)

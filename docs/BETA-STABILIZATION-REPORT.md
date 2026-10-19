@@ -301,6 +301,17 @@ menus and the palette are portrait only for now (a notice). EPUB reflow is PR 2.
 pdf-viewport, prepare-document-view, touch-drag and the `pdf_turns_with_the_tablet_and_keeps_ink_written_turned`
 route. Device checks 29–33; the first run also confirms the accelerometer's axis signs (`ui:orientation`).
 
+### Landscape, PR 3 (user request, 2026-10-19; docs/LANDSCAPE.md)
+
+Notes and Inkie open upright in landscape. Sheets keep composing in their own portrait pixels; `ib::layout::SheetMap`
+shows their lower 1620 rows at the foot of the turned screen, so the writing areas keep their size and stored ink never
+moves. The taller sheets (Inkie's answer sheet and tall composer, the expanded note, the Notes hub, Layers) start at the
+top of the landscape screen, and Inkie's zoom badge moves into its header. Compose, damage, coverage, taps, drags and
+gestures go through the same map. The pen's fast path writes in sheet pixels through an approved change to the protected
+input path: an optional turn and offset in `spike::Transform`, set through `SessionDisplay::inputFrame` whenever the
+session builds an Engine. [auto] sustained-session (`INPUT_FRAME_PASS`), ib-layout, ib-surface and ib-preview targets,
+and the `turned_note_sheet_…`/`turned_inkie_sheet_…` routes. Device checks 38–42.
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -359,6 +370,11 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 35 | In landscape: long-press a word; select a passage and highlight it | The definition card and the selection strip are upright on the page; the highlight lands on the text | — |
 | 36 | Open an EPUB with Auto-rotate on and turn the tablet; read a few pages; turn back | Longer lines at the same type size; the same passage after each turn | `ui:turn`, `ui:turned` |
 | 37 | Turn an EPUB, read on, then close it and reopen it upright | The book reopens where you stopped reading | — |
+| 38 | In landscape: open Document notes and Ask Inkie from the document menu, and Layers and Inkie from the toolbar | Each opens upright at the foot of the screen (the tall ones fill its height) with the page beside it; its controls act where drawn; a tap on the page beside it closes it | — |
+| 39 | In landscape: write a note, expand it, write more, type a title with the keyboard; tap Done; turn upright and reopen the note | The ink is where it was written on the note's paper, in both orientations; nothing moves | — |
+| 40 | In landscape: write a question to Inkie and Send; read the answer; pinch the reply, pan it, tap the zoom badge | The answer sheet fills the height with "You asked: …" in its header; the reply zooms and pans; the badge in the header resets it | `tom:response-visible` |
+| 41 | In landscape, in a note: erase with the pen's eraser and with the note's eraser; lasso some ink and move it | Erased ink leaves no residue (one cleanup as the eraser lifts); the lasso and the moved ink follow the pen | `ui:erase-lift-cleanup` |
+| 42 | In a turned sheet: write fast across the writing area's edge and beside the sheet | The ink appears under the pen tip at once, with no offset; nothing is drawn beside the sheet or outside the paper | — |
 
 ## 11. Beta-readiness recommendation
 
