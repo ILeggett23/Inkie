@@ -61,7 +61,8 @@ bool Reader::request(Action a,bool markerContact){
 }
 bool Reader::navigateTo(int target,bool markerContact){
  { /* E2 timing: requested page and whether it was already prepared (value = page*10 + cached) */ bool ready=false;for(const auto& c:cache_)ready|=c&&c->index==target;recovery::v2::e2::mark("reader:nav-request",unsigned(std::max(0,target))*10u+(ready?1u:0u));}
- if(markerContact||contact()||state_!=State::Active||exit_||target<0||target>=total_||target==page()||errors_[target]){++navRejected_;return false;}
+ if(markerContact||contact()||state_!=State::Active||exit_||target<0||target>=total_||target==page()){++navRejected_;return false;}
+  errors_[target]=false; /* an explicit turn retries a page whose earlier render failed: one transient prefetch failure used to refuse that page for the rest of the session (prefetch still skips it) */
  wanted_=target;navRefusal_=NavigationRefusal::None;
  const bool cached=std::any_of(cache_.begin(),cache_.end(),[&](const auto& c){return c&&c->index==target;});
  if(!cached&&!cacheAdmissible(target)){wanted_=-1;navRefusal_=NavigationRefusal::Busy;++navRejected_;return false;}

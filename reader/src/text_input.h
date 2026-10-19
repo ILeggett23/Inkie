@@ -19,5 +19,8 @@ public:
  QString text()const{return value_;}
  const ib::Targets& targets()const noexcept{return targets_;}
  void acknowledge()noexcept{done_=cancelled_=false;}
+ // The finished text could not be used yet (a save is still running): reopen the keyboard with it, so typing is
+ // never lost; the owner shows why.
+ void resume()noexcept{active_=true;done_=cancelled_=false;}
 };
 }

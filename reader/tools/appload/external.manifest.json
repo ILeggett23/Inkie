@@ -1,0 +1,6 @@
+{
+  "name": "Inkie",
+  "application": "launch.sh",
+  "args": [],
+  "qtfb": false
+}

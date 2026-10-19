@@ -360,7 +360,7 @@ test('an image provider refusal keeps OpenAI\'s reason on the illustration (stat
  const result=await (await route(directRequest(browser,'GET','/v1/tom/illustrations/'+refused),env,{})).json();
  assert.equal(result.status,'interrupted');assert.match(result.error,/verified OpenAI organization \(OpenAI 403 invalid_request_error\)/);assert.doesNotMatch(result.error,/sk-|synthetic/);
  const broken=await create();await processIllustration(env,broken,{async generate(){throw new Error('unexpected local failure');}});
- assert.equal((await (await route(directRequest(browser,'GET','/v1/tom/illustrations/'+broken),env,{})).json()).error,'Tom could not generate that illustration. Retry explicitly.'); /* other failures keep the generic text */
+ assert.equal((await (await route(directRequest(browser,'GET','/v1/tom/illustrations/'+broken),env,{})).json()).error,'Inkie could not generate that illustration. Retry explicitly.'); /* other failures keep the generic text */
 });
 
 test('current delivery scope excludes historical jobs and other accounts in actual D1',async()=>{

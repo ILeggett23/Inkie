@@ -28,4 +28,8 @@ void toolGlyph(Canvas&,Instrument,Rect box,std::uint32_t color,std::uint32_t dot
 // Native toolbar glyph for a writing tool: the upright pen tip seen end-on, as on the Paper Pro toolbar
 // and its attached palette. Stroke tools are outlines; marker, brush and shader tips are filled.
 void nibGlyph(Canvas&,Instrument,Rect box,std::uint32_t color);
+// Inkie glyph for a writing tool: its tip seen face-on and upright, as on the native toolbar, in the Inkie hand: a
+// paper collar with an ink outline, a tip whose shape names the tool, and the collar's foot banded in the tool's
+// current ink (0 = ink). selected draws it in paper for the ink tile. Rasterised once per key and cached.
+void penGlyph(Canvas&,Instrument,Rect box,std::uint32_t ink=0,bool selected=false,bool disabled=false);
 }
