@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <memory>
+#include <mutex>
+#include <vector>
 namespace ib {
 namespace {
 constexpr float Pi=3.14159265358979f;
@@ -30,18 +33,20 @@ G grid40(Canvas& c,Rect box,std::uint32_t col,float sw){float side=float(std::mi
 void native(Canvas& c,Icon i,Rect box,std::uint32_t col,float sw){
  G g=grid40(c,box,col,sw);
  switch(i){
- case Icon::ToolbarHandle:g.circle(20,20,14).circle(15,15,2.7f,true);break;
+ // Usability family: outlines on the 40 grid, one stroke weight, stationery motifs (a panel, a page, a stack of sheets).
+ case Icon::ToolbarHandle:g.rect(5,8,35,32,4).ln(15,8,15,32).ln(8.5f,14,11.5f,14).ln(8.5f,19,11.5f,19);break;
  case Icon::CloseCircle:g.circle(20,20,14).ln(15,15,25,25).ln(25,15,15,25);break;
- case Icon::DocumentMenu:g.poly({{8,4},{32,4},{32,36},{8,36}},true).ln(14,12,26,12).ln(14,19,26,19).ln(14,26,22,26);break;
+ case Icon::DocumentMenu:g.poly({{8,4},{25,4},{32,11},{32,36},{8,36}},true).poly({{25,4},{25,11},{32,11}}).ln(14,19,26,19).ln(14,25,26,25).ln(14,31,21,31);break;
  case Icon::BookOpen:{Path p;p.move(g.X(20),g.Y(9)).cubic(g.X(13),g.Y(4),g.X(6),g.Y(5),g.X(3),g.Y(7)).line(g.X(3),g.Y(35)).cubic(g.X(8),g.Y(32),g.X(13),g.Y(32),g.X(20),g.Y(35))
   .cubic(g.X(27),g.Y(32),g.X(32),g.Y(32),g.X(37),g.Y(35)).line(g.X(37),g.Y(7)).cubic(g.X(34),g.Y(5),g.X(27),g.Y(4),g.X(20),g.Y(9)).close();g.shape(p,false);g.ln(20,9,20,35);break;}
  case Icon::Tag:g.poly({{5,6},{20,6},{36,22},{22,36},{5,19}},true).circle(12,13,2);break;
  case Icon::NativeEraser:g.poly({{5,24},{23,6},{36,19},{19,36},{16,36}},true).ln(14,15,27,28).ln(20,36,35,36);break;
- case Icon::NativeSelection:for(auto [x,y]:{std::pair{6.f,6.f},{29.f,6.f},{6.f,29.f},{29.f,29.f}})g.poly({{x,y},{x+5,y},{x+5,y+5},{x,y+5}},true);
-  g.dash(14,8,26,8,2,4).dash(8,14,8,26,2,4).dash(32,14,32,26,2,4).dash(14,32,26,32,2,4);break;
- case Icon::NativeLayers:g.poly({{5,16},{20,7},{35,16},{20,25}},true).poly({{5,24},{20,33},{35,24}}).poly({{5,31},{20,39},{35,31}});break;
- case Icon::NativeUndo:{g.poly({{9,10},{2,17},{9,24}});Path p;p.move(g.X(3),g.Y(17)).line(g.X(18),g.Y(17)).cubic(g.X(30),g.Y(17),g.X(34),g.Y(26),g.X(34),g.Y(34));g.shape(p,false);break;}
- case Icon::NativeRedo:{g.poly({{31,10},{38,17},{31,24}});Path p;p.move(g.X(37),g.Y(17)).line(g.X(22),g.Y(17)).cubic(g.X(10),g.Y(17),g.X(6),g.Y(26),g.X(6),g.Y(34));g.shape(p,false);break;}
+ case Icon::NativeSelection:{ // a dashed lasso loop with its solid tail
+  for(int i=0;i<18;++i){const float a0=(i*20.f+4)*Pi/180,a1=(i*20.f+14)*Pi/180;g.c.line(g.X(21+15*std::cos(a0)),g.Y(16+10*std::sin(a0)),g.X(21+15*std::cos(a1)),g.Y(16+10*std::sin(a1)),g.w,g.col);}
+  Path p;p.move(g.X(12),g.Y(24)).cubic(g.X(8),g.Y(29),g.X(15),g.Y(32),g.X(12),g.Y(37));g.shape(p,false);break;}
+ case Icon::NativeLayers:g.rect(4,15,26,36,2.5f).poly({{9,15},{9,10},{31,10},{31,31},{26,31}}).poly({{14,10},{14,5},{36,5},{36,26},{31,26}});break; // a stack of sheets
+ case Icon::NativeUndo:{g.poly({{4,15},{13,8},{13,22}},true,true);Path p;p.move(g.X(12),g.Y(15)).line(g.X(21),g.Y(15)).cubic(g.X(30),g.Y(15),g.X(35),g.Y(21),g.X(35),g.Y(26)).cubic(g.X(35),g.Y(31),g.X(30),g.Y(34),g.X(24),g.Y(34));g.shape(p,false);break;}
+ case Icon::NativeRedo:{g.poly({{36,15},{27,8},{27,22}},true,true);Path p;p.move(g.X(28),g.Y(15)).line(g.X(19),g.Y(15)).cubic(g.X(10),g.Y(15),g.X(5),g.Y(21),g.X(5),g.Y(26)).cubic(g.X(5),g.Y(31),g.X(10),g.Y(34),g.X(16),g.Y(34));g.shape(p,false);break;}
  default:break;}
 }
 }
@@ -186,5 +191,81 @@ void nibGlyph(Canvas& c,Instrument kind,Rect box,std::uint32_t col){
   .cubic(g.X(21),g.Y(14),g.X(29),g.Y(16),g.X(25),g.Y(22)).line(g.X(28),g.Y(26));filled(p);break;}
  case Instrument::Eraser:native(c,Icon::NativeEraser,box,col,0);break;
  case Instrument::Count:break;}
+}
+// Writing family: each tool drawn whole and lying at 45 degrees, tip at the lower left, as on a stationery shelf: the
+// parts that name the tool (clip and button, sharpened wood and graphite, crimped ferrule, slit nib, felt chisel) in
+// ink outlines over paper, small parts solid ink, and the tool's current ink where it lays ink down (the tip) or on
+// its colour band, so colour sits in the glyph as an area met by an ink rule. A(a,b): a along the tool from the tip,
+// b across it, in units of the 40-unit grid.
+namespace {
+void drawPen(Canvas& c,Instrument kind,Rect box,std::uint32_t ink,bool selected,bool disabled){
+ G g=grid40(c,box,0,0);g.w=std::max(1.9f,1.25f*g.k);const float thin=std::max(1.2f,0.62f*g.w);
+ const std::uint32_t edge=disabled?theme::Disabled:selected?theme::Inverse:theme::InkPrimary,fill=selected?theme::InkPrimary:theme::Paper,solid=edge;
+ const std::uint32_t band=disabled?theme::Disabled:ink?ink:solid;
+ constexpr float tx=6.2f,ty=33.8f,s=0.70710678f;
+ auto X=[&](float a,float b){return g.X(tx+(a+b)*s);};auto Y=[&](float a,float b){return g.Y(ty+(-a+b)*s);};
+ auto part=[&](const Path& p,std::uint32_t f){c.fillPath(p,f);c.stroke(p,g.w,edge);};
+ // A section of the tool between a0 and a1, half widths h0 and h1 (a cone when they differ).
+ auto seg=[&](float a0,float h0,float a1,float h1){Path p;p.move(X(a0,-h0),Y(a0,-h0)).line(X(a1,-h1),Y(a1,-h1)).line(X(a1,h1),Y(a1,h1)).line(X(a0,h0),Y(a0,h0)).close();return p;};
+ // A section closed by a rounded end at a1.
+ auto rounded=[&](float a0,float a1,float h){const float r=h*0.9f;Path p;p.move(X(a0,-h),Y(a0,-h)).line(X(a1-r,-h),Y(a1-r,-h)).quad(X(a1,-h),Y(a1,-h),X(a1,0),Y(a1,0)).quad(X(a1,h),Y(a1,h),X(a1-r,h),Y(a1-r,h)).line(X(a0,h),Y(a0,h)).close();return p;};
+ auto ring=[&](float a,float h){c.line(X(a,-h),Y(a,-h),X(a,h),Y(a,h),thin,edge);};
+ auto along=[&](float a0,float a1,float b){c.line(X(a0,b),Y(a0,b),X(a1,b),Y(a1,b),thin,edge);};
+ // Pocket clip: a strip standing off the barrel's upper side, its foot rounded.
+ auto clip=[&](float a0,float a1,float h){Path p;p.move(X(a1,-h),Y(a1,-h)).line(X(a1,-h-1.3f),Y(a1,-h-1.3f)).line(X(a0+1.2f,-h-1.3f),Y(a0+1.2f,-h-1.3f)).quad(X(a0,-h-1.3f),Y(a0,-h-1.3f),X(a0,-h-0.4f),Y(a0,-h-0.4f)).line(X(a1,-h-0.4f),Y(a1,-h-0.4f)).close();part(p,fill);};
+ switch(kind){
+ case Instrument::Ballpoint:
+  part(rounded(7.5f,37.5f,3.0f),fill);clip(25,35.5f,3.0f);part(seg(1.6f,0.9f,7.5f,3.0f),fill);part(seg(15,3.0f,18,3.0f),band);
+  for(float a:{9.5f,11.f,12.5f})ring(a,3.0f);part(rounded(37.5f,40.2f,1.5f),solid);c.fillCircle(X(0.9f,0),Y(0.9f,0),1.15f*g.k,solid);break;
+ case Instrument::Fineliner:
+  part(rounded(9,38.5f,2.8f),fill);part(seg(4.2f,0.9f,9,2.8f),fill);part(seg(0.4f,0.42f,4.4f,0.42f),solid);part(seg(30,2.8f,33,2.8f),band);ring(13,2.8f);clip(22,31.5f,2.8f);break;
+ case Instrument::Pencil:{
+  part(seg(10.5f,3.2f,35,3.2f),fill);along(10.5f,35,0);part(rounded(37.4f,40.4f,2.9f),fill);part(seg(35,3.25f,37.4f,3.25f),fill);ring(35.8f,3.25f);ring(36.6f,3.25f);
+  Path wood;wood.move(X(3.6f,-1.0f),Y(3.6f,-1.0f)).line(X(10.5f,-3.2f),Y(10.5f,-3.2f)).quad(X(9.4f,-1.6f),Y(9.4f,-1.6f),X(10.5f,0),Y(10.5f,0)).quad(X(9.4f,1.6f),Y(9.4f,1.6f),X(10.5f,3.2f),Y(10.5f,3.2f)).line(X(3.6f,1.0f),Y(3.6f,1.0f)).close();part(wood,fill);
+  part(seg(0.3f,0.12f,3.8f,1.05f),band);break;}
+ case Instrument::Mechanical:
+  part(rounded(18,37.5f,2.7f),fill);clip(26,35.5f,2.7f);part(seg(11,3.0f,18,3.0f),fill);for(float a=12;a<17.6f;a+=1.4f)ring(a,3.0f);part(seg(6,1.1f,11,3.0f),fill);
+  part(seg(2.6f,0.65f,6.2f,0.75f),fill);part(seg(0.3f,0.36f,2.8f,0.36f),solid);part(seg(30,2.7f,32.4f,2.7f),band);part(rounded(37.5f,40,1.4f),solid);break;
+ case Instrument::Paintbrush:{
+  Path handle;handle.move(X(14,-2.4f),Y(14,-2.4f)).line(X(36,-1.5f),Y(36,-1.5f)).quad(X(40,-1.4f),Y(40,-1.4f),X(40,0),Y(40,0)).quad(X(40,1.4f),Y(40,1.4f),X(36,1.5f),Y(36,1.5f)).line(X(14,2.4f),Y(14,2.4f)).close();part(handle,fill);
+  part(seg(8.6f,2.0f,14,2.4f),fill);ring(10.4f,2.1f);ring(12.2f,2.25f);
+  Path hair;hair.move(X(8.6f,-2.0f),Y(8.6f,-2.0f)).cubic(X(5.5f,-2.6f),Y(5.5f,-2.6f),X(2.5f,-1.4f),Y(2.5f,-1.4f),X(0.2f,0),Y(0.2f,0)).cubic(X(2.5f,1.4f),Y(2.5f,1.4f),X(5.5f,2.6f),Y(5.5f,2.6f),X(8.6f,2.0f),Y(8.6f,2.0f)).close();part(hair,band);break;}
+ case Instrument::Calligraphy:{
+  part(rounded(15,38.5f,3.2f),fill);part(seg(26,3.2f,28,3.2f),band);clip(28,36.5f,3.2f);part(seg(10,2.6f,15,3.2f),solid);
+  Path nib;nib.move(X(10,-2.6f),Y(10,-2.6f)).cubic(X(6,-2.6f),Y(6,-2.6f),X(2.4f,-1.2f),Y(2.4f,-1.2f),X(0.3f,-0.35f),Y(0.3f,-0.35f)).line(X(0.3f,0.35f),Y(0.3f,0.35f)).cubic(X(2.4f,1.2f),Y(2.4f,1.2f),X(6,2.6f),Y(6,2.6f),X(10,2.6f),Y(10,2.6f)).close();part(nib,fill);
+  along(0.6f,5.6f,0);c.fillCircle(X(6.4f,0),Y(6.4f,0),0.85f*g.k,solid);break;}
+ case Instrument::Marker:{
+  part(rounded(8.5f,38.5f,4.1f),fill);part(seg(31,4.1f,34,4.1f),band);part(seg(4.4f,2.1f,8.5f,3.0f),fill);ring(6.5f,2.55f);
+  Path tip;tip.move(X(4.6f,-1.6f),Y(4.6f,-1.6f)).line(X(1.6f,-1.6f),Y(1.6f,-1.6f)).quad(X(0,-1.6f),Y(0,-1.6f),X(0,0),Y(0,0)).quad(X(0,1.6f),Y(0,1.6f),X(1.6f,1.6f),Y(1.6f,1.6f)).line(X(4.6f,1.6f),Y(4.6f,1.6f)).close();part(tip,band);break;}
+ case Instrument::Shader:{
+  // A broad graphite stick in a paper wrap: the worn, angled face is hatched (it shades, it does not draw a line).
+  part(seg(11,3.6f,36,3.6f),fill);for(float a:{17.f,23.f,29.f})ring(a,3.6f);part(seg(36,3.6f,38.4f,3.6f),band);
+  Path face;face.move(X(11,-3.6f),Y(11,-3.6f)).line(X(4.2f,-3.6f),Y(4.2f,-3.6f)).line(X(0.6f,3.6f),Y(0.6f,3.6f)).line(X(11,3.6f),Y(11,3.6f)).close();part(face,fill);
+  for(float a=2.2f;a<10.5f;a+=1.7f)c.line(X(a,3.4f),Y(a,3.4f),X(std::min(10.6f,a+2.6f),-3.4f),Y(std::min(10.6f,a+2.6f),-3.4f),thin,edge);break;}
+ case Instrument::Highlighter:{
+  part(rounded(8.5f,38.5f,4.4f),fill);ring(29,4.4f);part(seg(5,3.0f,8.5f,3.8f),fill);
+  part(seg(0.5f,2.6f,5,2.6f),fill);Path chisel;chisel.move(X(5,-2.6f),Y(5,-2.6f)).line(X(2.6f,-2.6f),Y(2.6f,-2.6f)).line(X(0.4f,2.6f),Y(0.4f,2.6f)).line(X(5,2.6f),Y(5,2.6f)).close();part(chisel,band);break;}
+ case Instrument::Eraser:{
+  // A block eraser, worn round at its working corner, half in its card sleeve.
+  Path rubber;rubber.move(X(16,-5),Y(16,-5)).line(X(4,-5),Y(4,-5)).quad(X(1.2f,-5),Y(1.2f,-5),X(1.2f,-2),Y(1.2f,-2)).line(X(1.2f,5),Y(1.2f,5)).line(X(16,5),Y(16,5)).close();part(rubber,fill);
+  part(seg(14,5.3f,30,5.3f),solid);c.line(X(17,0),Y(17,0),X(28,0),Y(28,0),thin,fill);break;}
+ case Instrument::Count:break;}
+}
+// Pen glyphs are filled, supersampled paths (about 40 times the cost of a line icon), and the palette repaints nine
+// of them on every tap. Each glyph depends only on its key, so it is rasterised once over the background it sits on
+// (paper, or the ink tile when selected) and copied after; pixels equal to that background are skipped, so the copy
+// composes over whatever is really beneath. Painters run on the shell thread; the lock keeps the cache safe anyway.
+struct PenKey {Instrument kind;int w,h;std::uint32_t ink,disabledInk;bool selected,disabled;bool operator==(const PenKey&)const=default;}; // disabledInk: High contrast changes theme::Disabled
+struct PenImage {PenKey key;std::uint32_t background;std::vector<std::uint32_t> px;};
+std::mutex penLock;std::vector<std::shared_ptr<const PenImage>> penCache;
+}
+void penGlyph(Canvas& c,Instrument kind,Rect box,std::uint32_t ink,bool selected,bool disabled){
+ const int w=width(box),h=height(box);if(w<=0||h<=0||w>512||h>512)return;
+ const PenKey key{kind,w,h,ink,theme::Disabled,selected,disabled};std::shared_ptr<const PenImage> image;
+ {std::lock_guard g(penLock);for(const auto& e:penCache)if(e->key==key){image=e;break;}}
+ if(!image){auto made=std::make_shared<PenImage>();made->key=key;made->background=selected?theme::ToolSelected:theme::Paper;made->px.assign(std::size_t(w)*h,made->background);
+  Canvas scratch(spike::Surface{made->px,w,h,w});drawPen(scratch,kind,{0,0,w,h},ink,selected,disabled);image=made;
+  std::lock_guard g(penLock);if(penCache.size()>=96)penCache.clear();penCache.push_back(image);}
+ for(int y=0;y<h;++y)for(int x=0;x<w;++x){const std::uint32_t p=image->px[std::size_t(y)*w+x];if(p!=image->background)c.blend(box.x0+x,box.y0+y,p,255);}
 }
 }

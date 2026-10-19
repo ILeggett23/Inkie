@@ -61,6 +61,10 @@ bool Touch::pair(Pair& out)const noexcept{int a=-1,b=-1;for(int f=0;f<16;++f)if(
  out.cx0=(at(originX_,a)+at(originX_,b))/2;out.cy0=(at(originY_,a)+at(originY_,b))/2;out.cx1=(at(fingerX_,a)+at(fingerX_,b))/2;out.cy1=(at(fingerY_,a)+at(fingerY_,b))/2;return out.d0>0;}
 Gesture Touch::recognise(spike::Ns now,bool busy)const noexcept{
  if(busy||penBlocked_||bad_||toolbarStart_||nonFingerChanged_||handleDrag_||longFired_||now<start_)return Gesture::None;const spike::Ns held=now-start_;
+ // Turned (docs/LANDSCAPE.md): the first and last points in the reader's upright frame (as ib::layout::Frame), so a swipe
+ // across the page, the top and bottom edges and the status corner follow the screen.
+ int startX=startX_,startY=startY_,lastX=lastX_,lastY=lastY_,screenWidth=1620,screenHeight=2160;
+ if(turn_){auto upright=[&](int& x,int& y){const int px=x,py=y;if(turn_==90){x=2159-py;y=px;}else{x=py;y=1619-px;}};upright(startX,startY);upright(lastX,lastY);screenWidth=2160;screenHeight=1620;}
  // Several fingers that barely moved and lifted quickly: two undo, three redo. Anything larger (a palm) is ignored.
  if(maxTouches_==2||maxTouches_==3){
   // Undo and redo remove or restore ink, so the fingers must land together (within 150 ms) and, for two, sit a finger
@@ -73,13 +77,13 @@ Gesture Touch::recognise(spike::Ns now,bool busy)const noexcept{
   if(std::hypot(p.ax,p.ay)<40||std::hypot(p.bx,p.by)<40)return Gesture::None;const float dot=p.ax*p.bx+p.ay*p.by;
   if(dot<0&&p.d0>=60&&std::abs(p.d1-p.d0)>=40&&std::abs(p.d1/p.d0-1.f)>=0.12f)return Gesture::Pinch;
   return dot>0&&std::hypot(p.ax-p.bx,p.ay-p.by)<=0.5f*std::max(std::hypot(p.ax,p.ay),std::hypot(p.bx,p.by))&&std::hypot(p.cx1-p.cx0,p.cy1-p.cy0)>=60?Gesture::TwoFingerPan:Gesture::None;}
- if(statusCorner_&&maxTouches_==1&&startX_>=1080&&startY_<=80&&held<=5000000000ULL&&lastY_-startY_>=250&&std::abs(lastY_-startY_)>=2*std::abs(lastX_-startX_))return Gesture::EdgeDown; /* The device-status corner has the existing bounded pan lifetime; ordinary page/selection deadlines stay unchanged. */
+ if(statusCorner_&&maxTouches_==1&&startX>=screenWidth-540&&startY<=80&&held<=5000000000ULL&&lastY-startY>=250&&std::abs(lastY-startY)>=2*std::abs(lastX-startX))return Gesture::EdgeDown; /* The device-status corner has the existing bounded pan lifetime; ordinary page/selection deadlines stay unchanged. */
  if(maxTouches_!=1||gestureMode_==DragMode::Ink||gestureMode_==DragMode::Scroll||((gestureMode_==DragMode::Text||gestureMode_==DragMode::Highlight)&&intentional_))return Gesture::None;
- if(gestureMode_==DragMode::Text&&gestureDrag_&&startY_>80&&held<=5000000000ULL&&std::abs(lastY_-startY_)>=60&&std::abs(lastY_-startY_)>2*std::abs(lastX_-startX_))return Gesture::VerticalScroll;
+ if(gestureMode_==DragMode::Text&&gestureDrag_&&startY>80&&held<=5000000000ULL&&std::abs(lastY-startY)>=60&&std::abs(lastY-startY)>2*std::abs(lastX-startX))return Gesture::VerticalScroll;
  if(held>800000000ULL)return Gesture::None; /* A page flick keeps the same deadline in and out of text-selection mode. */
- const int dx=lastX_-startX_,dy=lastY_-startY_;
- if(startY_<=80&&dy>=250&&std::abs(dy)>=2*std::abs(dx))return Gesture::EdgeDown;
- if(!dragEnabled_&&startY_>=2160-100&&dy<=-250&&std::abs(dy)>=2*std::abs(dx))return Gesture::EdgeUp; /* not while text selection drags (an edge drag there stays inert) */
+ const int dx=lastX-startX,dy=lastY-startY;
+ if(startY<=80&&dy>=250&&std::abs(dy)>=2*std::abs(dx))return Gesture::EdgeDown;
+ if(!dragEnabled_&&startY>=screenHeight-100&&dy<=-250&&std::abs(dy)>=2*std::abs(dx))return Gesture::EdgeUp; /* not while text selection drags (an edge drag there stays inert) */
  if(std::abs(dx)>=200&&std::abs(dx)>=2*std::abs(dy)&&std::abs(dy)<=200)return dx<0?Gesture::SwipeNext:Gesture::SwipePrevious;
  return Gesture::None;
 }

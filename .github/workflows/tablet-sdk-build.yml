@@ -3,6 +3,11 @@ on:
   push:
     branches: [fix/ui-input-refresh]
     paths: ['reader/**', '.github/workflows/tablet-sdk-build.yml']
+  # Changes proposed into the installed branch get the same ARM build before they land (main carries no workflows,
+  # so a manual dispatch cannot reach a feature branch).
+  pull_request:
+    branches: [fix/ui-input-refresh]
+    paths: ['reader/**', '.github/workflows/tablet-sdk-build.yml']
   workflow_dispatch:
 permissions:
   contents: read
