@@ -1,5 +1,6 @@
 #pragma once
 #include "pdf_viewport.h"
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
 #include <optional>
