@@ -53,8 +53,9 @@ void wordmark(Canvas&,Rect box,float size);
 // A drop of ink: a round body of radius r centred at (cx,cy) with a pointed top, closed by an ink rule.
 void inkDrop(Canvas&,float cx,float cy,float r,std::uint32_t color);
 // Context sheet (Note, Tom, highlight, Notes hub, Quick Browse): square paper from top to the bottom edge, the
-// accent colour as a band along its top edge, closed by an ink rule.
-void contextSheet(Canvas&,int top,std::uint32_t accent=theme::PopCyan);
+// accent colour as a band along its top edge, closed by an ink rule. turned: the sheet stands on a landscape page
+// (layout::SheetMap), so its sides are ink rules too.
+void contextSheet(Canvas&,int top,std::uint32_t accent=theme::PopCyan,bool turned=false);
 // Header: title (heavy cursive) and a quiet subtitle on the left (subtitle tap target = subtitleId when >= 0).
 void sheetTitle(Canvas&,Targets&,int top,int height,std::string_view title,std::string_view subtitle,int subtitleId,int rightEdge);
 // Quoted passage: a pigment rule on the left, serif text in secondary ink.

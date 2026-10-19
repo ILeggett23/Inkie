@@ -20,7 +20,7 @@ Rect closeRect()noexcept{const int w=layout::screenWidth();return side_==Side::L
 Rect topRect()noexcept{return {0,0,layout::screenWidth(),ToolbarItem};}
 Rect toolHandleRect()noexcept{return toolbarSlot(SlotHandle);}
 void closeButton(Canvas& c,Targets& tg){Rect r=closeRect();c.fill(r,t::Paper);icon(c,Icon::CloseCircle,centered(r,ToolbarGlyph,ToolbarGlyph),t::ToolbarInk);tg.add(Back,r);}
-void zoomBadge(Canvas& c,Targets& tg,int percent){const Rect r=ZoomBadgeRect;c.fill(r,t::Paper);const Rect b=inset(r,3);c.strokeRound(b,t::RadiusSmall,float(t::Outline),t::InkPrimary);text::centeredLine(c,{Face::SansSemibold,theme::Control.size},r,std::to_string(percent)+"%",t::InkPrimary,Align::Center);tg.add(ZoomBadge,hitArea(r));}
+void zoomBadge(Canvas& c,Targets& tg,int percent,Rect r){c.fill(r,t::Paper);const Rect b=inset(r,3);c.strokeRound(b,t::RadiusSmall,float(t::Outline),t::InkPrimary);text::centeredLine(c,{Face::SansSemibold,theme::Control.size},r,std::to_string(percent)+"%",t::InkPrimary,Align::Center);tg.add(ZoomBadge,hitArea(r));}
 void footer(Canvas& c,Targets& tg,const Chrome& m){
  // Quiet metadata under the page, as in the native reader: title or chapter left, position right.
  Rect r=footerRect();c.fill(r,t::Paper);Rect text{FooterInset,r.y0,r.x1-FooterInset,r.y1};const Font f{Face::Text,theme::Meta.size};

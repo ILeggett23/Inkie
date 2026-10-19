@@ -9,9 +9,11 @@ namespace ib::notes {
 // ---- Notes hub ------------------------------------------------------------
 enum class Filter:unsigned {All,Linked,Pages,Favorites,Tom,Count};
 struct Entry {std::string title,excerpt,body,source;std::uint32_t color{theme::Ink[4]};bool favorite{},linked{},handwriting{},tom{},unresolved{};library::Image preview;};
-struct Hub {std::string heading{"Notes"},subtitle;bool layers{};Filter filter{Filter::All};std::vector<Entry> entries;int page{},pages{1};bool canCreate{true},favorites{true};std::string status;bool embedded{};int idOffset{};};
+struct Hub {std::string heading{"Notes"},subtitle;bool layers{};Filter filter{Filter::All};std::vector<Entry> entries;int page{},pages{1};bool canCreate{true},favorites{true};std::string status;bool embedded{};int idOffset{};bool turned{};};
 enum HubId:int {HubClose=1,HubCreate,HubPrev,HubNext,HubLayers,FilterBase=10,EntryBase=100,StarBase=200};
 inline constexpr int HubPageSize=6;
+// Turned (docs/LANDSCAPE.md, PR 3) the hub starts at layout::TurnedSheetTop and shows four notes a page.
+inline constexpr int TurnedHubPageSize=4;inline int hubPageSize(bool turned)noexcept{return turned?TurnedHubPageSize:HubPageSize;}
 // embedded=true paints inside the library content column instead of a sheet.
 void hub(Canvas&,Targets&,const Hub&);
 // ---- Note sheet -------------------------------------------------------------
@@ -20,18 +22,22 @@ void hub(Canvas&,Targets&,const Hub&);
 // with Save. Strokes are stored relative to the writing area, so its width (1480) is what must not shrink.
 inline constexpr int NoteSheetTop=layout::SheetTop,NoteExpandedTop=layout::SheetExpandedTop,NoteHeader=layout::SheetHeader,NoteToolRow=104;
 inline constexpr Rect NoteArea{70,NoteSheetTop+NoteHeader+64,1550,theme::ScreenHeight-NoteToolRow-16},NoteExpandedArea{70,NoteExpandedTop+NoteHeader+64,1550,theme::ScreenHeight-NoteToolRow-16};
+// Turned, an expanded note starts at layout::TurnedSheetTop. Its strokes are relative to the area's top-left and its
+// scroll, so only the 1480 width is stored geometry: the turned area is shorter, and the ink keeps its place on the paper.
+inline constexpr Rect TurnedNoteExpandedArea{70,layout::TurnedSheetTop+NoteHeader+64,1550,theme::ScreenHeight-NoteToolRow-16};
 Rect notePicker(bool expanded)noexcept; // the pen picker, opened from the tool row
 struct Note {
  std::string heading,subtitle,excerpt,title,text,status;bool linked{},hasExcerpt{},unresolved{};
  unsigned color{4};bool textMode{},expanded{},editable{},busy{},confirmDelete{},sourceColor{},hasHighlight{},favorite{},favorites{};
  bool eraser{},retryInk{},confirmInkRetry{},selecting{},inkActions{},hasInkSelection{},playing{};unsigned playbackSpeed{};unsigned textOffset{};
  Instrument pen{Instrument::Fineliner};unsigned width{1};bool picker{};bool canUndo{true},canRedo{true};std::string context;bool empty{};
+ bool turned{}; // shown through layout::SheetMap: an expanded note starts at TurnedSheetTop
 };
 enum NoteId:int {NoteBack=40,NoteDone=1,NoteDelete,NoteSource,NoteTitle,NoteType,NoteInk,NoteText,NoteUp,NoteDown,NoteExpand,NoteUndo,NoteRedo,NoteSourceColor,NoteFavorite,NoteSave,NoteColorBase=20,NoteFinishInk=50,NoteInkSpeed,NoteSelectInk,NoteInkDelete,NoteInkSmaller,NoteInkLarger,NoteInkColor,NoteExportInk,NoteTom,NoteRetryInk,NoteEraser=80};
-Rect noteArea(bool expanded)noexcept;
+Rect noteArea(bool expanded,bool turned=false)noexcept;
 void note(Canvas&,Targets&,const Note&);
 // ---- Highlight detail (tap on an existing highlight) -----------------------
-struct HighlightDetail {std::string excerpt,source;unsigned color{4};bool confirmDelete{},busy{};std::string status;};
+struct HighlightDetail {std::string excerpt,source;unsigned color{4};bool confirmDelete{},busy{};std::string status;bool turned{};};
 enum HighlightId:int {HlClose=1,HlAttachNote,HlSource,HlDelete,HlUndo,HlRedo,HlColorBase=20};
 void highlight(Canvas&,Targets&,const HighlightDetail&);
 }

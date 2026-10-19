@@ -21,7 +21,7 @@ void stepper(Canvas& c,Targets& tg,Rect r,std::string_view label,std::string_vie
 }
 }
 void layers(Canvas& c,Targets& tg,const Layers& m){
- Rect r=LayersRect;auto frame=sheet(c,tg,r,"Layers",{.close=true,.closeId=LayersClose});
+ Rect r=m.rect;auto frame=sheet(c,tg,r,"Layers",{.close=true,.closeId=LayersClose});
  iconButton(c,tg,LayersUndo,{r.x1-3*t::MinTarget-t::S2,frame.header.y0+8,r.x1-2*t::MinTarget-t::S2,frame.header.y1-4},Icon::Undo,{false,!m.canUndo||m.busy});
  iconButton(c,tg,LayersRedo,{r.x1-2*t::MinTarget-t::S2,frame.header.y0+8,r.x1-t::MinTarget-t::S2,frame.header.y1-4},Icon::Redo,{false,!m.canRedo||m.busy});
  int y=frame.content.y0+t::S2;const int rowH=150;Rect content=frame.content;

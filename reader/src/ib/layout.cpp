@@ -17,6 +17,10 @@ void Frame::toLogical(const std::uint32_t* from,int fromStride,std::uint32_t* to
  for(int y=r.y0;y<r.y1;++y)for(int x=r.x0;x<r.x1;++x){int px,py;physical(x,y,px,py);to[std::size_t(y)*toStride+x]=from[std::size_t(py)*fromStride+px];}}
 void Frame::toPhysical(const std::uint32_t* from,int fromStride,std::uint32_t* to,int toStride,Rect r)const noexcept{r=intersect(r,{0,0,width(),height()});
  for(int y=r.y0;y<r.y1;++y)for(int x=r.x0;x<r.x1;++x){int px,py;physical(x,y,px,py);to[std::size_t(py)*toStride+px]=from[std::size_t(y)*fromStride+x];}}
+Rect SheetMap::physical(Rect s)const noexcept{s=intersect(s,visible());if(!turned()||s.empty())return s;return Frame{turn}.physical({s.x0+TurnedSheetLeft,s.y0-TurnedSheetTop,s.x1+TurnedSheetLeft,s.y1-TurnedSheetTop});}
+Rect SheetMap::sheet(Rect p)const noexcept{if(!turned())return p;const Rect l=Frame{turn}.logical(p);return {l.x0-TurnedSheetLeft,l.y0+TurnedSheetTop,l.x1-TurnedSheetLeft,l.y1+TurnedSheetTop};}
+void SheetMap::physical(int x,int y,int& px,int& py)const noexcept{if(!turned()){px=x;py=y;return;}Frame{turn}.physical(x+TurnedSheetLeft,y-TurnedSheetTop,px,py);}
+void SheetMap::sheet(int px,int py,int& x,int& y)const noexcept{if(!turned()){x=px;y=py;return;}Frame{turn}.logical(px,py,x,y);x-=TurnedSheetLeft;y+=TurnedSheetTop;}
 Zones zones(reader::Side side,Orientation o)noexcept{
  namespace R=reader;const bool left=side==R::Side::Left;
  const int w=o==Orientation::Portrait?t::ScreenWidth:t::ScreenHeight,h=o==Orientation::Portrait?t::ScreenHeight:t::ScreenWidth;
@@ -29,10 +33,9 @@ Zones zones(reader::Side side,Orientation o)noexcept{
  z.strip=left?Rect{z.toolbar.x1,TopRow,w,pageBottom}:Rect{0,TopRow,z.toolbar.x0,pageBottom};
  z.popover=z.strip;
  if(o==Orientation::Portrait){z.sheet={0,SheetTop,w,h};z.sheetExpanded={0,SheetExpandedTop,w,h};}
- else{ // Side sheet on the writing-hand side (the hand rests on what it writes in), as wide as the portrait sheet is tall.
-  // Its 860 px writing width is narrower than the 1480 px stored-stroke area: landscape needs a view scale for ink.
-  const int sw=t::ScreenHeight-SheetTop,ew=t::ScreenHeight-SheetExpandedTop;
-  z.sheet=left?Rect{w-sw,0,w,h}:Rect{0,0,sw,h};z.sheetExpanded=left?Rect{w-ew,0,w,h}:Rect{0,0,ew,h};}
+ else{ // The portrait sheet itself, centred at the foot (SheetMap): its 1480 px writing area keeps its size and place,
+  // and the tallest sheet is the whole height (taller portrait sheets start at TurnedSheetTop).
+  z.sheet={TurnedSheetLeft,SheetTop-TurnedSheetTop,TurnedSheetLeft+t::ScreenWidth,h};z.sheetExpanded={TurnedSheetLeft,0,TurnedSheetLeft+t::ScreenWidth,h};}
  z.reservedTop={0,0,w,EdgeBand};z.reservedStatus={w-(t::ScreenWidth-StatusCornerX),0,w,EdgeBand};z.reservedBottom=z.footer;
  return z;
 }

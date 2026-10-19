@@ -43,6 +43,22 @@ inline constexpr int EdgeBand=80,StatusCornerX=1080;
 // Lower sheets (Tom, Note): 1000 px of 2160 (46%). The 1480x680 writing area is fixed because stored strokes are
 // relative to it; header and quoted passage need the remaining 320 px. Expanded sheets may rise to 300.
 inline constexpr int SheetTop=1160,SheetExpandedTop=300,SheetHeader=136,SheetMargin=70;
+// Sheets (Notes, Inkie) are laid out and composed in portrait panel pixels, "sheet pixels" (1620x2160), in either
+// turn. Turned (docs/LANDSCAPE.md, PR 3), their lower 1620 rows stand upright at the foot of the landscape screen,
+// centred: sheet (x, y) is logical (x + TurnedSheetLeft, y - TurnedSheetTop). So the standard lower sheet and its
+// writing area keep their place on the sheet, and a turned sheet never starts above TurnedSheetTop: the taller
+// portrait sheets have turned layouts that start there.
+inline constexpr int TurnedSheetTop=theme::ScreenHeight-theme::ScreenWidth,TurnedSheetLeft=TurnedSheetTop/2;
+inline int sheetTop(int top,bool turned)noexcept{return turned&&top<TurnedSheetTop?TurnedSheetTop:top;}
+// Sheet pixels <-> the panel, through Frame. physical(Rect) keeps only what is shown; sheet(Rect) and sheet(px,py)
+// are exact and may reach outside the sheet (beside it, turned).
+struct SheetMap {
+ Turn turn{Turn::Portrait};
+ bool turned()const noexcept{return turn!=Turn::Portrait;}
+ Rect visible()const noexcept{return {0,turned()?TurnedSheetTop:0,theme::ScreenWidth,theme::ScreenHeight};} // the sheet pixels shown
+ Rect physical(Rect sheet)const noexcept;Rect sheet(Rect physical)const noexcept;
+ void physical(int x,int y,int& px,int& py)const noexcept;void sheet(int px,int py,int& x,int& y)const noexcept;
+};
 struct Zones {
  Rect screen;         // whole panel in this orientation
  Rect content;        // the page; never shrunk or repaginated by chrome
@@ -51,7 +67,7 @@ struct Zones {
  Rect close;          // circled close, top corner opposite the toolbar
  Rect palette;        // attached palette, level with the pen shortcut
  Rect strip;          // contextual strip band (selection actions, highlight colours)
- Rect sheet;          // lower sheet (portrait) or side sheet (landscape)
+ Rect sheet;          // lower sheet (in landscape the same sheet, centred at the foot: SheetMap)
  Rect sheetExpanded;  // tallest a sheet may grow
  Rect popover;        // where floating cards may be placed while chrome is shown
  Rect reservedTop,reservedStatus,reservedBottom; // gesture bands
