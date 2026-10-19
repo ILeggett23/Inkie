@@ -17,4 +17,10 @@ void activate(const std::filesystem::path& root,const QString& id,const QString&
 std::optional<PdfPage> pageEntry(const ViewSet&,int sourcePage);
 QString pageConfigId(const ViewSet&,int sourcePage);
 std::filesystem::path storagePath(const std::filesystem::path& root,const ViewSet&,int sourcePage);
+// A page shown turned (docs/LANDSCAPE.md): the orientation is never stored in the set. Its prepared page lives in
+// <document>/turn-<orientation>/ beside the portrait tree, renders the page's stored view (or the default view when the
+// page has none) and is identified by the page configuration plus the orientation. Orientation 0 is storagePath.
+QJsonObject viewSettings(const ViewSet&,int sourcePage); // the stored view, or the default view
+QString turnedConfigId(const ViewSet&,int sourcePage,const QJsonArray& bounds,unsigned orientation);
+std::filesystem::path turnedStoragePath(const std::filesystem::path& root,const ViewSet&,int sourcePage,unsigned orientation);
 }

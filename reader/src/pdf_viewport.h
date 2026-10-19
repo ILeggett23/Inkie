@@ -28,11 +28,19 @@ struct View {
  // Pan is rejected beyond the limit that keeps the viewport over the crop.
  Point pan{};
 };
+// The tablet's turn (docs/LANDSCAPE.md), a presentation parameter never stored in the view: 0 portrait, 90 its top edge
+// turned clockwise, 270 anticlockwise. In landscape the viewport is the landscape page area on the panel (1520x2160 at
+// x 0 for 90, x 100 for 270) and the content gets the quarter turn that keeps it upright for the reader. The stored pan
+// is in the reader's frame: it is turned with the screen and clamped to the landscape range.
+inline constexpr unsigned Portrait=0,Clockwise=90,Anticlockwise=270;
+struct Viewport {int x{},y{},width{Width},height{Height};};
+Viewport viewport(unsigned orientation)noexcept;
 struct Plan {
  Rect sourceBounds,crop,visibleSource;View view;Affine forward,inverse;
  double scale{},maxPanX{},maxPanY{};int width{Width},height{Height};std::size_t rasterBytes{RasterBytes};
+ int x{},y{};unsigned orientation{}; // the viewport's place on the panel; forward maps source to panel pixels
 };
-Plan plan(Rect immutableSourceBounds,const View&);
+Plan plan(Rect immutableSourceBounds,const View&,unsigned orientation=Portrait);
 struct RenderedViewport {
  Plan geometry;
  // Fixed viewport RGBA; visibleSource describes its source intersection, while
@@ -46,5 +54,8 @@ struct RenderedViewport {
 // Optional expected SHA256 verifies the exact immutable bytes before parsing.
 // Caller owns descriptor identity verification and helper CPU/wall limits.
 // This adapter reads one bounded regular source file and checks actual bounds.
-RenderedViewport renderPdfRegion(const std::filesystem::path&,int pageIndex,Rect immutableSourceBounds,const View&,std::string_view expectedSourceSha256={});
+// The raster is the plan's viewport (geometry.width x height), to be placed at (geometry.x, geometry.y) on the panel.
+RenderedViewport renderPdfRegion(const std::filesystem::path&,int pageIndex,Rect immutableSourceBounds,const View&,std::string_view expectedSourceSha256={},unsigned orientation=Portrait);
+// The page's own bounds (fz_bound_page), for a page without a stored view that is shown turned.
+Rect pageBounds(const std::filesystem::path&,int pageIndex,std::string_view expectedSourceSha256={});
 }
