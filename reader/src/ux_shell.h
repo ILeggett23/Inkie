@@ -167,6 +167,10 @@ public:
  bool gesture(reader::Gesture);
  bool gesture(const reader::Touch::Tap&); // carries pinch scale/focal point and two-finger pan deltas
  reader::pdfview::View pdfView()const{return viewSnapshot().pdf;} // the applied PDF view (zoom, pan) of this page
+ // Orientation (docs/LANDSCAPE.md): the accelerometer is read every 300 ms while auto-rotate is on; turn_ is the settled
+ // way the tablet is held. Locked (the default), it reads nothing.
+ void pollOrientation();std::optional<std::filesystem::path> accel_;bool accelSearched_{};device::OrientationWatch orientationWatch_;std::chrono::steady_clock::time_point orientationAt_{};
+ bool orientationSensor()noexcept{if(!accelSearched_){accel_=device::accelerometer();accelSearched_=true;}return accel_.has_value();}
  void pollDevice();device::Battery battery_{};device::Temperature temperature_{};device::HeatWatch heat_{};std::optional<bool> wifiLink_;device::Storage storage_{};std::string firmware_;std::chrono::steady_clock::time_point batteryAt_{};bool lowBatteryShown_{};
  bool pinch(float scale,int focalX,int focalY);bool twoFingerPan(int dx,int dy,int originY);bool resetZoom();double pdfZoom();QString zoomKey_;double zoom_{1};
  bool goHome();bool returnToLibrary();bool navigateTo(int);bool choose(unsigned);bool action(Action,bool markerContact=false);bool tick();void installed();
