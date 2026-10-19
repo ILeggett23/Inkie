@@ -28,11 +28,15 @@ struct Model {
  bool highContrast{},reduceMotion{},plainText{};
  // Tom
  bool tomTyped{},tomReveal{true};unsigned tomHand{1};int tomOnline{-1};
+ // What Inkie remembers: its notes about the reader, oldest first. Clear asks for a second tap (armed).
+ std::vector<std::string> tomMemory;bool tomMemoryArmed{};
  std::vector<std::pair<std::string,std::string>> about;
 };
 // Ids 950-965 are the ones the settings rows have always used (routes and tests tap them).
 enum Id:int {Effects=950,Leave,Wifi,SleepCover,ToolHandle,LeftHanded,ReadingProgress,SnapHighlights,IdleBase=960,PageBase=970,
- TomStyleBase=980 /* +0 handwriting, +1 typed */,TomHandBase=982 /* +0..2 */,TomReveal=985,HighContrast=986,ReduceMotion=987,PasscodeSet=988,PasscodeOff=989,CompanionManage=990,TimeZone=991,PlainText=992};
+ TomStyleBase=980 /* +0 handwriting, +1 typed */,TomHandBase=982 /* +0..2 */,TomReveal=985,HighContrast=986,ReduceMotion=987,PasscodeSet=988,PasscodeOff=989,CompanionManage=990,TimeZone=991,PlainText=992,
+ TomMemoryClear=993,TomMemoryForgetBase=994 /* +0..TomMemoryShown-1, newest first */};
+inline constexpr int TomMemoryShown=5;
 inline constexpr Rect NavRect{80,300,388,2060},PaneRect{516,180,1510,2060};
 void paint(Canvas&,Targets&,const Model&);
 // "38.7 GB" style size: decimal gigabytes with one decimal (megabytes below 1 GB).

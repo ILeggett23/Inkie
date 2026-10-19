@@ -7,6 +7,7 @@
 #include "release_policy.h"
 #include "helper_disposition.h"
 #include "tom_source.h"
+#include "tom_store.h"
 #include "semantic_range.h"
 #include "notes_runtime.h"
 #include "product_services.h"
@@ -337,6 +338,7 @@ void Shell::libraryRefresh(){
 void Shell::libraryPaint(){libraryView_.setCoverSource([this](const QString& id,const QString& source){return covers_.find(id,source);});if(wifiView_.active()){wifiPaint();return;}libraryView_.setTimeZone(semantic::utf8(clockprefs::label(timeSetting_)));libraryView_.setClock(statusModel_.clock,statusModel_.zone);libraryView_.setBattery(battery_.percent.value_or(-1),battery_.charging(),wifiLink_.value_or(false));libraryView_.setDevice(battery_,wifiLink_,storage_,firmware_);libraryView_.setFavorites(favorites_);libraryView_.setEnvironment(libraryEffects_,companionEnabled_,true,userEnded_);{const auto& sleep=sleepSettings();libraryView_.setSleep(sleep.cover,sleep.idleMinutes);}libraryView_.setToolHandle(toolHandleShown());libraryView_.setLeftHanded(leftHanded());libraryView_.setReading(readingProgress(),snapHighlights());
  {const auto state=companionStatus_["state"].toString();const int companion=!companionEnabled_?-1:state=="paired"||state=="transferring"||state=="transfer-error"?2:state=="pairing"?1:state=="unpaired"?0:3;
   libraryView_.setPreferences(passcodeSet(),companion,prefs_.highContrast,prefs_.reduceMotion,prefs_.tomTyped,prefs_.tomHand,prefs_.tomReveal,tomNetworkEnabled_?1:0,prefs_.plainText);}
+ if(libraryView_.section()==ib::library::Section::Settings&&libraryView_.settingsPage()==ib::settings::Page::Tom){std::vector<std::string> notes;for(const auto& n:companion::memory::read(data_))notes.push_back(n.toStdString());libraryView_.setTomMemory(std::move(notes));}
  if(libraryView_.notice().isEmpty())try{auto failures=QJsonDocument::fromJson(underlay::readBounded(data_/"import-errors.json",16384)).array();if(!failures.isEmpty())setLibraryNotice("Some files were rejected — your originals are kept");}catch(...){}
  libraryView_.paint({chrome_,underlay::Width,underlay::Height,underlay::Stride},books_,data_);}
 // Library-wide notes, read-only: verified feature stores of each book; never creates a store.
@@ -442,6 +444,9 @@ bool Shell::finger(int x,int y,bool longPress,bool markerContact){if(lock_!=Lock
   case LA::TomStyle:prefs_.tomTyped=hit.index==1;savePrefs();libraryRefresh();return true;
   case LA::TomHand:prefs_.tomHand=unsigned(std::clamp(hit.index,0,2));savePrefs();libraryRefresh();return true;
   case LA::TomReveal:if(!prefs_.reduceMotion){prefs_.tomReveal=!prefs_.tomReveal;savePrefs();}libraryRefresh();return true;
+  case LA::TomMemoryForget:{const auto notes=companion::memory::read(data_);const int at=int(notes.size())-1-hit.index; /* shown newest first */
+   if(hit.index>=0&&at>=0&&!companion::memory::forget(data_,notes[at]))setLibraryNotice("Inkie couldn’t forget that note — try again");recovery::v2::e2::mark("tom:memory-forget");libraryRefresh();return true;}
+  case LA::TomMemoryClear:if(!companion::memory::clear(data_))setLibraryNotice("Inkie couldn’t clear its notes — try again");recovery::v2::e2::mark("tom:memory-clear");libraryRefresh();return true;
   case LA::HighContrast:prefs_.highContrast=!prefs_.highContrast;applyPrefs();savePrefs();libraryRefresh();return true;
   case LA::PlainText:prefs_.plainText=!prefs_.plainText;applyPrefs();savePrefs();libraryRefresh();return true; /* glyphs change inside unchanged rects: the same regional diff */
   case LA::ReduceMotion:prefs_.reduceMotion=!prefs_.reduceMotion;applyPrefs();savePrefs();libraryRefresh();return true;

@@ -29,6 +29,8 @@ struct Pane {
   for(int i=int(options.size())-1;i>=0;--i){const int w=std::max(120,int(text::span(f,options[std::size_t(i)]))+t::S4*2);Rect cell{x-w,r.y0+18,x,r.y1-18};x=cell.x0-8;const bool on=std::size_t(i)==chosen;
    c.fillRound(cell,t::RadiusMedium,on?t::ToolSelected:t::Surface);c.strokeRound(cell,t::RadiusMedium,float(t::Outline),t::InkPrimary);text::centeredLine(c,f,cell,options[std::size_t(i)],on?t::OnSelected:t::InkPrimary,Align::Center);
    if(ids[std::size_t(i)]>=0)tg.add(ids[std::size_t(i)],hitArea(cell));}}
+ // A remembered note: up to two printed lines, Forget at the right.
+ void fact(std::string_view s,int id){const int h=int(text::wrap(Note,s,float(x1-240-x0),2).size())*40,top=y+(RowH-h)/2-4;text::block(c,Note,{x0,top,x1-240,top+h+8},s,t::InkPrimary,40,2);button(c,tg,id,{x1-200,y+14,x1,y+RowH-14},"Forget",ButtonKind::Secondary);divider(c,x0,x1,y+RowH);y+=RowH;}
  void note(std::string_view s,int lines=2){text::block(c,Note,{x0,y+t::S3,x1,y+t::S3+lines*40+8},s,t::InkPrimary,40,lines);y+=t::S3+lines*40+t::S2;}
 };
 }
@@ -103,7 +105,7 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   else{static constexpr std::array<const char*,4> S{"Not paired","Pairing","Paired","Needs attention"};Rect r=p.row("Companion");text::centeredLine(c,Value,{r.x0+380,r.y0,r.x1-330,r.y1},S[std::size_t(std::clamp(m.companion,0,3))],t::InkSecondary,Align::Right);
    button(c,tg,CompanionManage,{r.x1-300,r.y0+14,r.x1,r.y1-14},"Manage",ButtonKind::Secondary);}
   p.group("What Inkie sends");
-  p.note("Only when you send a question: your handwritten question, the book's title, the page and passage you are asking about, and the earlier questions and replies in that conversation. Your library, notes and other handwriting stay on this tablet.",3);
+  p.note("Only when you send a question: your handwritten question, the book's title, the page and passage you are asking about, your earlier questions and Inkie's replies (this conversation, and the end of your last one for a new conversation), and the notes Inkie keeps about you (Settings \xE2\x86\x92 Inkie). Your library, notes and other handwriting stay on this tablet.",4);
   break;}
  case Page::Accessibility:
   p.group("Display");
@@ -124,6 +126,13 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   if(m.reduceMotion)p.value("Write replies line by line","Off (Reduce motion)");else p.toggleRow("Write replies line by line",TomReveal,m.tomReveal);
   p.note("These are how a reply first appears; the controls under a reply still switch it while you read.",1);
   if(m.tomOnline>=0){p.group("Connection");p.value("Inkie",m.tomOnline?"Online when Wi-Fi is connected":"Offline on this tablet");}
+  p.group("What Inkie remembers");
+  if(m.tomMemory.empty())p.note("Nothing yet. When you tell Inkie about yourself, or say \xE2\x80\x9Cremember\xE2\x80\xA6\xE2\x80\x9D, it keeps a short note here and uses it in later conversations. The notes stay on this tablet and go with each question.",3);
+  else{const std::size_t shown=std::min<std::size_t>(m.tomMemory.size(),std::size_t(TomMemoryShown));
+   for(std::size_t i=0;i<shown;++i)p.fact(m.tomMemory[m.tomMemory.size()-1-i],TomMemoryForgetBase+int(i)); /* newest first */
+   const std::string rest=m.tomMemory.size()>shown?"And "+std::to_string(m.tomMemory.size()-shown)+" earlier "+(m.tomMemory.size()-shown==1?"note":"notes"):"Forget everything";
+   Rect r=p.row(rest);button(c,tg,TomMemoryClear,{r.x1-300,r.y0+14,r.x1,r.y1-14},m.tomMemoryArmed?"Confirm":"Clear all",m.tomMemoryArmed?ButtonKind::Primary:ButtonKind::Secondary);
+   p.note(m.tomMemoryArmed?"Tap Confirm to forget all "+std::to_string(m.tomMemory.size())+(m.tomMemory.size()==1?" note.":" notes."):std::string("Inkie uses these in every conversation. You can also tell Inkie \xE2\x80\x9C" "forget that\xE2\x80\xA6\xE2\x80\x9D"),2);}
   break;
  case Page::About:
   p.group("Inkie");
