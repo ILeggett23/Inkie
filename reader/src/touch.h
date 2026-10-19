@@ -20,7 +20,7 @@ class Touch {
 public:struct Counters {std::uint64_t readEvents{},consumedEvents{},frames{},outputs{},cancellations{},losses{},palmFrames{},rejectedPen{},rejectedInvalid{},rejectedMulti{},rejectedOther{};};
 private:Counters counters_{};
  int fd_{-1};int slot_{};std::array<int,16> ids_{};spike::Axis x_{},y_{};
- spike::Rect toolbar_{};bool toolbarStart_{};bool statusCorner_{},gesture_{},blocked_{},bad_{};int startX_{},startY_{},lastX_{},lastY_{};spike::Ns start_{};
+ spike::Rect toolbar_{};bool toolbarStart_{};unsigned turn_{};bool statusCorner_{},gesture_{},blocked_{},bad_{};int startX_{},startY_{},lastX_{},lastY_{};spike::Ns start_{};
  DragMode mode_{DragMode::None},gestureMode_{DragMode::None};bool intentional_{},motionStarted_{};bool longFired_{},longCancelled_{},dragEnabled_{},gestureDrag_{},moved_{},penBlocked_{};unsigned maxTouches_{};int travelX_{},travelY_{};std::array<int,16> fingerX_{},fingerY_{},originX_{},originY_{};std::uint64_t epoch_{},gestureEpoch_{};std::uint32_t usedSlots_{};spike::Ns multiAt_{}; /* when a second contact joined the gesture */
  struct Pair {float d0{},d1{},cx0{},cy0{},cx1{},cy1{},ax{},ay{},bx{},by{};}; /* a*, b*: each finger's own motion */bool pair(Pair&)const noexcept; // the two fingers of this gesture: spread and centroid, landing vs lift
 public:
@@ -30,6 +30,9 @@ public:
  Tap takeTap()noexcept{auto t=lastTap_;lastTap_={};return t;}
  Tap pollTap(bool markerBusy)noexcept{lastTap_={};(void)poll(markerBusy);if(caughtUp_&&!lastTap_.valid)expire(spike::monotonic(),markerBusy);if(lastTap_.valid){lastTap_.contacts=maxTouches_;if(!lastTap_.drag&&lastTap_.gesture==Gesture::None){lastTap_.startX=startX_;lastTap_.startY=startY_;}lastTap_.startedAt=start_;lastTap_.eligibleAt=lastTap_.longPress?start_+semantic::LongPressNs:lastFrame_;lastTap_.readAt=lastRead_;lastTap_.classifiedAt=spike::monotonic();++counters_.outputs;if(lastTap_.cancelled)++counters_.cancellations;}return takeTap();}
  void toolbar(spike::Rect r)noexcept{toolbar_=r;}
+ // The screen's turn in degrees (docs/LANDSCAPE.md): 0, 90 (top edge turned clockwise) or 270. Gestures are recognised
+ // in the reader's upright frame; tap coordinates stay in panel pixels.
+ void turn(unsigned degrees)noexcept{turn_=degrees==90||degrees==270?degrees:0;}
  void statusCorner(bool enabled)noexcept{statusCorner_=enabled;}
  void interactionMode(DragMode mode,std::uint64_t epoch)noexcept{const bool promotion=gesture_&&longFired_&&(mode_==DragMode::None||mode_==DragMode::Highlight)&&mode==DragMode::Text&&epoch==epoch_;if(gesture_&&!promotion&&(mode!=mode_||epoch!=epoch_))blocked_=bad_=true;if(promotion){gestureMode_=mode;gestureDrag_=intentional_=true;}mode_=mode;dragEnabled_=mode!=DragMode::None;epoch_=epoch;}
  void selectionMode(bool enabled,std::uint64_t epoch)noexcept{interactionMode(enabled?DragMode::Text:DragMode::None,epoch);}

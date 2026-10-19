@@ -76,11 +76,17 @@ The page, ink, styled ink and semantic text stay physical. The chrome and its ta
 - Marker writing stays physical. Marker taps on chrome convert to logical before hit-testing.
 
 **6. What rotates in PR 1.**
-- Only an open PDF in the reading view, without legacy (pre-styled) ink, rotates.
-- The library, settings, EPUB, Notes, Inkie, document settings and menus stay portrait. Opening one of them shows it in
-  portrait (turn the tablet), as stock does for screens without a landscape layout.
-- The rotation lock (quick settings) defaults to locked. When auto-rotate is on, a sustained tilt changes orientation
-  after it settles, and never during pen contact or while a page is preparing.
+- **What turns:** an open PDF's reading view, when the page has no legacy ink or legacy highlight pinned to its portrait
+  page (the same rule as a view change).
+- **Works in landscape:** writing, erasing and the highlighter (ink stays in source coordinates), page turns by swipe,
+  the toolbar's tools, undo and redo, the tool handle, the close button, the footer and the clock.
+- **Still portrait for now:** text selection, Define, highlight colours, Notes, Inkie, the pen palette, document
+  settings and menus, quick settings, recents, Quick Browse, pinch and two-finger pan, and page effects. In landscape
+  these show "Turn the tablet upright for this" (`ui:turn-portrait-only`). Their upright layouts are the next step.
+- **Library, settings and EPUB** stay portrait (EPUB reflow is PR 2).
+- **When it turns:** Auto-rotate (quick settings) is off by default. When it is on, the reading view turns once the tilt
+  has settled, and only between actions: no contact, saving, selection, panel, menu or sheet, and nothing preparing.
+  Each turn prepares the page again (`ui:turn`, then `ui:turned` when shown).
 
 **7. Sensor.**
 - `device::readAccel` reads the raw axes and applies the mount matrix.
@@ -104,7 +110,8 @@ The page, ink, styled ink and semantic text stay physical. The chrome and its ta
 
 - Turn the tablet with a PDF open (auto-rotate on). The page re-renders upright and sharp; the toolbar, close and footer
   sit on the landscape edges.
-- Write, erase and select text in landscape, then turn back. Ink and highlights are where they were written.
+- Write and erase in landscape, then turn back. The ink is where it was written.
+- Long-press a word, open the palette or swipe down in landscape. A notice asks for portrait; nothing opens sideways.
 - Swipe left and right. Pages turn in the direction the page reads.
 - Lock rotation in quick settings and turn the tablet. Nothing rotates.
 - Open the library, an EPUB, Notes or Inkie while turned. They show in portrait.
