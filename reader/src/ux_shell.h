@@ -183,12 +183,13 @@ public:
  std::optional<ib::layout::Turn> refusedTurn_;QString refusedDocument_;QString blockedNotice_;bool refusalAnnounced_{};
  // Turning ready ahead: while reading with Auto-rotate on, the page as the turn would show it (an EPUB's landscape layout
  // staged, the turned page prepared) is made in the background once reading settles on a page, so a turn shows it at
- // once instead of staging and rendering then. aheadRun_ is held by the job for its whole run; the turn's opener waits on
+ // once instead of staging and rendering then. Upright, both landscape directions are made (the one last used first);
+ // turned, the way back upright. aheadRun_ is held by the job for its whole run; the turn's opener waits on
  // it and takes the result only if it is for the same book, layout, page and direction. Page requests share the page
  // server's lock with reading, and the job is never cancelled mid-request (a stopped request counts against the server).
  struct Ahead {QString document,from;int page{-1};unsigned orientation{};QString next;int destination{-1};std::shared_ptr<underlay::Prepared> prepared;};
- std::thread ahead_;std::atomic<bool> aheadDone_{false},aheadStop_{false};std::mutex aheadRun_;std::optional<Ahead> aheadResult_;
- QString aheadKey_,aheadTried_;std::chrono::steady_clock::time_point aheadSince_{};ib::layout::Turn lastLandscape_{ib::layout::Turn::Anticlockwise};std::atomic<unsigned> aheadUsed_{0};
+ std::thread ahead_;std::atomic<bool> aheadDone_{false},aheadStop_{false};std::mutex aheadRun_;std::vector<Ahead> aheadResults_; /* for the place reading rests on: each way it may turn next */
+ QString aheadKey_;std::vector<unsigned> aheadTried_;std::chrono::steady_clock::time_point aheadSince_{};ib::layout::Turn lastLandscape_{ib::layout::Turn::Anticlockwise};std::atomic<unsigned> aheadUsed_{0};
  void aheadTick();
  static unsigned degrees(ib::layout::Turn t)noexcept{return t==ib::layout::Turn::Clockwise?90u:t==ib::layout::Turn::Anticlockwise?270u:0u;}
  bool turned()const noexcept{return turn_!=ib::layout::Turn::Portrait;}

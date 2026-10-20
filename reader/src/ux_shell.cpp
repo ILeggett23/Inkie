@@ -216,7 +216,7 @@ void Shell::viewTick(){if(!document_||document_->contact())return;if(styled_){if
  const bool turning=std::exchange(turning_,false);if(!turning)openingTurn_=turn_;const unsigned orientation=degrees(openingTurn_); /* turning: the same view set, prepared in the new turn */
  const bool epubTurn=turning&&selectedFormat_=="epub"&&(orientation!=0)!=turned(); /* an EPUB changes layout between upright and turned */if(epubTurn&&orientation)portraitEpubSet_=currentViewSet_;const QString portraitSet=portraitEpubSet_;turnRefused_=false;
  startOpener([this,old,view,bounds,target,restore,bookmark,turning,orientation,epubTurn,portraitSet]{try{int destination=target;QString next;bool refused=false;unsigned turnTo=orientation;
-  std::optional<Ahead> ready;if(turning){std::lock_guard run(aheadRun_); /* waits for a job still preparing */if(aheadResult_&&aheadResult_->document==selectedId_&&aheadResult_->from==old&&aheadResult_->page==target&&aheadResult_->orientation==orientation&&aheadResult_->prepared)ready=std::move(aheadResult_);aheadResult_.reset();}
+  std::optional<Ahead> ready;if(turning){std::lock_guard run(aheadRun_); /* waits for a job still preparing */for(auto& a:aheadResults_)if(a.document==selectedId_&&a.from==old&&a.page==target&&a.orientation==orientation&&a.prepared){ready=std::move(a);break;}aheadResults_.clear();}
   if(ready){next=ready->next;destination=ready->destination;}
   else if(epubTurn){ /* the landscape twin (lines a third longer, the same type size: 590 tall), or back to the book's own layout */
    const auto layout=reader::epubviews::readSet(selectedData_,old).receipt["layout"].toObject();const auto typography=epub::parse(layout["userCss"].toString()).value_or(epub::Typography{});const int font=layout["fontSize"].toInt(12);
@@ -519,33 +519,40 @@ ib::layout::Turn Shell::wantedTurn()noexcept{if(!prefs_.autoRotate||!orientation
 // A PDF's reading view turns only when nothing else is open or in flight (as a view change): no contact, saving,
 // selection, panel, menu or sheet, and no legacy ink or highlight pinned to the portrait page.
 bool Shell::turnReady()noexcept{return libraryMode_&&!stop_&&document_&&(selectedFormat_=="pdf"||selectedFormat_=="epub")&&styled_&&!changingView_&&!opener_.joinable()&&(state_==State::Clean||state_==State::Chrome)&&!menu_&&!quickSettings_&&!toolsView_.active()&&!viewControls_.active()&&!wifiView_.active()&&!pdfPreviewActive_&&!epubZoomActive()&&lock_==Lock::None&&!(notes_&&notes_->active())&&!(tom_&&tom_->active());}
-// Turning ready ahead (see ux_shell.h): one background job per place (book, layout, page, turn), started once reading has
-// rested there for AheadIdle with nothing else under way, for the direction the next turn most likely goes (back upright
-// when turned; else the landscape direction last used).
+// Turning ready ahead (see ux_shell.h): background jobs per place (book, layout, page, turn), started once reading has
+// rested there for AheadIdle with nothing else under way, one per way the next turn may go: back upright when turned;
+// upright, the landscape direction last used and then the other one. Both landscape directions share one staged EPUB
+// layout (the same width and height), so the second only prepares its page.
 void Shell::aheadTick(){
  if(ahead_.joinable()&&aheadDone_.load(std::memory_order_acquire))ahead_.join();
  if(ahead_.joinable())return;
  if(!libraryMode_||stop_||!document_||!styled_||!(selectedFormat_=="pdf"||selectedFormat_=="epub")||!prefs_.autoRotate||!orientationSensor()||leaveTurned_){aheadKey_.clear();return;}
- const auto to=turned()?ib::layout::Turn::Portrait:lastLandscape_;
- const QString key=selectedId_+"|"+currentViewSet_+"|"+QString::number(page())+"|"+QString::number(degrees(turn_))+"|"+QString::number(degrees(to));
- const auto now=std::chrono::steady_clock::now();if(key!=aheadKey_){aheadKey_=key;aheadSince_=now;return;}
- if(aheadTried_==key||now-aheadSince_<std::chrono::seconds(3))return;
+ const QString key=selectedId_+"|"+currentViewSet_+"|"+QString::number(page())+"|"+QString::number(degrees(turn_));
+ const auto now=std::chrono::steady_clock::now();
+ if(key!=aheadKey_){aheadKey_=key;aheadSince_=now;aheadTried_.clear();std::lock_guard run(aheadRun_);std::erase_if(aheadResults_,[&](const Ahead& a){return a.document!=selectedId_||a.from!=currentViewSet_||a.page!=page();});return;}
+ constexpr auto AheadIdle=std::chrono::milliseconds(800); /* a page read for a moment; flipping pages starts nothing */
+ if(now-aheadSince_<AheadIdle)return;
+ std::vector<ib::layout::Turn> ways;if(turned())ways={ib::layout::Turn::Portrait};else ways={lastLandscape_,lastLandscape_==ib::layout::Turn::Clockwise?ib::layout::Turn::Anticlockwise:ib::layout::Turn::Clockwise};
+ std::optional<ib::layout::Turn> pick;for(auto w:ways)if(std::find(aheadTried_.begin(),aheadTried_.end(),degrees(w))==aheadTried_.end()&&!(refusedTurn_&&*refusedTurn_==w&&refusedDocument_==selectedId_)){pick=w;break;}
+ if(!pick)return;const auto to=*pick;
  if(!(state_==State::Clean||state_==State::Chrome)||changingView_||opener_.joinable()||document_->contact()||styled_->status().busy||styled_->hasLegacyInk()||semantics_->pending()||!semantics_->highlights().isEmpty()||semantics_->view()!=semantic::View::None||unsaved()||menu_||quickSettings_||toolsView_.active()||(notes_&&notes_->active())||(tom_&&tom_->active()))return;
- if(refusedTurn_&&*refusedTurn_==to&&refusedDocument_==selectedId_)return;
- aheadTried_=key;
+ aheadTried_.push_back(degrees(to));
  const QString document=selectedId_,format=selectedFormat_,old=currentViewSet_,portraitSet=portraitEpubSet_;const auto data=selectedData_;const auto app=app_;const int target=page();const unsigned orientation=degrees(to);const bool epubTurn=format=="epub"&&(orientation!=0)!=turned();
+ std::optional<std::pair<QString,int>> staged; /* the other landscape direction's layout, already staged for this place */
+ if(epubTurn&&orientation){std::lock_guard run(aheadRun_);for(const auto& a:aheadResults_)if(a.document==document&&a.from==old&&a.page==target&&a.orientation!=0)staged=std::pair{a.next,a.destination};}
  aheadStop_=false;aheadDone_=false;recovery::v2::e2::mark("ui:turn-ahead-start",orientation);
- try{ahead_=std::thread([this,document,old,portraitSet,data,app,target,orientation,epubTurn]{
+ try{ahead_=std::thread([this,document,old,portraitSet,data,app,target,orientation,epubTurn,staged]{
   {std::lock_guard run(aheadRun_);const auto started=std::chrono::steady_clock::now();
    try{QString next=old;int destination=target;
-    if(epubTurn){ /* exactly as the turn's opener stages it */
+    if(staged){next=staged->first;destination=staged->second;}
+    else if(epubTurn){ /* exactly as the turn's opener stages it */
      const auto layout=reader::epubviews::readSet(data,old).receipt["layout"].toObject();const auto typography=epub::parse(layout["userCss"].toString()).value_or(epub::Typography{});const int font=layout["fontSize"].toInt(12);
      const int width=orientation?std::clamp(int(std::lround(layout["width"].toInt(600)*2160/1620.)),64,4094):reader::epubviews::readSet(data,portraitSet).receipt["layout"].toObject()["width"].toInt(600);
-     auto staged=reader::stageEpubViewViaHelper(app,data,old,width,font,target,aheadStop_,typography,orientation?590:800);next=staged.viewId;destination=staged.targetPage;}
+     auto result=reader::stageEpubViewViaHelper(app,data,old,width,font,target,aheadStop_,typography,orientation?590:800);next=result.viewId;destination=result.targetPage;}
     auto p=reader::prepareViewPage(app,data,destination,stop_,next,orientation);
-    aheadResult_=Ahead{document,old,target,orientation,next,destination,std::make_shared<underlay::Prepared>(std::move(p))};
-    std::fprintf(stderr,"TURN_AHEAD_READY orientation=%u ms=%lld\n",orientation,(long long)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-started).count());
-   }catch(const std::exception& e){aheadResult_.reset();std::fprintf(stderr,"TURN_AHEAD_FAILED reason=%s\n",e.what());}catch(...){aheadResult_.reset();}}
+    aheadResults_.push_back(Ahead{document,old,target,orientation,next,destination,std::make_shared<underlay::Prepared>(std::move(p))});
+    std::fprintf(stderr,"TURN_AHEAD_READY orientation=%u ms=%lld reused_layout=%d\n",orientation,(long long)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-started).count(),staged?1:0);
+   }catch(const std::exception& e){std::fprintf(stderr,"TURN_AHEAD_FAILED reason=%s\n",e.what());}catch(...){}}
   aheadDone_.store(true,std::memory_order_release);});}catch(...){aheadDone_=true;}
 }
 // The library turns too (docs/LANDSCAPE.md): repainted in the upright landscape frame with one complete refresh, nothing
