@@ -122,7 +122,13 @@ bool Transition::paint(std::uint64_t stamp,std::span<std::uint32_t> dst,int w,in
    const int settling=int(hash(request_.seed^unsigned(x/3)*619u^unsigned(y/3)*137u)%361);
    const bool formed=progress==1000||(progress>0&&u*640/std::max(1,tw)+settling<progress+noise);
    if(!formed)pixel=old;
-   else if(!request_.dismiss&&semantic<4&&x>request_.target.x0+2&&x<request_.target.x1-3&&y>request_.target.y0+2&&y<request_.target.y1-3&&((pixel>>16)&255)<96&&((pixel>>8)&255)<96&&(pixel&255)<96)pixel=0xffffffffu; // interior text/icons appear intact at consolidation
+   else if(!request_.dismiss&&semantic<4&&x>request_.target.x0+2&&x<request_.target.x1-3&&y>request_.target.y0+2&&y<request_.target.y1-3){
+    const auto red=(pixel>>16)&255,green=(pixel>>8)&255,blue=pixel&255;
+    const auto high=std::max({red,green,blue}),low=std::min({red,green,blue});
+    // Withhold the antialiased fringe as well as the dark glyph core. Leaving
+    // only grey outlines looked like ghosted text during actual UI snapshots.
+    if(high<250&&high-low<16)pixel=0xffffffffu;
+   }
   }
   const unsigned count=semantic==4?grainCount_/12:grainCount_;
   auto speck=[&](int x,int y){if(x>=clip.x0&&x<clip.x1&&y>=clip.y0&&y<clip.y1)dst[std::size_t(y)*stride+x]=0xff000000u;};
