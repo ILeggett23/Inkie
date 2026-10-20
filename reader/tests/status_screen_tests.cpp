@@ -1,6 +1,7 @@
 #include "ib/status_screen.h"
 #include "device_status.h"
 #include <fstream>
+#include <memory>
 #include <thread>
 #include <chrono>
 #include <atomic>
@@ -24,13 +25,13 @@ int main(int argc,char**argv){try{if(argc!=2||!ib::text::load(std::filesystem::p
   auto axes=[&](int x,int y,int z){put(acc/"in_accel_x_raw",std::to_string(x));put(acc/"in_accel_y_raw",std::to_string(y));put(acc/"in_accel_z_raw",std::to_string(z));return device::readAccel(acc);};
   check(device::accelerometer(root/"iio")==acc&&!device::accelerometer(root/"none"));auto a=axes(0,1000,0);check(a&&a->x==1000&&a->y==0&&a->z==0); /* sensor y is device x */
   device::OrientationWatch o;using T=device::Turn;auto feed=[&](int dx,int dy,int dz){return o.update(device::Accel{double(dx),double(dy),double(dz)});};
-  check(!feed(0,1000,0)&&o.turn==T::Portrait);check(!feed(-1000,0,0)&&!feed(-1000,0,0)&&o.turn==T::Portrait&&feed(-1000,0,0)&&o.turn==T::Clockwise); /* top edge to the right */
+  check(!feed(0,1000,0)&&o.turn==T::Portrait);check(!feed(-1000,0,0)&&o.turn==T::Portrait&&feed(-1000,0,0)&&o.turn==T::Clockwise); /* top edge to the right: two settled readings */
   check(!feed(0,0,1000)&&!feed(0,0,1000)&&!feed(0,0,1000)&&o.turn==T::Clockwise); /* flat on a table: kept */
   check(!feed(-707,707,0)&&!feed(-707,707,0)&&!feed(-707,707,0)&&o.turn==T::Clockwise); /* 45 degrees: inside the margin, kept */
   check(!feed(0,-1000,0)&&!feed(0,-1000,0)&&!feed(0,-1000,0)&&o.turn==T::Clockwise); /* upside down: kept */
-  check(!feed(1000,0,0)&&!feed(1000,0,0)&&!feed(0,1000,0)&&o.turn==T::Clockwise); /* interrupted: no turn */
-  check(!feed(1000,0,0)&&!feed(1000,0,0)&&feed(1000,0,0)&&o.turn==T::Anticlockwise&&std::lround(device::OrientationWatch::angle({1000,0,0}))==90);
-  check(!feed(-200,1000,0)&&!feed(-200,1000,0)&&feed(-200,1000,0)&&o.turn==T::Portrait); /* 11 degrees off upright */
+  check(!feed(1000,0,0)&&!feed(0,1000,0)&&o.turn==T::Clockwise); /* interrupted: no turn */
+  check(!feed(1000,0,0)&&feed(1000,0,0)&&o.turn==T::Anticlockwise&&std::lround(device::OrientationWatch::angle({1000,0,0}))==90);
+  check(!feed(-200,1000,0)&&feed(-200,1000,0)&&o.turn==T::Portrait); /* 11 degrees off upright */
   // The reader thread: the caller never waits for a slow sensor (0.75 s a reading on the Paper Pro), each reading is
   // taken once, and a paused reader reads nothing more (at most the reading already under way, then discarded).
   {device::AccelReader r;std::atomic<int> reads{0};check(!r.take());r.run([&]{++reads;std::this_thread::sleep_for(std::chrono::milliseconds(400));return std::optional<device::Accel>(device::Accel{1,2,3});});
@@ -38,6 +39,13 @@ int main(int argc,char**argv){try{if(argc!=2||!ib::text::load(std::filesystem::p
    std::optional<device::Accel> got;for(int i=0;i<500&&!got;++i){got=r.take();if(!got)std::this_thread::sleep_for(std::chrono::milliseconds(10));}check(got&&got->x==1&&got->y==2&&got->z==3&&r.lastRead()>=std::chrono::milliseconds(400));check(!r.take());
    r.pause();const int paused=reads.load();std::this_thread::sleep_for(std::chrono::milliseconds(1000));check(reads.load()<=paused+1&&!r.take());
    axes(0,1000,0);r.run([acc]{return device::readAccel(acc);});got={};for(int i=0;i<500&&!got;++i){got=r.take();if(!got)std::this_thread::sleep_for(std::chrono::milliseconds(10));}check(got&&got->x==1000&&got->y==0);}
+  // The sampling rate: raised to 100 Hz only when listed, put back afterwards; the reader thread restores it when paused.
+  {put(acc/"sampling_frequency","12");put(acc/"sampling_frequency_available","12 25 50 100 200 400 800 1600");auto rate=[&]{return device::detail::line(acc/"sampling_frequency").value_or("");};
+   device::SamplingBoost b;b.device=acc;check(b.raise()&&rate()=="100"&&b.raise());b.restore();check(rate()=="12");
+   put(acc/"sampling_frequency_available","12 25 50");device::SamplingBoost slow;slow.device=acc;check(!slow.raise()&&rate()=="12"&&!slow.raise()); /* not offered: left as it was */
+   put(acc/"sampling_frequency_available","12 25 50 100");auto shared=std::make_shared<device::SamplingBoost>();shared->device=acc;std::atomic<int> idles{0};device::AccelReader r;
+   r.run([&,shared]{(void)shared->raise();return device::readAccel(acc);},[&,shared]{shared->restore();++idles;});std::optional<device::Accel> got;for(int i=0;i<500&&!got;++i){got=r.take();if(!got)std::this_thread::sleep_for(std::chrono::milliseconds(10));}check(got&&rate()=="100");
+   r.pause();for(int i=0;i<500&&idles==0;++i)std::this_thread::sleep_for(std::chrono::milliseconds(10));check(idles==1&&rate()=="12");}
   put(acc/"in_accel_mount_matrix","garbage");a=axes(1,2,3);check(a&&a->x==1&&a->y==2&&a->z==3); /* identity when malformed */put(acc/"in_accel_z_raw","x");check(!device::readAccel(acc));
   std::filesystem::remove_all(root);
   std::vector<std::uint32_t> px(1632*2160,0xffffffffu);Canvas cv({px,1620,2160,1632});Targets tg;s::Model cool;cool.clock="12:00";cool.clockOnly=true;s::bar(cv,tg,cool,s::ReaderClock);auto red=[&]{for(int y=s::ReaderClock.y0;y<s::ReaderClock.y1;++y)for(int x=s::ReaderClock.x0;x<s::ReaderClock.x1;++x)if(px[std::size_t(y)*1632+x]==theme::Caution)return true;return false;};check(!red());

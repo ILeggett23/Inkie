@@ -38,6 +38,10 @@ enum Id:int {Effects=950,Leave,Wifi,SleepCover,ToolHandle,LeftHanded,ReadingProg
  TomMemoryClear=993,TomMemoryForgetBase=994 /* +0..TomMemoryShown-1, newest first */,SandMode=1005};
 inline constexpr int TomMemoryShown=5;
 inline constexpr Rect NavRect{80,300,388,2060},PaneRect{516,180,1510,2060};
+// The page list and pane for the frame paint() is given: the constants above in portrait, or, turned (2160x1620), a pane
+// that runs to the frame's right edge and its foot (docs/LANDSCAPE.md).
+struct Geometry {Rect nav{NavRect},pane{PaneRect};int divider{419};};
+Geometry geometry(int width,int height)noexcept;
 void paint(Canvas&,Targets&,const Model&);
 // "38.7 GB" style size: decimal gigabytes with one decimal (megabytes below 1 GB).
 std::string size(std::int64_t bytes);

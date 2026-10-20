@@ -27,8 +27,9 @@ test('retries stop after two, and quota or client errors are not retried; the pr
  for(const [reply,calls] of [[{status:429,code:'insufficient_quota'},1],[{status:400,code:'invalid_request_error'},1],[{status:401,code:'invalid_api_key'},1]]){const r=await run([reply,'stream']);assert.equal(r.row.status,'interrupted');assert.equal(r.calls.length,calls);assert.match(r.row.error,new RegExp('HTTP '+reply.status));}
 });
 
-test('reading handwriting asks for little reasoning; answers keep their payload',()=>{
- const png='data:image/png;base64,iVBORw0KGgo=',read=providerPayload({purpose:'transcribe',model:'gpt-5.4-mini',question:'',history:[],handwriting_image:png,max_output_tokens:800});assert.deepEqual(read.reasoning,{effort:'low'});
+test('reading handwriting asks for no reasoning; answers keep their payload',()=>{
+ const png='data:image/png;base64,iVBORw0KGgo=',read=providerPayload({purpose:'transcribe',model:'gpt-5.4-mini',question:'',history:[],handwriting_image:png,max_output_tokens:800});assert.deepEqual(read.reasoning,{effort:'none'});
+ assert.deepEqual(providerPayload({purpose:'transcribe',model:'gpt-5-mini',question:'',history:[],handwriting_image:png,max_output_tokens:800}).reasoning,{effort:'minimal'});
  assert.equal(providerPayload({purpose:'transcribe',model:'gpt-4.1-mini',question:'',history:[],handwriting_image:png,max_output_tokens:800}).reasoning,undefined);
  assert.equal(providerPayload({purpose:'answer',model:'gpt-5.4-mini',question:'Q',history:[],max_output_tokens:800}).reasoning,undefined);
 });

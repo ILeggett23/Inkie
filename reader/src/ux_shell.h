@@ -6,6 +6,7 @@
 #include <utility>
 #include "library.h"
 #include "library_view.h"
+#include "ib/library_screen.h"
 #include "library_manage.h"
 #include "companion_view.h"
 #include "wifi_view.h"
@@ -187,6 +188,18 @@ public:
  // An EPUB turns into a landscape twin of its layout (wider lines, same type size); portraitEpubSet_ is the layout it
  // returns to. Leaving a turned EPUB turns it back first, so its own layout keeps the reading position.
  QString portraitEpubSet_;bool leaveTurned_{};std::atomic<bool> turnRefused_{false};
+ // A turn that could not be made (refused layout) or may not be made (ink or highlights pinned upright) is not tried again
+ // for the same book, page and way of holding it: retrying re-opened the book every few seconds (journal 2026-10-20).
+ std::optional<ib::layout::Turn> refusedTurn_;QString refusedDocument_;QString blockedNotice_;bool refusalAnnounced_{};
+ // Turning ready ahead: while reading with Auto-rotate on, the page as the turn would show it (an EPUB's landscape layout
+ // staged, the turned page prepared) is made in the background once reading settles on a page, so a turn shows it at
+ // once instead of staging and rendering then. aheadRun_ is held by the job for its whole run; the turn's opener waits on
+ // it and takes the result only if it is for the same book, layout, page and direction. Page requests share the page
+ // server's lock with reading, and the job is never cancelled mid-request (a stopped request counts against the server).
+ struct Ahead {QString document,from;int page{-1};unsigned orientation{};QString next;int destination{-1};std::shared_ptr<underlay::Prepared> prepared;};
+ std::thread ahead_;std::atomic<bool> aheadDone_{false},aheadStop_{false};std::mutex aheadRun_;std::optional<Ahead> aheadResult_;
+ QString aheadKey_,aheadTried_;std::chrono::steady_clock::time_point aheadSince_{};ib::layout::Turn lastLandscape_{ib::layout::Turn::Anticlockwise};std::atomic<unsigned> aheadUsed_{0};
+ void aheadTick();
  static unsigned degrees(ib::layout::Turn t)noexcept{return t==ib::layout::Turn::Clockwise?90u:t==ib::layout::Turn::Anticlockwise?270u:0u;}
  bool turned()const noexcept{return turn_!=ib::layout::Turn::Portrait;}
  spike::Rect physical(spike::Rect logical)const noexcept{return ib::layout::Frame{turn_}.physical(logical);}
@@ -213,6 +226,9 @@ public:
  unsigned inputTurn_{};std::span<const std::uint32_t> sheetBackdrop();void sheetDamage(spike::Rect sheet);void composeSheet(spike::Surface,spike::Rect)const;
  void paintMenuOn(ib::Canvas&,ib::Targets&);
  template<class F>void paintTurned(std::vector<std::uint32_t>& pixels,ib::Targets& targets,std::initializer_list<spike::Rect> logical,F paint);
+ // A library rect on the panel: as is upright; turned, the same part of the landscape library (ib::library::geometry).
+ spike::Rect libraryArea(spike::Rect portrait)const noexcept{if(!turned())return portrait;const auto g=ib::library::geometry(2160,1620);return physical(portrait.y0==ib::library::NoticeRect.y0&&portrait.y1==ib::library::NoticeRect.y1?g.notice:portrait.y0==ib::library::StatusRect.y0&&portrait.x0==ib::library::StatusRect.x0?g.status:spike::Rect{0,0,2160,1620});}
+ void libraryTurn();bool libraryPortraitOnly();
  void pollOrientation();std::optional<std::filesystem::path> accel_;bool accelSearched_{};device::OrientationWatch orientationWatch_;device::AccelReader accelReader_;bool accelOn_{},accelTimed_{};
  bool orientationSensor()noexcept{if(!accelSearched_){accel_=device::accelerometer();accelSearched_=true;}return accel_.has_value();}
  void pollDevice();device::Battery battery_{};device::Temperature temperature_{};device::HeatWatch heat_{};std::optional<bool> wifiLink_;device::Storage storage_{};std::string firmware_;std::chrono::steady_clock::time_point batteryAt_{};bool lowBatteryShown_{};

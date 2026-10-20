@@ -25,7 +25,7 @@ void Shell::revealSceneChanged(){
  else if(viewControls_.active()){scene=ViewScene;content=insetContent(DocumentControls::Panel);panelPixels=viewPixels_;}
  else if(state_==State::Picker&&companionView_.active()){scene=CompanionScene;content={0,15,1620,2160};panelPixels=background();}
  else if(state_==State::Picker&&libraryManage_.active()){scene=LibraryManageScene;key=QString::number(libraryManage_.effectScene());content={0,15,1620,2160};panelPixels=background();}
- else if(state_==State::Picker&&libraryView_.effectScene()){scene=LibraryMenuScene;key=QString::number(libraryView_.effectScene());content=libraryView_.effectContent();panelPixels=background();}
+ else if(state_==State::Picker&&libraryView_.effectScene()){scene=LibraryMenuScene;key=QString::number(libraryView_.effectScene());content=libraryView_.effectContent();if(turned())content=physical(content); /* the library's upright frame, on the panel */panelPixels=background();}
  else if(semantics_->view()==semantic::View::Definition)content=semanticVisual_.panel;
  else if(semantics_->view()==semantic::View::Menu){content=semanticVisual_.menu;panelPixels=background();}
  if(!quietEffectsEnabled()&&reveal_.quiescent()){revealView_=scene;revealSelection_=key;return;}

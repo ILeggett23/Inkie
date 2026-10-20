@@ -40,10 +40,10 @@ std::string meta(const library::Document& d){
 }
 }
 spike::Rect LibraryView::keyboardContent()noexcept{auto k=ib::KeyboardRect;return {k.x0+16,k.y0+24,k.x1-16,k.y1-16};}
-spike::Rect LibraryView::menuContent()const noexcept{auto r=create_?ib::library::createMenuRect(2):ib::library::DrawerRect;return {r.x0+16,r.y0+24,r.x1-16,r.y1-16};}
+spike::Rect LibraryView::menuContent()const noexcept{auto r=create_?ib::library::createMenuRect(2):landscape_?ib::library::geometry(2160,1620).drawer:ib::library::DrawerRect;return {r.x0+16,r.y0+24,r.x1-16,r.y1-16};}
 spike::Rect LibraryView::effectContent()const noexcept{return keyboard_?keyboardContent():menu_?menuContent():spike::Rect{};}
 void LibraryView::setDocuments(const QVector<library::Document>& docs){all_=docs;rebuild();}
-int LibraryView::capacity()const{bool root=section_==Section::MyFiles&&folder_.isEmpty()&&query_.isEmpty()&&!keyboard_;return ib::library::capacity(grid_,root?std::min(int(folders_.size()),ib::library::folderCapacity()):0);}
+int LibraryView::capacity()const{bool root=section_==Section::MyFiles&&folder_.isEmpty()&&query_.isEmpty()&&!keyboard_;return ib::library::capacity(grid_,root?std::min(int(folders_.size()),ib::library::folderCapacity()):0,landscape_?ib::library::geometry(2160,1620):ib::library::Geometry{});}
 void LibraryView::rebuild(){
  filtered_.clear();folders_.clear();folderCounts_.clear();
  for(const auto& d:all_)if(!d.trashed&&!d.folder.isEmpty()){if(!folderCounts_.contains(d.folder))folders_.push_back(d.folder);folderCounts_[d.folder]++;}
@@ -73,7 +73,7 @@ std::shared_ptr<const LibraryView::Cover> LibraryView::cover(const std::filesyst
  if(covers_.size()>=covers::CacheLimit)covers_.clear();covers_.insert(id,out);return out;
 }
 void LibraryView::paint(spike::Surface s,const QVector<library::Document>& docs,const std::filesystem::path& root){
- setDocuments(docs);if(s.width!=1620||s.height!=2160||s.stridePixels<s.width||s.pixels.size()<std::size_t(s.stridePixels)*s.height)return;
+ setDocuments(docs);if(s.width!=(landscape_?2160:1620)||s.height!=(landscape_?1620:2160)||s.stridePixels<s.width||s.pixels.size()<std::size_t(s.stridePixels)*s.height)return;
  ib::Canvas c(s);targets_.clear();
  ib::library::Model m;m.section=section_;m.grid=grid_;m.sharedAvailable=shared_;m.tomAvailable=tom_;m.notice=utf8(notice_);
  m.searching=keyboard_||!query_.isEmpty();m.query=utf8(query_);m.sortLabel=recent_?"Last opened":"Title";
@@ -108,9 +108,11 @@ void LibraryView::paint(spike::Surface s,const QVector<library::Document>& docs,
  if(keyboard_){ib::KeyboardModel k;k.title="Search titles";k.value=utf8(query_);k.hint="Type a title";k.shift=shift_;k.symbols=symbols_;ib::keyboard(c,targets_,k);}
 }
 LibraryView::Hit LibraryView::hit(int x,int y){
- if(x<0||x>=1620||y<0||y>=2160)return {};
+ if(x<0||x>=(landscape_?2160:1620)||y<0||y>=(landscape_?1620:2160))return {};
  auto changed=[&](){rebuild();return Hit{Action::Changed,{},-1};};
  int id=targets_.find(x,y);namespace L=ib::library;
+ /* Turned: search (its keyboard) and the Notes section have no landscape layout yet */
+ if(landscape_&&!keyboard_&&(id==L::Search||id==L::NavBase+int(Section::Notes))){menu_=false;return {Action::PortraitOnly,{},-1};}
  const bool memoryArmed=std::exchange(memoryArmed_,false); /* Clear all asks once more, on the very next tap */
  if(create_){create_=false;return changed();} // Retire stale creation menus without executing their actions.
  if(menu_){menu_=false;if(id==MenuLeave)return {Action::Exit,{},-1};if(id==MenuWifi)return {Action::Wifi,{},-1};if(id<L::NavBase||id>=L::NavBase+int(Section::Count))return changed();} /* the drawer: a section row falls through to navigation */

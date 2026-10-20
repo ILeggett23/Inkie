@@ -56,7 +56,7 @@ bool libraryOrigin(const void*symbol,const char*expected)noexcept{
  Dl_info info{};char canonical[PATH_MAX]{};return dladdr(symbol,&info)&&info.dli_fname&&realpath(info.dli_fname,canonical)&&std::strcmp(canonical,expected)==0;
 }
 class Runtime final:public spike::VendorCalls,public spike::MaintenanceCalls {
- using Instance=void*(*)();using Swap=void(*)(void*,QRect,int,int,int);
+ using Instance=void*(*)();using Swap=void(*)(void*,QRect,int,int,int);using Ghost=void(*)(void*,int);Ghost ghost_{};
  spike::Pixels eraseMask_{};std::vector<unsigned char> maskBackup_;bool maskedLogged_{};void* library_{};void* singleton_{};Swap swap_{};bool attempted_{};QCoreApplication* application_{};
  using Temperature=float(*)();using PreparePower=void(*)(float);using Operation=void(*)();
  Temperature temperature_{};PreparePower preparePower_{};Operation tmodeRequest_{},publish_{};
@@ -66,6 +66,11 @@ class Runtime final:public spike::VendorCalls,public spike::MaintenanceCalls {
   auto* base=static_cast<unsigned char*>(module.dli_fbase);
   if(reinterpret_cast<void*>(instance)!=base+0x32d30)return false;
   void* vtable{};void* implementation{};std::memcpy(&vtable,singleton_,sizeof(vtable));if(!vtable)return false;std::memcpy(&implementation,static_cast<unsigned char*>(vtable)+0xb8,sizeof(implementation));if(implementation!=base+0x35600)return false;
+  /* Ghost clearing (test build): bound only when the exported Acep2 override is the pinned function and both it and the
+     clearing routine it runs have their recorded bytes; otherwise the reader simply has none. */
+  {const auto g=reinterpret_cast<Ghost>(dlsym(library_,"_ZN18EPFramebufferAcep212ghostControlEN13EPFramebuffer16GhostControlModeE"));auto pinned=[&](std::size_t offset,const char* sha){return QCryptographicHash::hash(QByteArrayView(reinterpret_cast<const char*>(base+offset),32),QCryptographicHash::Sha256).toHex()==sha;};
+   if(g&&reinterpret_cast<void*>(g)==static_cast<void*>(base+0x36be0)&&pinned(0x36be0,"0c0906f702e646a2b7152e9076aa27dd1ce9423a045e635f4aed057c24f7329a")&&pinned(0x3c310,"cd9f09eccd38fa9458b83c46d5ceebfa22db74b911005e396ad4c302bd12974b"))ghost_=g;
+   std::fprintf(stderr,"DIRECT_GHOST_CLEAR available=%d\n",ghost_?1:0);}
   struct Entry{std::size_t offset;const char* sha;};
   const Entry entries[]={
    {0x3eb80,"d1c87934b0eeb4f52ff80d0126b05913513d68ad573d6c72ad3d3866f6dbb15c"},
@@ -126,6 +131,7 @@ public:
  }
  void region(spike::Rect r,int content,int mode,int flags)noexcept override{swap_(singleton_,QRect(r.x0,r.y0,r.x1-r.x0,r.y1-r.y0),content,mode,flags);}
  bool eraseRegion(spike::Rect r,int content,int mode,int flags,std::span<const unsigned char> source,int stride)noexcept override{{spike::ScopedEraseMask scope(eraseMask_,source,stride,r,maskBackup_);if(!scope)return false;swap_(singleton_,QRect(r.x0,r.y0,r.x1-r.x0,r.y1-r.y0),content,mode,flags);}if(!maskedLogged_){maskedLogged_=true;std::fprintf(stderr,"DIRECT_MASKED_ERASE_SOURCE_RETURNED mask_restored=1 flags=2 optical=NOT_MEASURED\n");}return true;}
+ bool ghostClear()noexcept override{if(!ghost_)return false;ghost_(singleton_,2);return true;}
  void events()noexcept override{pumping_=true;QCoreApplication::processEvents(QEventLoop::AllEvents,1);pumping_=false;}
  // Intentionally no dlclose/vendor destructor/Qt deletion: process teardown owns
  // them. Shutdown can block, so only the qualified external owner may restore.

@@ -13,6 +13,7 @@ sand::Policy Shell::sandPolicy()const noexcept{
  p.contact=(document_&&document_->contact())||(notes_&&notes_->contact())||(tom_&&tom_->contact());
  p.selecting=penSelect_.active||selectMode_;p.power=powerConstrained_||stop_||quiescing_||lock_!=Lock::None;
  p.heavy=turned()||changingView_||returning_||syncing_||companionBusy_||pdfPreviewActive_||epubZoomActive()||generatedPlaying()||
+  (ahead_.joinable()&&!aheadDone_.load(std::memory_order_acquire))||
   (state_!=State::Clean&&state_!=State::Chrome&&state_!=State::Picker)||(styled_&&styled_->status().busy)||semantics_->pending()||
   (document_&&document_->unsaved()!=0)||(tom_&&tom_->active()&&tom_->inkPending())||(notes_&&notes_->active()&&notes_->inkPending());
  p.congested=sandCongested_;p.expensive=sand_.pending()&&sand_.metrics().lastPaintNs>12000000;return p;

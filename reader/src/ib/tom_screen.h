@@ -58,6 +58,10 @@ int sheetTop(const Model&); // where the sheet starts for this model (compact, o
 // Where the reply zoom badge is drawn and tapped: the top chrome row above the sheet, or (turned) the sheet's header.
 Rect zoomBadgeRect(const Model&);
 void paint(Canvas&,Targets&,const Model&);
+// The writing hint paint() draws ("Write to Inkie…", "Continue the conversation…"): its strip of the writing area, empty
+// when none shows. clearHint paints paper and its guides back over that strip, as the pen first touches the paper.
+Rect hintRect(const Model&);
+void clearHint(Canvas&,const Model&);
 }
 namespace ib {
 // Original on-screen keyboard: letters, shift, numbers/punctuation layer.

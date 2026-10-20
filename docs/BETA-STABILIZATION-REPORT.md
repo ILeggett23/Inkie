@@ -341,6 +341,98 @@ input path: an optional turn and offset in `spike::Transform`, set through `Sess
 session builds an Engine. [auto] sustained-session (`INPUT_FRAME_PASS`), ib-layout, ib-surface and ib-preview targets,
 and the `turned_note_sheet_…`/`turned_inkie_sheet_…` routes. Device checks 40–44.
 
+### Device report follow-up 6: Auto-rotate loops instead of turning (user report, 2026-10-20)
+
+The user, on PR #14 (`47d9889`): with Auto-rotate on, an opened EPUB or PDF did not turn to landscape; the toolbar kept
+opening and closing and the page refreshed by itself. The journal (read with the user's approval) shows the EPUB
+"Psycho-Cybernetics" from 16:25:04 to 16:25:26 UTC: `ui:turn 270`, then `EPUB_STAGE_FAILED
+reason=epub-view-feature-unknown-file` and `ui:turn-refused`, the book re-opened upright (a complete refresh) and the
+next turn attempt about 4 s later, six times until the session ended. The same refusal is in the 2026-10-19 sessions.
+
+| # | Issue | Root cause | Fix | Verified |
+|---|---|---|---|---|
+| D17 | A book with an interrupted erase can never turn | Styled ink keeps an interrupted eraser stroke as a draft in `features/interrupted/` (the book had one from 2026-10-16). The EPUB view store's strict feature inspection allowed only `features.lock`, `features.json`, `features.previous.json` and `legacy`, so every new layout of that book was refused. | `inspectFeatures` accepts `interrupted` as a directory; other unknown names are still refused. | [auto] `epub-view-store-tests`: a draft does not refuse staging or activation; a stray file and an `interrupted` file are still refused |
+| D18 | A refused turn is retried forever: the book re-opens upright with a full refresh and the toolbar redrawn every few seconds | `turnTick` tried the wanted turn again as soon as the refused one re-opened the book upright. | A refused turn is remembered for the book and the way the tablet is held (`refusedTurn_`) and not retried until the tablet is held another way or another book opens; "This book can’t turn — it stays upright" shows once. | [auto] `refused_turn_is_not_retried`: one refusal, then 3 s held turned with no further complete refresh; held upright and turned again (refusal gone), it turns |
+| D19 | A page with older ink or legacy highlights never turns, without a word | By design (as for view changes) such a page keeps its upright layout, but nothing said so. | "This page stays upright — its older ink or highlights are fixed to it" once per book and way of holding it; `ui:turn-blocked` 1 (ink) or 2 (highlights). | [inspect]; device check 40 |
+
+Not changed, noted: a PDF page that fails to prepare turned closes the book to the library like any failed open
+("This book could not open — its data is kept"), rather than staying upright. A retained interrupted-eraser draft is
+never applied (the protected `styled_ink.cpp` keeps the original ink unchanged by design).
+
+### Test build: the panel's own ghost clearing after an erase (user request, 2026-10-20)
+
+A photo from the user (PR #14 build): after erasing a snapped highlight, yellow stripes stay exactly along the eraser's
+passes while the rest of the highlight is clean. The highlight itself was removed; the stripes are pigment left on the
+panel where the masked fast erase drove it to white first, and the Content-mode cleanup after it did not drive those
+pixels again (the D15 finding). The user asked for a build that runs the vendor's ghost clearing, as Xochitl's
+GhostBuster does, to see whether it removes the yellow and whether it flashes.
+
+- **Call:** `EPFramebufferAcep2::ghostControl` mode 2 (libqsgepaper `3800e9f3`, 0x36be0), which runs the Swtcon's
+  dedicated clearing routine (0x3c310) under the Swtcon lock. Mode 0 (a complete flashing swap of the whole image) and
+  mode 3 (factory-reset blink) are never used. The call is bound only when the exported symbol is the pinned function and
+  both functions have their recorded first bytes (`DIRECT_GHOST_CLEAR available=1`); otherwise nothing runs.
+- **When:** once per settled erase: pen up, the erase saved and its removal cleanups sent, 1 s after the last of them
+  (`ui:ghost-clear` 1 ran, 0 unavailable; `REFRESH_GHOST_CLEAR` counts). This is a protected vendor change and a timed
+  step, both for this test only; it is kept or removed after the device check.
+- **Verified:** [auto] `ghost_clearing_runs_once_after_an_erase_settles` (once, after every cleanup of the erased area,
+  never for writing alone). Optics and flashing: device check 41.
+
+### Inkie replies sooner; the writing hint goes at once (user request, 2026-10-20)
+
+The journal (read with the user's approval) times eight handwritten questions from 2026-10-18 to 10-20: about 1.1–1.6 s
+on the tablet before the request leaves (`tom:ink-captured` → `tom:read-answer-start`), **15–18 s until the handwriting
+is read** (`tom:ocr-end`), then 1.3–6 s to the answer's first words.
+
+| # | Issue | Cause | Change | Verified |
+|---|---|---|---|---|
+| D20 | Reading a handwritten question takes 15–18 s | The Companion reads the handwriting in its own provider call before answering. It asked gpt-5.4-mini for reasoning effort `low`; that model's documented efforts are none (its default), low, medium, high and xhigh. The tablet's helper also asked for the status of a request it had just created (one more HTTPS round trip and store write before the stream opened). | **Companion:** the transcription call uses effort `none` on GPT-5.1 and later, `minimal` on the original GPT-5 models (`transcriptionEffort`); answers are unchanged. **Reader:** the helper skips the status request for a request just accepted as queued (a replayed or resumed one still asks), and journals `TOM_HELPER_TIMING` (created, stream-open, question, first-delta; ms since the helper started) to split the remaining wait between the tablet, the network and the service. | [auto] Companion `tom_reliability` (none for gpt-5.4-mini, minimal for gpt-5-mini, answers unchanged). Device check 42; needs the Companion deployed |
+| D21 | "Write to Inkie…" and "Continue the conversation…" stay while writing | The hint is drawn while the paper is empty, and the sheet is repainted only after the first stroke is saved. | At pen-down the hint's strip is painted paper again (`ib::tom::clearHint`) and joins the ink's live damage, so it leaves with the first ink; the sheet's next repaint gives the strip its quality refresh. | [auto] `tom-panel-tests` `hint_cleared_at_pen_down_and_presented_with_the_ink` |
+
+### Turning is slow (user report, 2026-10-20)
+
+On PR #17, Psycho-Cybernetics turned, "extremely slow and laggy". The journal (read with the user's approval) times one
+turn from 17:51:36 UTC: the first tilt reading 0.75 s after Auto-rotate came on; the turn decided at 17:51:40 (three
+settled readings, 0.75 s each); the landscape layout staged by 17:51:46; the first landscape page at 17:51:48 (page
+renderer start 2.1 s). Turning back upright took 11 s, 7 s of it staging the book's own layout. In staging, both
+layouts were made and the place found within about 2 s; the other 4–7 s followed (test render, store, and deriving
+every highlight and note for the layout again).
+
+| # | Issue | Cause | Change | Verified |
+|---|---|---|---|---|
+| D22 | A turn takes about 12 s; turning back about 11 s | The tilt needed three readings (2.3 s on the tablet, not the ~1 s intended); staging rendered a test page even for the book's own layout and derived the annotation cache again on every turn. | **Two settled readings** (about 1.5 s). **No test render** for the book's own layout (`base_layout`), which always renders. **The annotation cache is reused** when it was derived from exactly the same annotations (`annotationsSha256` in the cache, written by the stage command; older builds ignore it). `EPUB_STAGE_TIMING` journals layouts, render, store and annotations. | [auto] `status-screen-tests` (two readings to turn; interruptions and the margin unchanged); `epub-annotation-cache-tests` (reused only for the same annotations), now run in CI. Device check 43 |
+
+### Tool switching and turn detection (user report, 2026-10-20)
+
+The user: switching tools is slow, and Auto-rotate takes too long to notice the tablet was turned. Read with the user's
+approval: the journal since 17:40 UTC and the accelerometer's sysfs settings (read-only).
+
+| # | Issue | Cause | Change | Verified |
+|---|---|---|---|---|
+| D23 | A turn is noticed 2–3 s late | The accelerometer runs at 12 Hz, its lowest rate (`sampling_frequency_available` 12–1600); a one-shot reading of the three axes waits for fresh samples: five readings took 3.83 s on the tablet (0.77 s each). Xochitl itself listens to the chip's orientation interrupt (`lis2dw12_orientation`, `in_rot0_change_either_en` = 1) and holds its event descriptor, which the kernel gives to one reader at a time. | While Auto-rotate runs, Inkie raises the rate to 100 Hz (`device::SamplingBoost`, only a listed value, read back after writing) and the reader thread puts the original rate back when reading stops or Inkie ends; readings every 200 ms. The user approved this runtime setting once measured. | [auto] `status-screen-tests`: raised only when listed, restored, left alone when not offered, restored by the reader thread when paused (also under ThreadSanitizer). Device check 44 (`ui:orientation-read-ms`) |
+| D24 | A tool change shows late, once 10 s late | A tool change saved the tool setting and its toolbar repaint waited until saving was durable; each save rewrites the book's feature state (about 0.5 s on the tablet, `styled:batch-write-us`), and a tap at 18:16 waited behind ten queued saves (10.2 s). | Rail taps, pen-palette commands and closing the palette present at once (`change_.preview`, as strip commands do); the setting still saves in order. | [inspect]; device check 44 |
+
+Also seen, not changed here: a new Inkie request takes about 11 s on the tablet before the service has it
+(`TOM_HELPER_TIMING stage=created`); the service then reads the handwriting in about 3.7 s. While a reply's picture is
+pending, a new helper process starts every 1–2 s, and each shell tick then takes about 36 ms.
+
+### Turning ready ahead (user request, 2026-10-20)
+
+The user: turning must be near instant, as in Xochitl. A turn reopened the book: staging an EPUB's landscape layout,
+rendering the turned page in a new page-server process (about 2 s), then showing it.
+
+| # | Issue | Cause | Change | Verified |
+|---|---|---|---|---|
+| D25 | A turn shows the page seconds after the tilt is noticed | All of the turned page's work started at the turn | With Auto-rotate on, the page as the next turn would show it is prepared in the background once reading rests on a page for 3 s and nothing else is under way; the turn uses it when it matches (book, layout, page, direction) and otherwise works as before (docs/LANDSCAPE.md). Predicted direction: the last landscape direction used, or upright when turned. | [auto] `turn_uses_the_page_prepared_ahead_pdf` / `_epub`: the turn and the turn back each use the page prepared ahead. Device check 45 |
+
+What remains at a turn: closing and reopening the book's reader and ink (about 0.3–0.5 s on the tablet) and the full-page
+refresh.
+
+### The library and Settings turn (user request, 2026-10-20)
+
+| # | Change | Verified |
+|---|---|---|
+| D26 | With Auto-rotate on, the library, its drawer and Settings turn with the tablet, laid out for the upright landscape frame (four cover columns, two rows; the settings pane to the right edge). Search, Notes, Inkie, pairing, Wi-Fi, time zone, passcode and the file menu stay upright for now and say so. | [auto] `library_turns_with_the_tablet` (laid out turned, search refused, a book opens from it and leaving keeps it turned, turns back); `ib-targets.txt` gains only the landscape previews; all Settings pages measured to fit in 1620 (the longest, Inkie with five notes, ends at y 1588). Device check 46 |
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -401,6 +493,13 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 37 | Turn an EPUB, read on, then close it and reopen it upright | The book reopens where you stopped reading | — |
 | 38 | Write black and red ink; erase part of each with the Marker's eraser end, then with the toolbar eraser; erase a long scribble | Ink disappears under the eraser as it moves and nothing is left unerased (D15 reverted; residue colour compared with stock) | `ui:erase-live-removals`, `ui:erase-lift-cleanup`, `ui:removal-content-cleanup` |
 | 39 | Turn Auto-rotate on in quick settings; tap the toolbar, menus and page turns; then turn the tablet | Taps respond at once, as with Auto-rotate off; the page turns about 2 s after the tilt settles | `ui:orientation-read-ms`, no `reader:slow-tick-us` near 750 000 |
+| 40 | Auto-rotate on: open the EPUB that looped (Psycho-Cybernetics) and turn the tablet; then a PDF with highlights | The EPUB turns to landscape; a book that cannot turn stays upright with one notice and no repeated refreshes; the PDF says why it stays upright | `ui:turn`, `ui:turned`, `ui:turn-refused` at most once, `ui:turn-blocked` |
+| 41 | (Test build) Highlight a passage with snap-to-text and erase it with the eraser end; erase black and red handwriting; wait 2 s each time | The yellow or grey left along the eraser's path clears about a second after the erase; note whether the area or the whole screen flashes | `ui:ghost-clear` 1, `REFRESH_GHOST_CLEAR`, `DIRECT_GHOST_CLEAR available=1` |
+| 42 | (After the Companion is deployed) Ask Inkie a handwritten question; time Send to the answer's first words; start writing in an empty Inkie sheet | The answer starts clearly sooner than the 17–20 s before; the hint disappears as soon as the pen touches | `tom:read-answer-start` → `tom:ocr-end`, `TOM_HELPER_TIMING` |
+| 43 | Auto-rotate on: open an EPUB and turn the tablet, then turn back, twice | The first turn is a few seconds quicker; turning back and the second round trip are quicker still | `EPUB_STAGE_TIMING` (annotations reused=1 on the second round), `ui:turn` → `ui:turned` |
+| 44 | Auto-rotate on: turn the tablet with a PDF open; switch pens, colours and the eraser from the toolbar and the palette while writing | The turn starts within about half a second of the tilt; the toolbar shows each new tool at once | `ui:orientation-read-ms` (well under 100), `ui:turn` |
+| 45 | Auto-rotate on: read a page for a few seconds, then turn the tablet anticlockwise; read a few seconds, turn back; repeat with an EPUB | The page shows turned within about a second of the tilt, and back as quickly | `ui:turn-ready-ahead`, `TURN_AHEAD_READY` |
+| 46 | Auto-rotate on, in the library: turn the tablet; open the drawer, Settings and each settings page; page through My files; open a book; turn back upright | The library and Settings turn at once and lay out across the screen; taps land where drawn; search and Notes say to turn upright | `ui:turn-library`, `ui:turn-portrait-only` |
 
 | 40 | In landscape: open Document notes and Ask Inkie from the document menu, and Layers and Inkie from the toolbar | Each opens upright at the foot of the screen (the tall ones fill its height) with the page beside it; its controls act where drawn; a tap on the page beside it closes it | — |
 | 41 | In landscape: write a note, expand it, write more, type a title with the keyboard; tap Done; turn upright and reopen the note | The ink is where it was written on the note's paper, in both orientations; nothing moves | — |

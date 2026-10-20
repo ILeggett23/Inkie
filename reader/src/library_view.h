@@ -17,7 +17,9 @@ namespace ux {
 class LibraryView {
 public:
  using Section=ib::library::Section;
- enum class Action {None,Changed,Open,Exit,Tom,Shared,Import,NewNotebook,Effects,OpenNote,NotesChanged,Favorite,Wifi,NoteFavorite,SleepCover,SleepIdle,ToolHandle,LeftHanded,ReadingProgress,SnapHighlights,TomStyle,TomHand,TomReveal,HighContrast,ReduceMotion,PlainText,PasscodeSet,PasscodeOff,TimeZone,TomMemoryForget /* index: newest first */,TomMemoryClear,SandMode};
+ enum class Action {None,Changed,Open,Exit,Tom,Shared,Import,NewNotebook,Effects,OpenNote,NotesChanged,Favorite,Wifi,NoteFavorite,SleepCover,SleepIdle,ToolHandle,LeftHanded,ReadingProgress,SnapHighlights,TomStyle,TomHand,TomReveal,HighContrast,ReduceMotion,PlainText,PasscodeSet,PasscodeOff,TimeZone,TomMemoryForget /* index: newest first */,TomMemoryClear,PortraitOnly /* turned: a surface without a landscape layout yet */,SandMode};
+ // Turned: paint() takes the upright 2160x1620 frame and taps come in its coordinates; paging follows its capacity.
+ void setLandscape(bool on){if(landscape_==on)return;landscape_=on;offset_=0;rebuild();}bool landscape()const noexcept{return landscape_;}
  struct Hit {Action action{Action::None};QString id;int index{-1};int note{-1};};
  // Library-wide notes (concept #7) supplied by the caller for the Notes section.
  struct NoteEntry {QString document,noteId,title,excerpt,body,source;QJsonObject anchor;qint64 created{};int page{-1};unsigned color{4};bool favorite{},linked{},handwriting{},tom{},unresolved{};};
@@ -59,6 +61,6 @@ private:
  unsigned sandMode_{};bool passcode_{},highContrast_{},reduceMotion_{},plainText_{},tomTyped_{},tomReveal_{true};int companion_{-1},tomOnline_{-1};unsigned tomHand_{1};std::vector<std::string> tomMemory_;bool memoryArmed_{};
  ib::settings::Page settingsPage_{ib::settings::Page::Reading};device::Battery device_{};std::optional<bool> wifiLink_;device::Storage storage_{};std::string firmware_,clock_,clockZone_,timeZone_;
  using Cover=covers::Image;std::function<std::shared_ptr<const Cover>(const QString&,const QString&)> coverSource_;QHash<QString,std::shared_ptr<const Cover>> covers_;
- int capacity()const;void rebuild();std::shared_ptr<const Cover> cover(const std::filesystem::path&,const QString&);
+ bool landscape_{}; /* laid out for the turned 2160x1620 frame (docs/LANDSCAPE.md) */int capacity()const;void rebuild();std::shared_ptr<const Cover> cover(const std::filesystem::path&,const QString&);
 };
 }

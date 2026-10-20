@@ -93,7 +93,8 @@ The page, ink, styled ink and semantic text stay physical. The chrome and its ta
 - `device::readAccel` reads the raw axes and applies the mount matrix.
 - `device::OrientationWatch` classifies portrait, clockwise, anticlockwise or flat:
   - a 30° margin, so a tablet at an angle keeps its orientation;
-  - the reading must hold for 3 polls at 300 ms;
+  - the reading must hold for 2 readings, one every 200 ms; while Auto-rotate runs the sensor samples at 100 Hz
+    instead of its 12 Hz default (restored afterwards), so a reading takes a fraction of the 0.77 s it took at 12 Hz;
   - flat or upside down keeps the last orientation.
 - The first device run journals the raw readings (`ui:orientation`) to confirm the axis signs.
 - Readings come from their own thread (`device::AccelReader`). One reading takes about 0.75 s on the tablet; read on the
@@ -114,9 +115,30 @@ reader's frame, painted upright, and hit on the panel:
   stages the book's own layout (the same id).
 - **Nothing is activated.** Leaving a turned EPUB turns it upright first, so the book's own layout keeps the position.
 - **Ink** stays on the layout it was written on, as with any layout change.
+- **A refused turn** (the layout cannot be made) is not retried for that book until the tablet is held another way;
+  a page pinned upright by older ink or highlights says so once (D17–D19).
 - **Rendering:** turned pages use `pdfview::fitTurned` (`turn_fit.h`, shared with the PDF planner and the loader: exact
   float coefficients) and live in `<document>/turn-<o>/epub-views/<id>/page-N`. The EPUB store's reclaim and strict
   inspection cover that tree.
+
+**Turning ready ahead (2026-10-20).** A turn used to stage the layout (EPUB), render the turned page in a page-server
+process and only then show it: about 12 s on the tablet. With Auto-rotate on, once reading rests on a page for 3 s with
+nothing else under way (no pen, nothing saving or pending, no sheet, menu or palette), Inkie prepares that page as the
+next turn would show it, in the background: the landscape layout staged and the page rendered for the last landscape
+direction used (anticlockwise at first), or the upright page when turned. The turn's opener waits for a job still running
+and uses its result when it is for the same book, layout, page and direction (`ui:turn-ready-ahead`); otherwise it
+stages and renders as before. Page requests share the page server's lock with reading; a job is never stopped mid-request.
+`TURN_AHEAD_READY` / `TURN_AHEAD_FAILED` journal each job.
+
+**The library and Settings turn (2026-10-20).** With Auto-rotate on, the library (My files, Favorites, Recents,
+Trash), its drawer and Settings turn with the tablet: they are laid out for an upright 2160x1620 frame
+(`ib::library::geometry`, `ib::settings::geometry`: four cover columns and two rows, the pill and pager at the foot, the
+settings pane to the right edge), painted there and put on the panel turned in one complete refresh; nothing has to be
+prepared, so the turn is immediate. Taps are brought upright before the library's targets are hit. Portrait previews and
+targets are unchanged (`ib-targets.txt` only gains the landscape surfaces). Still upright only, with "Turn the tablet
+upright for this": search (its keyboard), the Notes section, Inkie, pairing (Shared), Wi-Fi, the time zone list, passcode
+setting and the file menu; while one is open the library does not turn. A book opened from the turned library opens
+upright and then turns as before; leaving a turned PDF returns to the turned library directly.
 
 **Still portrait (a notice), with why:**
 - **Notes and Inkie sheets** were portrait here; PR 3 turns them (below).
