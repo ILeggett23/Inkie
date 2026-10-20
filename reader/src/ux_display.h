@@ -36,6 +36,10 @@ class Display final:public spike::SessionDisplay,public spike::OperationSink {
  // ghost trails on the colour panel, so the live feedback is the erased band itself.)
  static constexpr int EraserRing=22;
  bool pageTurnPending_{};std::uint64_t installedVersion_{};RefreshPlan uiCleanup_;RefreshController refresh_;std::array<std::uint32_t,1620*64> sceneRows_;bool penContact_{},erasing_{},eraseSubmission_{};int ringX_{-1},ringY_{-1};spike::Rect eraseArea_{},cleanup_{},liftCleanup_{},strokeArea_{};RefreshPlan inkPlan_,removal_;bool colorStroke_{};
+ // Keep the removed material through both the immediate lift cleanup and the
+ // final saved/rendered erase result. Paying a grid cell at lift is not a panel
+ // completion fence and must not downgrade the later cleanup to white/Mono.
+ spike::Rect erasedBounds_{};int erasedClass_{-1};spike::Ns eraseLiftAt_{};
  // What the Gallery 3 panel still holds. A fast (pen-mode) update, or one whose class came only from its new pixels,
  // leaves the pigment of what it replaced: colour ink erased to white, a coloured sheet closed over a page. A later
  // quality update of that area must drive the richest class the area showed, or the residue stays until a complete
@@ -49,7 +53,9 @@ class Display final:public spike::SessionDisplay,public spike::OperationSink {
  void paid(spike::Rect r)noexcept{cells(r,[&](std::int8_t& c,spike::Rect cell){if(r.x0<=cell.x0&&r.y0<=cell.y0&&r.x1>=cell.x1&&r.y1>=cell.y1)c=-1;});}
  // The class a quality update of r must keep: what r shows now (read before compose) or still owes. cleanRemoval()
  // takes the larger of this and the new pixels' class, so a removal is never driven with a poorer waveform class.
- int prior(spike::Rect r)noexcept{return std::max(owedIn(r),vendor_.removalContent(r));}
+ int prior(spike::Rect r)noexcept{int content=std::max(owedIn(r),vendor_.removalContent(r));
+  if(erasedClass_>=0&&std::max(r.x0,erasedBounds_.x0)<std::min(r.x1,erasedBounds_.x1)&&std::max(r.y0,erasedBounds_.y0)<std::min(r.y1,erasedBounds_.y1))content=std::max(content,erasedClass_);
+  return content;}
  static spike::Rect around(int x,int y,int r)noexcept{return {std::max(0,x-r-3),std::max(0,y-r-3),std::min(1620,x+r+4),std::min(2160,y+r+4)};}
  static void grow(spike::Rect& a,spike::Rect b)noexcept{if(b.empty())return;if(a.empty())a=b;else a.include(b);}
  static void join(RefreshPlan& p,spike::Rect r)noexcept{if(r.empty()||p.add(r))return;spike::Rect joined=r;for(unsigned n=0;n<p.count;++n)joined.include(p.regions[n]);p={};(void)p.add(joined);}
@@ -72,7 +78,7 @@ class Display final:public spike::SessionDisplay,public spike::OperationSink {
   // local quality 2/16, 5/16; red appears after it). Inkie gave one only to grid cells that passed the 96-update counter,
   // so a stroke across two cells came out half in fast-mode colour. Each stroke's live damage is kept (strokeArea_) and
   // queued once the pen is up and ink is settled. Black ink keeps no extra update, as in stock's black-dot pilot.
-  if(!eraseSubmission_){if(p.phase==spike::Phase::Down){join(inkPlan_,strokeArea_);strokeArea_={};colorStroke_=shell_.colorInk();}return;}if(p.phase==spike::Phase::Down){erasing_=true;eraseArea_={};}ringX_=p.x;ringY_=p.y;grow(eraseArea_,around(p.x,p.y,int(std::ceil((EraserRing+10)*shell_.inputScale()))));if(p.phase==spike::Phase::Up){erasing_=false;grow(liftCleanup_,eraseArea_);eraseArea_={};}}
+  if(!eraseSubmission_){if(p.phase==spike::Phase::Down){join(inkPlan_,strokeArea_);strokeArea_={};colorStroke_=shell_.colorInk();}return;}if(p.phase==spike::Phase::Down){erasing_=true;eraseArea_={};}ringX_=p.x;ringY_=p.y;grow(eraseArea_,shell_.inputArea(around(p.x,p.y,int(std::ceil((EraserRing+10)*shell_.inputScale()))))); /* p is in the pen's frame (inputFrame) */if(p.phase==spike::Phase::Up){erasing_=false;grow(liftCleanup_,eraseArea_);eraseArea_={};if(!eraseLiftAt_)eraseLiftAt_=spike::monotonic();}}
  void detach(const char* why)noexcept{detached_=true;std::fprintf(stderr,"INK_STROKE_TAIL_UNSAVED reason=%s splits=%llu\n",why,(unsigned long long)splits_);}
  bool appendSplit(const spike::Point& p)noexcept{
   penContact_=p.phase!=spike::Phase::Up;track(p);
@@ -157,8 +163,10 @@ public:
   if(sessionPower_&&!sessionPower_->tick(spike::monotonic(),l.valid()))powerEnd_=true;
   return startupWindow("reader:display-initialize-us",[&]{return vendor_.initialize(l);})&&touch_.open(l.valid());}
  spike::Surface surface()const noexcept override{return shell_.ink();}
+ // A turned Notes or Inkie sheet (docs/LANDSCAPE.md, PR 3): pen points arrive in its sheet pixels (Shell::inputFrame).
+ void inputFrame(spike::Transform& t)noexcept override{shell_.inputFrame(t);}
  bool initialPage()noexcept override{try{return startupWindow("reader:initial-page-us",[&]{compose({0,0,1620,2160});const bool accepted=vendor_.initialPreparedPage(vendor_.surface().pixels);if(accepted)refresh_.accepted({0,0,1620,2160},RefreshIntent::PageTransition);return accepted;});}catch(...){return false;}}
- spike::Submit submit(spike::Rect r)noexcept override{try{r=shell_.presentationDamage(r);const int shown=eraseSubmission_?vendor_.removalContent(r):-1;if(eraseSubmission_&&!vendor_.beginErase(r))return spike::Submit::Failed;compose(r);auto result=live(r,"reader:submit-failed",RefreshIntent::FastInk,false,eraseSubmission_);if(result==spike::Submit::Accepted){if(eraseSubmission_){grow(liftCleanup_,r);owe(r,std::max(0,shown));}else if(colorStroke_)grow(strokeArea_,r);shell_.presentationCovered(r);}return result;}catch(...){return spike::Submit::Failed;}}
+ spike::Submit submit(spike::Rect r)noexcept override{try{r=shell_.presentationDamage(r);const int shown=eraseSubmission_?prior(r):-1;if(eraseSubmission_&&!vendor_.beginErase(r))return spike::Submit::Failed;compose(r);auto result=live(r,"reader:submit-failed",RefreshIntent::FastInk,false,eraseSubmission_);if(result==spike::Submit::Accepted){if(eraseSubmission_){grow(liftCleanup_,r);grow(erasedBounds_,r);erasedClass_=std::max(erasedClass_,std::max(0,shown));owe(r,std::max(0,shown));}else if(colorStroke_)grow(strokeArea_,r);shell_.presentationCovered(r);}return result;}catch(...){return spike::Submit::Failed;}}
  void pump()noexcept override{pumped_=true;cadence_.tick("reader:loop");vendor_.pump();if(foreground_)foreground_->publish(shell_.failed());logWorkers();if(sessionPower_&&!sessionPower_->tick(spike::monotonic(),lease_&&lease_->valid()))powerEnd_=true;sleepTick(false);}void shutdown()noexcept override{shell_.beginQuiesce();vendor_.shutdown();lease_=nullptr;}
  bool diagnosticSegment()const noexcept override{return false;}spike::OperationSink* operationSink()noexcept override{return this;}
  bool reserve()noexcept override{if(asleep()||restoreSleep_||pageTurnPending_)return false;if(sessionPower_)sessionPower_->activity(spike::monotonic());touch_.block();return shell_.reserve();}
@@ -192,10 +200,11 @@ public:
    change.preview=true;
    refresh_.sceneComposed();recovery::v2::e2::mark("reader:scene-regions",count);
   }
-  if(change.full){if(!erasing_){cleanup_={};liftCleanup_={};removal_={};owed_.fill(-1);}strokeArea_={};inkPlan_={};uiCleanup_={};}else{if(!change.cleanup.empty()){owe(change.cleanup,vendor_.removalContent(change.cleanup));grow(cleanup_,change.cleanup);}for(unsigned i=0;i<change.uiCleanupCount;++i)owe(change.uiCleanup[i],vendor_.removalContent(change.uiCleanup[i]));for(unsigned i=0;i<change.uiCleanupCount;++i)if(!uiCleanup_.add(change.uiCleanup[i])){spike::Rect joined=change.uiCleanup[i];for(unsigned n=0;n<uiCleanup_.count;++n)joined.include(uiCleanup_.regions[n]);uiCleanup_={};(void)uiCleanup_.add(joined);}}
+  if(change.full){if(!erasing_){cleanup_={};liftCleanup_={};removal_={};owed_.fill(-1);erasedBounds_={};erasedClass_=-1;eraseLiftAt_=0;}strokeArea_={};inkPlan_={};uiCleanup_={};}else{if(!change.cleanup.empty()){owe(change.cleanup,vendor_.removalContent(change.cleanup));grow(cleanup_,change.cleanup);}for(unsigned i=0;i<change.uiCleanupCount;++i)owe(change.uiCleanup[i],vendor_.removalContent(change.uiCleanup[i]));for(unsigned i=0;i<change.uiCleanupCount;++i)if(!uiCleanup_.add(change.uiCleanup[i])){spike::Rect joined=change.uiCleanup[i];for(unsigned n=0;n<uiCleanup_.count;++n)joined.include(uiCleanup_.regions[n]);uiCleanup_={};(void)uiCleanup_.add(joined);}}
   // Stock erase cleanup (Xochitl three-dot erase pilot, docs/refresh-reverse-engineering/STOCK_REFRESH_TRACE.md): in the
-  // same millisecond the eraser lifts, one regional quality update covers the erased stroke's bounds (380x460, 372x444),
-  // with no dark fill and no wait. Inkie used to wait until the stroke was saved (0.5-2 s). The removed class is kept
+  // first safe boundary after lift, one regional quality update covers the erased damage. Stock queue
+  // observations on 2026-10-20 were around 23–37 ms after input lift; these are lossy observations, not a timer.
+  // No dark fill, fixed padding inferred from stock, or new waiting interval is introduced. Inkie used to wait until the stroke was saved (0.5-2 s). The removed class is kept
   // (prior); a refused update joins the ordinary removal cleanup and is retried with it. Strokes removed beyond the
   // eraser's path arrive with the saved result and keep the existing removal cleanup.
   RefreshPlan removalNow;if(!penContact_&&!erasing_&&!liftCleanup_.empty()&&refresh_.qualityAllowed({},spike::monotonic())){recovery::v2::e2::mark("ui:erase-lift-cleanup",unsigned(std::min<std::uint64_t>(RefreshPlan::area(liftCleanup_),UINT32_MAX)));join(removalNow,liftCleanup_);
@@ -229,9 +238,13 @@ public:
   // Removals (erase results, undo/redo, snap, highlight/layer changes) are cleaned in Content mode, as stock cleans
   // erased ink (cleanContent); UI debt stays in UI mode below.
   if(removalNow.count){const auto now=removalNow;for(unsigned i=0;i<now.count;++i){const auto rect=now.regions[i];const bool ready=vendor_.surface().valid();const int before=ready?prior(rect):-1;if(ready)compose(rect);
-   if(ready&&vendor_.cleanContent(rect,std::max(0,before))==spike::Submit::Accepted){paid(rect);shell_.presentationCovered(rect);refresh_.accepted(rect,RefreshIntent::Cleanup);recovery::v2::e2::mark("ui:removal-content-cleanup",unsigned(std::min<std::uint64_t>(RefreshPlan::area(rect),UINT32_MAX)));}
+   if(ready&&vendor_.cleanContent(rect,std::max(0,before))==spike::Submit::Accepted){
+    if(eraseLiftAt_&&std::max(rect.x0,erasedBounds_.x0)<std::min(rect.x1,erasedBounds_.x1)&&std::max(rect.y0,erasedBounds_.y0)<std::min(rect.y1,erasedBounds_.y1)){recovery::v2::e2::mark("ui:erase-lift-to-submit-us",(spike::monotonic()-eraseLiftAt_)/1000);eraseLiftAt_=0;}paid(rect);shell_.presentationCovered(rect);refresh_.accepted(rect,RefreshIntent::Cleanup);recovery::v2::e2::mark("ui:removal-content-cleanup",unsigned(std::min<std::uint64_t>(RefreshPlan::area(rect),UINT32_MAX)));}
    else{for(unsigned n=i;n<now.count;++n)join(removal_,now.regions[n]);refresh_.failed(spike::monotonic());break;}}}
 bool presentationDone=uiCleanup_.count==0;if(quality.count){uiCleanup_={};bool accepted=true;for(unsigned i=0;i<quality.count;++i){const auto rect=quality.regions[i];const bool sourceReady=vendor_.surface().valid();const int before=sourceReady?prior(rect):-1;if(sourceReady)compose(rect);if(sourceReady&&vendor_.cleanRemoval(rect,std::max(0,before))==spike::Submit::Accepted){paid(rect);shell_.presentationCovered(rect);refresh_.accepted(rect,RefreshIntent::Cleanup);recovery::v2::e2::mark("ui:retirement-quality-submit",RefreshPlan::area(rect));}else{accepted=presentationDone=false;for(unsigned n=i;n<quality.count;++n)(void)uiCleanup_.add(quality.regions[n]);refresh_.failed(spike::monotonic());break;}}if(accepted){uiCleanup_={};presentationDone=true;}}if(presentationDone&&refresh_.scene(conditions)==SceneRefresh::None){shell_.uiPresentationAccepted();pageTurnPending_=false;}
+  if(settled&&presentationDone&&removal_.count==0&&liftCleanup_.empty()&&cleanup_.empty()){
+   erasedBounds_={};erasedClass_=-1;eraseLiftAt_=0;
+  }
   return true;
  }catch(...){recovery::v2::e2::mark("reader:end-exception");shell_.fail(24);return false;}}
 };

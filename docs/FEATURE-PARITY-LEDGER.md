@@ -144,3 +144,7 @@ Reasons and proposals: `docs/LAYOUT-ARCHITECTURE.md` §7 and PR #2.
 
 **Result: no capability lost.** One move (highlight detail onto the shared lower-sheet geometry), one new preference row,
 and restyles that keep every target rect.
+
+## Intentional reading-scope change — 2026-10-20
+
+The owner retired standalone notebook creation. Its library control, menu and PDF-generation route are removed intentionally. Existing notebook PDFs, book-linked notes, annotations and imported books remain supported; assistant replies remain in History and can be saved to an open document. See [READER-ERASING-STANDARD.md](READER-ERASING-STANDARD.md). This removal is a requested product-scope change, not accidental feature loss.

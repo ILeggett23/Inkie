@@ -38,10 +38,12 @@ void wordmark(Canvas& c,Rect box,float size){
  const float x=box.x0+(width(box)-w)/2,b=box.y0+(height(box)+text::capHeight(f))/2.f;text::draw(c,f,x,b,word,t::InkPrimary);
  const Font drawn=text::resolved(f);const Stem st=stemOf(f);const float r=std::max(float(t::EdgeBand)*0.6f,drawn.size*0.075f);
  inkDrop(c,x+st.x,b+st.top-r*1.7f,r,t::PopMagenta);}
-void contextSheet(Canvas& c,int top,std::uint32_t accent){
+void contextSheet(Canvas& c,int top,std::uint32_t accent,bool turned){
  // Square, full-width paper with its colour along the top edge, closed by an ink rule (as an index card).
  c.fill({0,top,t::ScreenWidth,t::ScreenHeight},t::Surface);c.fill({0,top,t::ScreenWidth,top+t::EdgeBand},accent);
- c.fill({0,top+t::EdgeBand,t::ScreenWidth,top+t::EdgeBand+t::Hairline},t::InkPrimary);}
+ c.fill({0,top+t::EdgeBand,t::ScreenWidth,top+t::EdgeBand+t::Hairline},t::InkPrimary);
+ // Turned, the card stands on the page between two strips of it: its sides (and its colour band's ends) meet ink.
+ if(turned){c.fill({0,top,t::Hairline,t::ScreenHeight},t::InkPrimary);c.fill({t::ScreenWidth-t::Hairline,top,t::ScreenWidth,t::ScreenHeight},t::InkPrimary);}}
 void sheetTitle(Canvas& c,Targets& tg,int top,int h,std::string_view title,std::string_view subtitle,int subtitleId,int rightEdge){
  const Font tf{Face::TextSemibold,theme::Subhead.size},sf{Face::Text,theme::Meta.size};text::draw(c,tf,70.f,float(top+62),title,t::InkPrimary);
  if(!subtitle.empty()){Rect s{70,top+76,rightEdge-t::S3,top+h-16};text::centeredLine(c,sf,s,text::fit(sf,subtitle,float(width(s))),t::InkSecondary,Align::Left);if(subtitleId>=0)tg.add(subtitleId,hitArea(s));} /* a 44 px line, a 96 px target */

@@ -95,16 +95,13 @@ void base(Canvas& c,Targets& tg,const Model& m){
   iconButton(c,tg,Prev,{p.x0,p.y0,p.x0+t::MinTarget,p.y1},Icon::ChevronLeft,{false,m.page<=0});iconButton(c,tg,Next,{p.x1-t::MinTarget,p.y0,p.x1,p.y1},Icon::ChevronRight,{false,m.page+1>=m.pages});}
 }
 void overlays(Canvas& c,Targets& tg,const Model& m){
- // Bottom pill: search | create, as on the native My Files (not on Settings, mockup 25).
- if(m.section!=Section::Settings){Rect p=PillRect;int mid=(p.x0+p.x1)/2;Rect sr{p.x0,p.y0,mid,p.y1},cr{mid,p.y0,p.x1,p.y1};
-  // One outlined control in two halves: search (an ink half while searching) and create.
-  const Rect v=inset(p,8);c.fillRound(v,t::RadiusMedium,t::Surface);
-  if(m.searching){c.fillRound({v.x0,v.y0,mid+int(t::RadiusMedium),v.y1},t::RadiusMedium,t::ToolSelected);c.fill({mid,v.y0,mid+int(t::RadiusMedium)+1,v.y1},t::Surface);}
-  c.strokeRound(v,t::RadiusMedium,float(t::Outline),t::InkPrimary);c.fill({mid-1,v.y0,mid+1,v.y1},t::InkPrimary);
-  icon(c,Icon::Search,centered(sr,40,40),m.searching?t::OnSelected:t::InkPrimary);icon(c,Icon::Plus,centered(cr,40,40),t::InkPrimary);tg.add(Search,sr);tg.add(Create,cr);}
- if(m.create){Rect r=createMenuRect(m.createItems.size());popover(c,r);text::draw(c,{Face::TextSemibold,theme::Body.size},float(r.x0+36),float(r.y0+36+32),"Create new",t::InkPrimary);int y=r.y0+36+56;
-  for(const auto& it:m.createItems){Rect row{r.x0,y,r.x1,y+120};icon(c,it.icon,{row.x0+34,row.y0+38,row.x0+78,row.y0+82},t::InkPrimary);
-   text::draw(c,Label,float(row.x0+36+40+28),float(row.y0+54),it.label,t::InkPrimary);if(!it.detail.empty())text::draw(c,{Face::Text,theme::Meta.size},float(row.x0+36+40+28),float(row.y0+94),it.detail,t::InkSecondary);tg.add(it.id,row);y+=120;}}
+ // Reading/search remains available; standalone notebook creation has no control or target.
+ if(m.section!=Section::Settings){const Rect p=PillRect,v=inset(p,8);
+  c.fillRound(v,t::RadiusMedium,m.searching?t::ToolSelected:t::Surface);
+  c.strokeRound(v,t::RadiusMedium,float(t::Outline),t::InkPrimary);
+  icon(c,Icon::Search,centered(p,40,40),m.searching?t::OnSelected:t::InkPrimary);tg.add(Search,p);}
+
+
  if(m.drawer){Rect r=DrawerRect;c.fill(r,t::Paper);c.vline(r.x1-t::Outline,r.y0,r.y1,t::InkPrimary,t::Outline);
   iconButton(c,tg,Menu,{r.x0+40,38,r.x0+152,180},Icon::Menu);text::centeredLine(c,{Face::Text,theme::Label.size},{r.x0+40+112+t::S1,38,r.x1-40,180},"Menu",t::InkPrimary,Align::Left);
   // Each place has an index tab in its colour at the drawer's edge, as a divided notebook; the current place is an ink

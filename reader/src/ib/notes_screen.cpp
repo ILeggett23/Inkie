@@ -11,9 +11,9 @@ const Font Caption{Face::Text,float(t::Caption.size)};
 constexpr std::array<std::string_view,5> Filters{"All","Linked","Pages","Favorites","Inkie"};
 void status(Canvas& c,std::string_view s,bool warn=false){if(!s.empty())text::draw(c,Caption,70.f,float(t::ScreenHeight-26),text::fit(Caption,s,1480),warn?t::InkPrimary:t::InkTertiary);}
 }
-void hub(Canvas& c,Targets& tg,const Hub& m){const int o=m.idOffset;
+void hub(Canvas& c,Targets& tg,const Hub& m){const int o=m.idOffset;const int top=m.turned?layout::TurnedSheetTop:120;
  int x0=m.embedded?library::ContentLeft:70,x1=m.embedded?library::ContentRight:t::ScreenWidth-70;int y;
- if(!m.embedded){contextSheet(c,120,t::SectionColor[1]);y=120; /* the native square sheet, as Note and Tom */
+ if(!m.embedded){contextSheet(c,top,t::SectionColor[1],m.turned);y=top; /* the native square sheet, as Note and Tom */
   text::draw(c,type::ScriptHeading,float(x0),float(y+72),m.heading,t::InkPrimary);
   if(!m.subtitle.empty())text::draw(c,{Face::TextItalic,float(t::Meta.size)},float(x0+text::measure(type::ScriptHeading,m.heading)+t::S3),float(y+70),text::fit({Face::TextItalic,float(t::Meta.size)},m.subtitle,700),t::InkSecondary);
   iconButton(c,tg,HubClose+o,{x1-t::MinTarget+t::S3,y+20,x1+t::S3,y+20+t::MinTarget},Icon::Close,{},36); /* where Note, Tom and Highlight have it */
@@ -25,7 +25,7 @@ void hub(Canvas& c,Targets& tg,const Hub& m){const int o=m.idOffset;
  chips(c,tg,FilterBase+o,{x0,y,x1,y+64},std::span(labels.data(),filters),m.favorites||unsigned(m.filter)<3?unsigned(m.filter):unsigned(m.filter)-1);y+=64+t::S4;
  if(m.entries.empty())text::draw(c,type::ScriptEmpty,float(x0),float(y+90),m.filter==Filter::All?"Notes you write while reading appear here.":"No notes in this view.",t::InkSecondary);
  const int rowH=250;
- for(std::size_t i=0;i<m.entries.size()&&i<std::size_t(HubPageSize);++i){const auto& e=m.entries[i];Rect r{x0,y+int(i)*rowH,x1,y+int(i+1)*rowH};
+ for(std::size_t i=0;i<m.entries.size()&&i<std::size_t(hubPageSize(m.turned&&!m.embedded));++i){const auto& e=m.entries[i];Rect r{x0,y+int(i)*rowH,x1,y+int(i+1)*rowH};
   Rect thumb{r.x0,r.y0+t::S4,r.x0+128,r.y1-t::S4};c.fillRound(thumb,t::RadiusMedium,t::Surface);c.strokeRound(thumb,t::RadiusMedium,float(t::Outline),t::InkPrimary);{const Rect tab{thumb.x0,thumb.y0+t::S3,thumb.x0+14,thumb.y1-t::S3};c.fill(tab,e.color);c.hairline(tab,t::InkPrimary,t::Outline);}
   if(!e.preview.empty())c.image(inset(thumb,10),e.preview.pixels,e.preview.width,e.preview.height,e.preview.stride);
   else icon(c,e.tom?Icon::Tom:e.handwriting?Icon::Handwrite:e.linked?Icon::Highlight:Icon::Notes,centered(thumb,48,48),t::InkSecondary);
@@ -40,11 +40,11 @@ void hub(Canvas& c,Targets& tg,const Hub& m){const int o=m.idOffset;
   iconButton(c,tg,HubPrev+o,{cx-220,py,cx-120,py+t::MinTarget},Icon::ChevronLeft,{false,m.page<=0});iconButton(c,tg,HubNext+o,{cx+120,py,cx+220,py+t::MinTarget},Icon::ChevronRight,{false,m.page+1>=m.pages});}
  if(!m.embedded)status(c,text::quiet(m.status));
 }
-Rect noteArea(bool expanded)noexcept{return expanded?NoteExpandedArea:NoteArea;}
+Rect noteArea(bool expanded,bool turned)noexcept{return expanded?(turned?TurnedNoteExpandedArea:NoteExpandedArea):NoteArea;}
 Rect notePicker(bool)noexcept{const int y1=t::ScreenHeight-NoteToolRow-t::S2;return {70,y1-ib::reader::PenPanelCompactHeight,70+ib::reader::PenPanelWidth,y1};}
 void note(Canvas& c,Targets& tg,const Note& m){
- namespace R=ib::reader;const int top=m.expanded?NoteExpandedTop:NoteSheetTop;const Rect area=noteArea(m.expanded);
- contextSheet(c,top,t::NoteAccent);
+ namespace R=ib::reader;const int top=layout::sheetTop(m.expanded?NoteExpandedTop:NoteSheetTop,m.turned);const Rect area=noteArea(m.expanded,m.turned);
+ contextSheet(c,top,t::NoteAccent,m.turned);
  // Header tools, right to left: close, delete, all notes, star, expand.
  const int hy=top+20;int right=1550+t::S3;
  iconButton(c,tg,NoteDone,{right-t::MinTarget,hy,right,hy+t::MinTarget},Icon::Close,{},36);right-=t::MinTarget;
@@ -83,7 +83,7 @@ void note(Canvas& c,Targets& tg,const Note& m){
 }
 void highlight(Canvas& c,Targets& tg,const HighlightDetail& m){
  // The same lower sheet as Note and Tom: square, one ink rule, close in the same place.
- const int top=layout::SheetTop,x0=layout::SheetMargin,x1=t::ScreenWidth-layout::SheetMargin;contextSheet(c,top,t::Ink[m.color%t::Ink.size()]);
+ const int top=layout::SheetTop,x0=layout::SheetMargin,x1=t::ScreenWidth-layout::SheetMargin;contextSheet(c,top,t::Ink[m.color%t::Ink.size()],m.turned);
  iconButton(c,tg,HlClose,{x1+t::S3-t::MinTarget,top+20,x1+t::S3,top+20+t::MinTarget},Icon::Close,{},36);
  sheetTitle(c,tg,top,layout::SheetHeader,"Highlight",{},-1,x1+t::S3-t::MinTarget);
  int y=quote(c,{x0,top+layout::SheetHeader,x1,0},m.source,m.excerpt,3)+t::S4;

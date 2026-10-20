@@ -58,5 +58,20 @@ int main(int argc,char** argv){try{
  const auto normal=tip(false),contrast=tip(true),normalAgain=tip(false),contrastAgain=tip(true);
  check(normal!=contrast,"high contrast darkens a disabled tip (cache keyed on the disabled ink)");
  check(normal==normalAgain&&contrast==contrastAgain,"cached tips repaint identically");
+ // Reference layout is spatial only; IDs continue selecting the same tool.
+ {const auto r=reader::penPanelRect();const auto ball=reader::penCell(0,r),fine=reader::penCell(1,r),high=reader::penCell(8,r),pencil=reader::penCell(2,r),mechanical=reader::penCell(3,r),nib=reader::penCell(5,r),marker=reader::penCell(6,r),brush=reader::penCell(4,r),shader=reader::penCell(7,r);
+  check(ball.y0==fine.y0&&fine.y0==high.y0&&ball.x0<fine.x0&&fine.x0<high.x0,"reference top row tool order");
+  check(pencil.y0==mechanical.y0&&mechanical.y0==nib.y0&&pencil.x0<mechanical.x0&&mechanical.x0<nib.x0,"reference middle row tool order");
+  check(marker.y0==brush.y0&&brush.y0==shader.y0&&marker.x0<brush.x0&&brush.x0<shader.x0,"reference lower row tool order");}
+ // Reference nibs remain monochrome; rail colour is a separate dot. Cached
+ // selected/disabled variants must not restore the retired slanted artwork.
+ for(unsigned i=0;i<unsigned(Instrument::Count);++i){
+  Image a(120,120),b(120,120);auto ca=a.canvas(),cb=b.canvas();
+  penGlyph(ca,Instrument(i),{20,20,100,100},t::Ink[0]);penGlyph(cb,Instrument(i),{20,20,100,100},t::Ink[4]);
+  check(a.px==b.px,"reference nib shape is independent of ink colour");
+ }
+ for(const auto& surface:surfaces())if(surface.name.starts_with("library-")){
+  const auto image=paint(surface);for(const auto& target:image.targets)check(target.id!=library::Create,"library surfaces have no standalone creation target");
+ }
  std::printf("IB_SURFACE_TESTS_PASS checks=%u surfaces=%u targets=%u\n",checks,surfacesSeen,targetsSeen);return 0;
 }catch(const std::exception& e){std::fprintf(stderr,"IB_SURFACE_TESTS_FAIL %s\n",e.what());return 1;}}

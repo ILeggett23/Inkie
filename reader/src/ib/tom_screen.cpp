@@ -38,15 +38,28 @@ HandProgress handProgress(const Model& m,float ink){HandProgress p;if(m.typed)re
  for(std::size_t i=0;i<lines.size();++i){const float li=lineInk(f,lines[i],unsigned(i)+1);if(ink>=p.total)p.line=int(i);p.total+=li;}return p;}
 Rect answerLineBox(const Model& m,unsigned line){const Rect a=answerArea(m);const int lh=lineHeight(m);if(line<m.answerScroll)return {};int row=int(line-m.answerScroll);if(row>=answerRows(m))return {};
  const int base=a.y0+56+row*lh;return {a.x0,base-lh+8,a.x1-t::MinTarget,std::min(a.y1,base+22)};}
-int sheetTop(const Model& m){return (m.inlineComposer||(m.expanded&&m.composing))&&!m.history?ExpandedSheetTop:SheetTop;}
+int sheetTop(const Model& m){return layout::sheetTop((m.inlineComposer||(m.expanded&&m.composing))&&!m.history?ExpandedSheetTop:SheetTop,m.turned);}
+namespace {
+// The header's tools, right to left: close, history, then expand or half and the pen while writing.
+bool writingTools(const Model& m){return !m.history&&m.composing&&!m.historyTurn;}
+int toolsLeft(const Model& m){return Right+t::S3-(writingTools(m)?4:2)*t::MinTarget;}
+}
+Rect zoomBadgeRect(const Model& m){if(!m.turned)return reader::ZoomBadgeRect;const Rect b=reader::ZoomBadgeRect;const int x1=toolsLeft(m)-t::S2,y0=sheetTop(m)+30;return {x1-width(b),y0,x1,y0+height(b)};}
 void paint(Canvas& c,Targets& tg,const Model& m){
  // Native lower sheet: the book stays in view above it; one ink rule, opaque paper.
- const int top=sheetTop(m);contextSheet(c,top,t::TomAccent);
+ const int top=sheetTop(m);contextSheet(c,top,t::TomAccent,m.turned);
  const Rect head{0,top,t::ScreenWidth,top+HeaderHeight};
  // Header tools, right to left: close, history, expand (while writing).
  int right=Right+t::S3;auto tool=[&](int id,Icon ic,bool on=false){iconButton(c,tg,id,{right-t::MinTarget,head.y0+20,right,head.y0+20+t::MinTarget},ic,{on},36);right-=t::MinTarget;};
- tool(Close,Icon::Close);tool(History,Icon::Clock,m.history);if(!m.history&&m.composing&&!m.historyTurn){if(!m.inlineComposer)tool(Expand,m.expanded?Icon::ChevronDown:Icon::ChevronUp);else tool(Half,m.lowerHalf?Icon::ChevronUp:Icon::ChevronDown);tool(InkTools,Icon::Handwrite,m.picker);}
- sheetTitle(c,tg,top,HeaderHeight,"Inkie",m.contextLine,m.hasSource?Source:-1,right);
+ tool(Close,Icon::Close);tool(History,Icon::Clock,m.history);if(writingTools(m)){if(!m.inlineComposer)tool(Expand,m.expanded?Icon::ChevronDown:Icon::ChevronUp);else tool(Half,m.lowerHalf?Icon::ChevronUp:Icon::ChevronDown);tool(InkTools,Icon::Handwrite,m.picker);}
+ // Turned, there is no page row above a tall sheet: the zoom badge joins the header and the subtitle ends before it.
+ if(m.turned&&m.zoomPercent>0){const Rect badge=zoomBadgeRect(m);reader::zoomBadge(c,tg,m.zoomPercent,badge);right=badge.x0;}
+ const Rect area=m.inlineComposer?WritingArea:m.expanded&&m.composing?ExpandedWritingArea:WritingArea;
+ // The one line between header and paper (the passage, or the question above an answer). A turned tall sheet starts
+ // where that line was: the question then becomes the header's subtitle (the passage is already named there).
+ const int lineBottom=(m.inlineComposer?680:area.y0)-8;const bool lineFits=lineBottom>head.y1;
+ const bool asked=!lineFits&&!m.history&&m.showAnswer&&!m.question.empty();
+ sheetTitle(c,tg,top,HeaderHeight,"Inkie",asked?"You asked: "+m.question:m.contextLine,m.hasSource&&!asked?Source:-1,right);
  int y=head.y1;
  if(m.history){
   // Saved conversations (left) and the questions of this conversation (right), four rows each.
@@ -66,9 +79,8 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   if(!m.status.empty())text::draw(c,Caption,float(Margin),float(t::ScreenHeight-26),text::fit(Caption,text::quiet(m.status),float(Right-Margin)),m.failed?t::InkPrimary:t::InkSecondary);
   return;
  }
- const Rect area=m.inlineComposer?WritingArea:m.expanded&&m.composing?ExpandedWritingArea:WritingArea;
  // One line between header and writing: the passage while writing; the recognized question above an answer.
- {const Rect quote{Margin,y,Right,(m.inlineComposer?680:area.y0)-8};
+ if(lineFits){const Rect quote{Margin,y,Right,lineBottom};
   if(m.showAnswer&&!m.question.empty()){const Font qf{Face::Text,theme::Meta.size};text::centeredLine(c,qf,quote,text::fit(qf,"You asked: "+m.question,float(width(quote))),t::InkSecondary,Align::Left);}
   else if(!m.excerpt.empty()){sheetQuote(c,quote,"\xE2\x80\x9C"+m.excerpt+"\xE2\x80\x9D",t::Ink[4]);if(m.hasSource)tg.add(Source,{quote.x0,std::min(quote.y0,quote.y1-t::MinTarget),quote.x1,quote.y1});}} /* the source target grows upward only, into the header line that leads to the same source, never into the writing area */
  if(m.showAnswer){

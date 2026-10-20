@@ -301,7 +301,7 @@ menus and the palette are portrait only for now (a notice). EPUB reflow is PR 2.
 pdf-viewport, prepare-document-view, touch-drag and the `pdf_turns_with_the_tablet_and_keeps_ink_written_turned`
 route. Device checks 29–33; the first run also confirms the accelerometer's axis signs (`ui:orientation`).
 
-### Device report follow-up 4: erasing leaves yellow (user report, 2026-10-19)
+### Device report follow-up 4: erasing leaves yellow (historical approach; reverted by PR13)
 
 The user: erasing black or coloured ink with the Marker's eraser end or the toolbar eraser leaves a yellow ghost, while
 Undo (two-finger double tap) removes the same ink completely.
@@ -329,6 +329,17 @@ Auto-rotate turned on, so it felt instant.
 
 Turning takes about as long as before (three readings, each about 0.75 s on the tablet, so about 2 s), but nothing
 waits for it.
+
+### Landscape, PR 3 (user request, 2026-10-19; docs/LANDSCAPE.md)
+
+Notes and Inkie open upright in landscape. Sheets keep composing in their own portrait pixels; `ib::layout::SheetMap`
+shows their lower 1620 rows at the foot of the turned screen, so the writing areas keep their size and stored ink never
+moves. The taller sheets (Inkie's answer sheet and tall composer, the expanded note, the Notes hub, Layers) start at the
+top of the landscape screen, and Inkie's zoom badge moves into its header. Compose, damage, coverage, taps, drags and
+gestures go through the same map. The pen's fast path writes in sheet pixels through an approved change to the protected
+input path: an optional turn and offset in `spike::Transform`, set through `SessionDisplay::inputFrame` whenever the
+session builds an Engine. [auto] sustained-session (`INPUT_FRAME_PASS`), ib-layout, ib-surface and ib-preview targets,
+and the `turned_note_sheet_…`/`turned_inkie_sheet_…` routes. Device checks 40–44.
 
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
@@ -391,6 +402,12 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 38 | Write black and red ink; erase part of each with the Marker's eraser end, then with the toolbar eraser; erase a long scribble | Ink disappears under the eraser as it moves and nothing is left unerased (D15 reverted; residue colour compared with stock) | `ui:erase-live-removals`, `ui:erase-lift-cleanup`, `ui:removal-content-cleanup` |
 | 39 | Turn Auto-rotate on in quick settings; tap the toolbar, menus and page turns; then turn the tablet | Taps respond at once, as with Auto-rotate off; the page turns about 2 s after the tilt settles | `ui:orientation-read-ms`, no `reader:slow-tick-us` near 750 000 |
 
+| 40 | In landscape: open Document notes and Ask Inkie from the document menu, and Layers and Inkie from the toolbar | Each opens upright at the foot of the screen (the tall ones fill its height) with the page beside it; its controls act where drawn; a tap on the page beside it closes it | — |
+| 41 | In landscape: write a note, expand it, write more, type a title with the keyboard; tap Done; turn upright and reopen the note | The ink is where it was written on the note's paper, in both orientations; nothing moves | — |
+| 42 | In landscape: write a question to Inkie and Send; read the answer; pinch the reply, pan it, tap the zoom badge | The answer sheet fills the height with "You asked: …" in its header; the reply zooms and pans; the badge in the header resets it | `tom:response-visible` |
+| 43 | In landscape, in a note: erase with the pen's eraser and with the note's eraser; lasso some ink and move it | Erased ink leaves no residue (one cleanup as the eraser lifts); the lasso and the moved ink follow the pen | `ui:erase-lift-cleanup` |
+| 44 | In a turned sheet: write fast across the writing area's edge and beside the sheet | The ink appears under the pen tip at once, with no offset; nothing is drawn beside the sheet or outside the paper | — |
+
 ## 11. Beta-readiness recommendation
 
 **Go for a closed beta**, on these conditions:
@@ -403,3 +420,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 - S-R2: the passcode should fail closed;
 - P-R4/P-R5 power and memory measurements;
 - the dead-handler cleanup.
+
+## Reader standard follow-up — 2026-10-20
+
+See [READER-ERASING-STANDARD.md](READER-ERASING-STANDARD.md) for the exact installed-PR11 finding, current masked-erase standard, removed-class retention through final cleanup, intentional retirement of standalone notebook creation, owner-approved integration of landscape Notes/assistant support, and reference toolbar vectors. Earlier D15 remains reverted; it is not the standard erase path. Stock red/highlighter late tint reports remain unresolved optical evidence, not a clean-colour guarantee.

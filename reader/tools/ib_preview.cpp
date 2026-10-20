@@ -82,17 +82,36 @@ void page(Canvas& c){
 std::vector<library::Document> books(){std::vector<library::Document> d;const char* titles[]{"A Tale of Two Cities","Middlemarch","The Origin of Species","Field Notes","Quarterly report","Walden"};const char* fmt[]{"epub","epub","epub","pdf","pdf","epub"};
  for(int i=0;i<6;++i)d.push_back({titles[i],std::string("Opened ")+std::to_string(i+1)+" d ago \xC2\xB7 "+std::to_string(12+i*7)+"%",fmt[i],{},i==1});return d;}
 library::Model libraryModel(){library::Model m;m.battery=73;m.wifi=true;m.clock="9:41";m.folders={{"Reading",12},{"Research",4},{"Notebooks",7}};m.documents=books();m.pages=3;
- m.createItems={{900,Icon::Note,"Notebook","Lined, grid, dot or blank pages"}};m.drawerExtras={{901,Icon::Back,"Leave Inkie",{}}};return m;}
+ m.drawerExtras={{901,Icon::Back,"Leave Inkie",{}}};return m;}
 tom::Model tomModel(){tom::Model m;m.contextLine="A Tale of Two Cities \xC2\xB7 page 12";m.excerpt="It was the best of times, it was the worst of times";m.hasSource=true;m.writable=true;m.empty=true;m.canSend=false;
  m.disclosure="Inkie sees this passage and your question.";return m;}
 const char* Answer="Dickens opens with paired opposites to show a society pulled two ways at once. The rhythm makes the reader feel the instability of 1775 before any character appears.";
 struct Surface {std::string name;std::function<void(Canvas&,Targets&)> paint;bool sided{};bool landscape{}; /* painted upright on 2160x1620 in a landscape turn */};
+// A landscape book page, upright (2160x1620).
+void landscapePage(Canvas& c){c.fill({0,0,2160,1520},t::Paper);
+#if __has_include("ib/type.h")
+ const bool plain=text::plainScript();text::setPlainScript(true);
+#endif
+ int y=160;for(int i=0;i<4&&y<1400;++i)y=text::block(c,{Face::Serif,36},{300,y,1860,1480},"It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness.",t::InkPrimary,58,5)+40;
+#if __has_include("ib/type.h")
+ text::setPlainScript(plain);
+#endif
+}
+// A turned sheet (docs/LANDSCAPE.md, PR 3): painted in its own sheet pixels over the landscape page, then shown upright
+// as the shell shows it (layout::SheetMap: its lower 1620 rows, centred at the foot); targets in the upright frame. On a
+// portrait canvas (the surface tests) the sheet pixels themselves are painted, as the panel composes them.
+void turnedSheet(Canvas& c,Targets& tg,const std::function<void(Canvas&,Targets&)>& paint){
+ const auto up=c.surface();if(up.width!=2160){paint(c,tg);return;}
+ landscapePage(c);const int dx=layout::TurnedSheetLeft,dy=layout::TurnedSheetTop;Image sheet;
+ for(int y=dy;y<H;++y)for(int x=0;x<W;++x)sheet.px[std::size_t(y)*W+x]=up.pixels[std::size_t(y-dy)*up.stridePixels+x+dx];
+ auto sc=sheet.canvas();Targets st;paint(sc,st);
+ for(int y=dy;y<H;++y)for(int x=0;x<W;++x)up.pixels[std::size_t(y-dy)*up.stridePixels+x+dx]=sheet.px[std::size_t(y)*W+x];
+ for(unsigned i=0;i<st.size();++i){const auto r=st[i].rect;tg.add(st[i].id,{r.x0+dx,r.y0-dy,r.x1+dx,r.y1-dy});}}
 std::vector<Surface> surfaces(){
  std::vector<Surface> s;
  s.push_back({"library-grid",[](Canvas& c,Targets& tg){library::paint(c,tg,libraryModel());}});
  s.push_back({"library-list",[](Canvas& c,Targets& tg){auto m=libraryModel();m.grid=false;library::paint(c,tg,m);}});
  s.push_back({"library-drawer",[](Canvas& c,Targets& tg){auto m=libraryModel();m.drawer=true;library::paint(c,tg,m);}});
- s.push_back({"library-create",[](Canvas& c,Targets& tg){auto m=libraryModel();m.create=true;library::paint(c,tg,m);}});
  s.push_back({"library-empty",[](Canvas& c,Targets& tg){auto m=libraryModel();m.documents.clear();m.folders.clear();m.pages=1;library::paint(c,tg,m);}});
  s.push_back({"library-notes-hub",[](Canvas& c,Targets& tg){auto m=libraryModel();m.section=library::Section::Notes;m.heading="Notes";m.sortLabel.clear();m.documents.clear();m.folders.clear();library::base(c,tg,m);
   notes::Hub h;h.embedded=true;h.canCreate=false;
@@ -106,14 +125,7 @@ std::vector<Surface> surfaces(){
  for(bool armed:{false,true})
   s.push_back({std::string("settings-Inkie-memory")+(armed?"-armed":""),[armed](Canvas& c,Targets& tg){auto m=libraryModel();m.section=library::Section::Settings;m.documents.clear();m.folders.clear();library::base(c,tg,m);settings::Model sm;sm.page=settings::Page::Tom;sm.tomOnline=1;sm.tomMemoryArmed=armed;
    sm.tomMemory={"The reader's name is Sam.","Sam is studying for a biology exam in December.","Sam prefers short answers with one example.","Sam is reading A Tale of Two Cities for a book club that meets on Thursdays and wants to keep track of the Manette family.","Sam likes drawings in colour.","Sam's cat is called Pip.","Sam finds Dickens's long sentences hard and likes them paraphrased."};settings::paint(c,tg,sm);library::overlays(c,tg,m);}});
- s.push_back({"reader-chrome-landscape",[](Canvas& c,Targets& tg){c.fill({0,0,2160,1520},t::Paper);
-#if __has_include("ib/type.h")
-  const bool plain=text::plainScript();text::setPlainScript(true);
-#endif
-  int y=160;for(int i=0;i<4&&y<1400;++i)y=text::block(c,{Face::Serif,36},{300,y,1860,1480},"It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness.",t::InkPrimary,58,5)+40;
-#if __has_include("ib/type.h")
-  text::setPlainScript(plain);
-#endif
+ s.push_back({"reader-chrome-landscape",[](Canvas& c,Targets& tg){landscapePage(c);
   reader::Chrome ch;ch.chapter="Book the First \xE2\x80\x94 Recalled to Life";ch.page=11;ch.total=412;reader::footer(c,tg,ch);reader::Tools tools;tools.canUndo=true;reader::toolbar(c,tg,tools);reader::closeButton(c,tg);},true,true});
  s.push_back({"reader-clean",[](Canvas& c,Targets& tg){page(c);reader::Chrome ch;ch.chapter="Book the First \xE2\x80\x94 Recalled to Life";ch.page=11;ch.total=412;reader::footer(c,tg,ch);reader::Tools tools;reader::toolHandle(c,tg,tools);}});
  s.push_back({"reader-chrome",[](Canvas& c,Targets& tg){page(c);reader::Chrome ch;ch.chapter="Book the First \xE2\x80\x94 Recalled to Life";ch.page=11;ch.total=412;reader::footer(c,tg,ch);reader::Tools tools;tools.canUndo=true;reader::toolbar(c,tg,tools);reader::closeButton(c,tg);},true});
@@ -134,12 +146,23 @@ std::vector<Surface> surfaces(){
  s.push_back({"tom-history",[](Canvas& c,Targets& tg){page(c);auto m=tomModel();m.history=true;m.threads={{"Paired opposites","A Tale of Two Cities \xC2\xB7 2 questions"},{"Dorothea's choice","Middlemarch \xC2\xB7 1 question"}};m.turns={{"Why open with opposites?",Answer}};tom::paint(c,tg,m);}});
  s.push_back({"sheet-layers",[](Canvas& c,Targets& tg){page(c);sheets::Layers l;l.layers={{"Annotations",true,false,true,true,14},{"Highlights",true,false,false,false,6},{"Sketch",false,true,false,false,2}};sheets::layers(c,tg,l);}});
  s.push_back({"sheet-document-settings",[](Canvas& c,Targets& tg){page(c);sheets::Settings st;st.pdf=false;st.tab=sheets::Tab::Reading;st.pages=412;sheets::settings(c,tg,st);}});
- s.push_back({"sheet-new-notebook",[](Canvas& c,Targets& tg){auto m=libraryModel();library::paint(c,tg,m);sheets::NewNotebook n;n.title="Reading notes";n.folder="My files";sheets::newNotebook(c,tg,n);}});
  s.push_back({"keyboard",[](Canvas& c,Targets& tg){page(c);KeyboardModel k;k.title="Rename";k.value="Reading notes";keyboard(c,tg,k);}});
  s.push_back({"lock-screen",[](Canvas& c,Targets& tg){lock::Model m;m.entered=2;m.cancel=true;lock::paint(c,tg,m);}});
  s.push_back({"sleep-screen",[](Canvas& c,Targets&){sleep::paint(c);}});
  s.push_back({"status-panel",[](Canvas& c,Targets& tg){auto m=libraryModel();library::paint(c,tg,m);status::Model st;st.battery=73;st.wifi=1;st.light=819;st.maximum=2047;st.clock="9:41";status::panel(c,tg,st);}});
  s.push_back({"highlight-sheet",[](Canvas& c,Targets& tg){page(c);notes::HighlightDetail h;h.excerpt="It was the best of times, it was the worst of times";h.source="A Tale of Two Cities \xC2\xB7 p. 12";notes::highlight(c,tg,h);}});
+ // Turned sheets (docs/LANDSCAPE.md, PR 3): Notes and Inkie upright on a landscape page.
+ s.push_back({"note-sheet-turned",[](Canvas& c,Targets& tg){turnedSheet(c,tg,[](Canvas& sc,Targets& st){notes::Note n;n.turned=true;n.context="A Tale of Two Cities \xC2\xB7 page 12";n.excerpt="It was the best of times";n.hasExcerpt=true;n.linked=true;n.editable=true;n.favorites=true;n.empty=true;notes::note(sc,st,n);});},false,true});
+ s.push_back({"note-sheet-expanded-turned",[](Canvas& c,Targets& tg){turnedSheet(c,tg,[](Canvas& sc,Targets& st){notes::Note n;n.turned=true;n.expanded=true;n.context="A Tale of Two Cities \xC2\xB7 page 12";n.excerpt="It was the best of times";n.hasExcerpt=true;n.linked=true;n.editable=true;n.favorites=true;n.empty=true;notes::note(sc,st,n);});},false,true});
+ s.push_back({"notes-hub-turned",[](Canvas& c,Targets& tg){turnedSheet(c,tg,[](Canvas& sc,Targets& st){notes::Hub h;h.turned=true;h.subtitle="A Tale of Two Cities";h.layers=true;h.pages=2;h.status="Saved on this tablet";
+  for(int i=0;i<4;++i){notes::Entry e;e.title=i==0?"On paired opposites":i==1?"Ask about 1775":i==2?"Page note":"The Manettes";e.excerpt=i==2?"":"It was the best of times";e.body=i==2?"Finish the chapter tonight.":"";e.source="p. "+std::to_string(12+i)+" \xC2\xB7 A Tale of Two Cities";e.color=t::Ink[unsigned(4+i%3)];e.linked=!e.excerpt.empty();e.tom=i==1;e.favorite=i==0;h.entries.push_back(e);}notes::hub(sc,st,h);});},false,true});
+ s.push_back({"tom-write-turned",[](Canvas& c,Targets& tg){turnedSheet(c,tg,[](Canvas& sc,Targets& st){auto m=tomModel();m.turned=true;tom::paint(sc,st,m);});},false,true});
+ s.push_back({"tom-tall-writing-turned",[](Canvas& c,Targets& tg){turnedSheet(c,tg,[](Canvas& sc,Targets& st){auto m=tomModel();m.turned=true;m.expanded=true;tom::paint(sc,st,m);});},false,true});
+ s.push_back({"tom-reply-turned",[](Canvas& c,Targets& tg){turnedSheet(c,tg,[](Canvas& sc,Targets& st){auto m=tomModel();m.turned=true;m.inlineComposer=m.showAnswer=m.answered=true;m.composing=false;m.empty=false;m.question="Why open with opposites?";m.answer=Answer;m.canSaveNote=true;tom::paint(sc,st,m);});},false,true});
+ s.push_back({"tom-reply-zoomed-turned",[](Canvas& c,Targets& tg){turnedSheet(c,tg,[](Canvas& sc,Targets& st){auto m=tomModel();m.turned=true;m.inlineComposer=m.showAnswer=m.answered=true;m.composing=false;m.empty=false;m.question="Why open with opposites?";m.answer=Answer;m.canSaveNote=true;m.zoomPercent=150;tom::paint(sc,st,m);});},false,true});
+ s.push_back({"tom-history-turned",[](Canvas& c,Targets& tg){turnedSheet(c,tg,[](Canvas& sc,Targets& st){auto m=tomModel();m.turned=true;m.history=true;m.threads={{"Paired opposites","A Tale of Two Cities \xC2\xB7 2 questions"},{"Dorothea's choice","Middlemarch \xC2\xB7 1 question"}};m.turns={{"Why open with opposites?",Answer}};tom::paint(sc,st,m);});},false,true});
+ s.push_back({"highlight-sheet-turned",[](Canvas& c,Targets& tg){turnedSheet(c,tg,[](Canvas& sc,Targets& st){notes::HighlightDetail h;h.turned=true;h.excerpt="It was the best of times, it was the worst of times";h.source="A Tale of Two Cities \xC2\xB7 p. 12";notes::highlight(sc,st,h);});},false,true});
+ s.push_back({"sheet-layers-turned",[](Canvas& c,Targets& tg){turnedSheet(c,tg,[](Canvas& sc,Targets& st){sheets::Layers l;l.rect=sheets::layersRect(true);l.layers={{"Annotations",true,false,true,true,14},{"Highlights",true,false,false,false,6},{"Sketch",false,true,false,false,2}};sheets::layers(sc,st,l);});},false,true});
  s.push_back({"notice",[](Canvas& c,Targets& tg){auto m=libraryModel();library::paint(c,tg,m);sheets::Notice n;n.title="Move to Trash?";n.body="Middlemarch moves to Trash. You can restore it from there.";n.actions={{1,Icon::Close,"Cancel"},{2,Icon::Trash,"Move to Trash",true}};sheets::notice(c,tg,n);}});
  return s;
 }

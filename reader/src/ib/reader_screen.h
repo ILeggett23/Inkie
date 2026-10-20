@@ -26,7 +26,7 @@ Rect topRect()noexcept;      // the top strip refreshed with chrome: handle and 
 void closeButton(Canvas&,Targets&);
 // Native zoom indicator (top centre while a PDF is zoomed): tap to return to the fitted view.
 inline constexpr Rect ZoomBadgeRect{700,24,920,100};
-void zoomBadge(Canvas&,Targets&,int percent);
+void zoomBadge(Canvas&,Targets&,int percent,Rect at=ZoomBadgeRect); // at: where a turned Inkie sheet puts it
 void footer(Canvas&,Targets&,const Chrome&);
 // Clean state: the footer reveals chrome (the handle is registered by toolHandle()).
 void cleanZones(Targets&);

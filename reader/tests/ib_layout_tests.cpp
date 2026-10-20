@@ -79,6 +79,45 @@ int main(int argc,char** argv){try{
   // Pixels: a logical rect copied out to the panel and back is unchanged, and lands where the rect maps.
   std::vector<std::uint32_t> panel(1632*2160,0),back(std::size_t(L::logicalStride(turn))*1620,0);for(std::size_t i=0;i<px.size();++i)px[i]=std::uint32_t(i*2654435761u);const Rect r{300,200,900,700};f.toPhysical(px.data(),L::logicalStride(turn),panel.data(),1632,r);f.toLogical(panel.data(),1632,back.data(),L::logicalStride(turn),r);
   bool ok=true;for(int y=r.y0;y<r.y1;++y)for(int x=r.x0;x<r.x1;++x){const auto i=std::size_t(y)*L::logicalStride(turn)+x;ok&=back[i]==px[i];int a,b;f.physical(x,y,a,b);ok&=panel[std::size_t(b)*1632+a]==px[i];}check(ok,"pixels round trip");}
+ // 2c. Sheets turned (docs/LANDSCAPE.md, PR 3): Notes and Inkie keep composing in sheet pixels and SheetMap shows
+ //     their lower 1620 rows upright, centred at the foot of the landscape screen. Every turned sheet paints and hits
+ //     only in the rows shown; the writing areas (stored-stroke geometry) keep their 1480 width, and Inkie's their place.
+ for(L::Turn turn:{L::Turn::Clockwise,L::Turn::Anticlockwise}){const L::SheetMap s{turn};const L::Frame f{turn};const Rect shown=s.visible();
+  check(same(shown,{0,540,1620,2160})&&same(s.physical(shown),f.physical({270,0,1890,1620})),"the shown sheet rows stand at the foot, centred");
+  check(same(s.physical({0,L::SheetTop,1620,2160}),f.physical({270,620,1890,1620}))&&same(L::zones(Side::Left,L::Orientation::Landscape).sheet,{270,620,1890,1620}),"the lower sheet at the foot, unchanged");
+  check(same(s.physical({0,0,1620,600}),f.physical({270,0,1890,60}))&&s.physical({0,0,1620,540}).empty(),"rows above the shown window are not shown");
+  check(same(s.sheet(s.physical(tom::WritingArea)),tom::WritingArea)&&same(s.sheet(f.physical({0,0,2160,1620})),{-270,540,1890,2160}),"sheet rects round trip");
+  for(int y=540;y<2160;y+=89)for(int x=0;x<1620;x+=101){int a,b,x2,y2;s.physical(x,y,a,b);check(a>=0&&a<1620&&b>=0&&b<2160&&s.physical(Rect{x,y,x+1,y+1}).x0==a&&s.physical(Rect{x,y,x+1,y+1}).y0==b,"sheet point and pixel agree");s.sheet(a,b,x2,y2);check(x2==x&&y2==y,"sheet point round trip");}
+  {int a,b,x,y;f.physical(100,800,a,b);s.sheet(a,b,x,y);check(x==-170&&y==1340,"the page beside a turned sheet is outside it");f.physical(2000,10,a,b);s.sheet(a,b,x,y);check(x==1730&&y==550,"right of the sheet");}
+ }
+ {const Rect shown=L::SheetMap{L::Turn::Clockwise}.visible();
+  auto turnedSheet=[&](const char* what,auto paint){Frame fr;auto c=fr.canvas();paint(c,fr.tg);check(fr.tg.size()>0,what);for(auto x:list(fr.tg))check(inside(x.rect,shown),what);
+   bool above=true;for(int y=0;y<shown.y0;++y)for(int x=0;x<t::ScreenWidth;++x)above&=fr.px[std::size_t(y)*t::ScreenWidth+x]==t::Paper;check(above,"nothing is painted above a turned sheet");return fr;};
+  // Inkie: compact and tall composers, the answer sheet (with and without zoom), history and an earlier turn.
+  auto inkie=[](int mode){tom::Model m;m.turned=true;m.hasSource=true;m.excerpt="It was the best of times, it was the worst of times";m.contextLine="On \xE2\x80\x9CIt was the best\xE2\x80\xA6\xE2\x80\x9D \xC2\xB7 p. 1";m.configured=true;m.writable=true;
+   if(mode==1)m.expanded=true;if(mode==2||mode==3){m.inlineComposer=m.showAnswer=m.answered=true;m.composing=false;m.question="Why the opposites?";m.answer=Answer;m.revealInk=-1.f;m.zoomPercent=mode==3?150:0;}
+   if(mode==4){m.history=true;m.threads={{"A question","2 turns"},{"Another","1 turn"}};m.turns={{"Why?",""},{"How?",""}};}if(mode==5){m.historyTurn=true;m.composing=false;m.showAnswer=true;m.question="Why?";m.answer=Answer;}return m;};
+  for(int mode=0;mode<6;++mode){const auto m=inkie(mode);const auto fr=turnedSheet("turned Inkie paints and hits in the shown rows",[&](Canvas& c,Targets& tg){tom::paint(c,tg,m);});
+   check(tom::sheetTop(m)>=L::TurnedSheetTop&&tom::sheetTop(m)==std::max(L::TurnedSheetTop,[&]{auto p=m;p.turned=false;return tom::sheetTop(p);}()),"turned Inkie starts at the portrait top, capped");
+   if(mode==3){const Rect badge=tom::zoomBadgeRect(m);check(inside(badge,{0,tom::sheetTop(m),t::ScreenWidth,tom::sheetTop(m)+tom::HeaderHeight})&&!fr.tg.rect(reader::ZoomBadge).empty(),"turned zoom badge in the header");
+    for(auto x:list(fr.tg))if(x.id!=reader::ZoomBadge)check(!overlaps(x.rect,fr.tg.rect(reader::ZoomBadge)),"turned zoom badge clear of the header's controls");}
+   else check(fr.tg.rect(reader::ZoomBadge).empty()&&same(tom::zoomBadgeRect([&]{auto p=m;p.turned=false;return p;}()),reader::ZoomBadgeRect),"zoom badge only while zoomed; portrait keeps the top row");}
+  for(Rect a:{tom::WritingArea,tom::ExpandedWritingArea,Rect{70,680,1550,1320}})check(inside(a,shown),"Inkie's writing and answer areas keep their place, shown");
+  {Frame up,down;auto cu=up.canvas(),cd=down.canvas();auto m=inkie(1);m.turned=false;tom::paint(cu,up.tg,m);m.turned=true;tom::paint(cd,down.tg,m);bool paper=true;const Rect w=tom::ExpandedWritingArea;for(int y=w.y0;y<w.y1;++y)for(int x=w.x0;x<w.x1;++x)paper&=up.px[std::size_t(y)*t::ScreenWidth+x]==down.px[std::size_t(y)*t::ScreenWidth+x];check(paper,"the tall writing paper is the same paper turned");}
+  // Notes: the note sheet (compact and expanded, with its pickers), the hub, a highlight and Layers.
+  for(bool expanded:{false,true})for(int extra=0;extra<2;++extra){notes::Note n;n.turned=true;n.editable=true;n.hasExcerpt=true;n.excerpt="It was the best of times";n.context="Linked passage";n.favorites=true;n.expanded=expanded;n.picker=extra==1;n.inkActions=extra==1;
+   turnedSheet("turned note paints and hits in the shown rows",[&](Canvas& c,Targets& tg){notes::note(c,tg,n);});
+   const Rect a=notes::noteArea(expanded,true);check(inside(a,shown)&&width(a)==1480&&a.x0==notes::NoteArea.x0&&a.y1==notes::NoteArea.y1&&a.y0>=L::TurnedSheetTop+notes::NoteHeader,"turned note area: 1480 wide, below the header");
+   check(inside(notes::notePicker(expanded),shown),"note picker shown");}
+  check(same(notes::noteArea(false,true),notes::NoteArea)&&same(notes::noteArea(true,false),notes::NoteExpandedArea),"compact and portrait note areas unchanged");
+  {notes::Hub h;h.turned=true;h.layers=true;h.pages=3;h.page=1;h.status="Saved";for(int i=0;i<6;++i)h.entries.push_back({"Note "+std::to_string(i),"An excerpt","A body","p. 1",t::Ink[4],i==0,true,true,false,false,{}});
+   const auto fr=turnedSheet("turned hub paints and hits in the shown rows",[&](Canvas& c,Targets& tg){notes::hub(c,tg,h);});
+   check(!fr.tg.rect(notes::EntryBase+notes::TurnedHubPageSize-1).empty()&&fr.tg.rect(notes::EntryBase+notes::TurnedHubPageSize).empty()&&notes::hubPageSize(true)==notes::TurnedHubPageSize&&notes::hubPageSize(false)==notes::HubPageSize,"turned hub: four notes a page");}
+  {notes::HighlightDetail d;d.turned=true;d.excerpt="It was the best of times";d.source="Book \xC2\xB7 p. 1";turnedSheet("turned highlight paints and hits in the shown rows",[&](Canvas& c,Targets& tg){notes::highlight(c,tg,d);});}
+  for(int menu=-1;menu<int(sheets::LayerPageSize);++menu){sheets::Layers l;l.rect=sheets::layersRect(true);for(int i=0;i<9;++i)l.layers.push_back({"Layer "+std::to_string(i),true,i==2,i==0,i==1,i});l.menuFor=menu;l.status="Saved";
+   turnedSheet("turned Layers paints and hits in the shown rows",[&](Canvas& c,Targets& tg){sheets::layers(c,tg,l);});}
+  check(inside(sheets::TurnedLayersRect,shown)&&width(sheets::TurnedLayersRect)==width(sheets::LayersRect)&&height(sheets::TurnedLayersRect)==height(sheets::LayersRect)&&same(sheets::layersRect(false),sheets::LayersRect),"turned Layers: the same side sheet, lower");
+  check(inside(KeyboardRect,shown),"the keyboard is shown turned");}
  L::setTurn(L::Turn::Portrait);reader::setToolbarSide(Side::Left);check(L::screenWidth()==1620&&L::pageHeight()==2060&&same(reader::footerRect(),reader::FooterRect)&&same(L::Frame{}.physical(Rect{1,2,3,4}),Rect{1,2,3,4}),"portrait unchanged");
  // 3. Every role size is at least the smallest permitted text.
  for(auto r:{t::Code,t::Display,t::Title,t::Heading,t::Subhead,t::Body,t::Label,t::Control,t::Meta,t::Caption})check(r.size>=t::Caption.size&&r.line>r.size,"role sizes");

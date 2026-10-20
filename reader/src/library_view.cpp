@@ -87,8 +87,8 @@ void LibraryView::paint(spike::Surface s,const QVector<library::Document>& docs,
   ib::library::Document doc;doc.title=utf8(d.title);doc.meta=meta(d);doc.format=utf8(d.format);doc.favorite=favorites_.contains(d.id);if(cv)doc.cover={cv->pixels,cv->width,cv->height,cv->width};m.documents.push_back(std::move(doc));}
  m.page=filtered_.isEmpty()?0:offset_/capacity();m.pages=std::max(1,int((filtered_.size()+capacity()-1)/capacity()));
  if(section_==Section::Notes||section_==Section::Settings){m.pages=1;m.documents.clear();}
- m.drawer=menu_;m.create=create_;m.battery=battery_;m.charging=charging_;m.wifi=wifi_;m.clock=clock_;m.clockZone=clockZone_;
- m.createItems={{MenuNotebook,ib::Icon::Note,"Notebook","Lined, grid, dot or blank pages"}};
+ m.drawer=menu_;m.create=false;m.battery=battery_;m.charging=charging_;m.wifi=wifi_;m.clock=clock_;m.clockZone=clockZone_;
+ m.createItems.clear();
  if(userEnded_)m.drawerExtras.push_back({MenuWifi,ib::Icon::Wifi,"Wi-Fi",{}});else m.drawerExtras.push_back({MenuLeave,ib::Icon::Back,"Leave Inkie",{}}); /* D2: a user-ended session is left only with the power button */
  ib::library::base(c,targets_,m);
  if(section_==Section::Notes){
@@ -112,7 +112,7 @@ LibraryView::Hit LibraryView::hit(int x,int y){
  auto changed=[&](){rebuild();return Hit{Action::Changed,{},-1};};
  int id=targets_.find(x,y);namespace L=ib::library;
  const bool memoryArmed=std::exchange(memoryArmed_,false); /* Clear all asks once more, on the very next tap */
- if(create_){create_=false;switch(id){case MenuNotebook:return {Action::NewNotebook,{},-1};case MenuImport:return {Action::Import,{},-1};default:return changed();}}
+ if(create_){create_=false;return changed();} // Retire stale creation menus without executing their actions.
  if(menu_){menu_=false;if(id==MenuLeave)return {Action::Exit,{},-1};if(id==MenuWifi)return {Action::Wifi,{},-1};if(id<L::NavBase||id>=L::NavBase+int(Section::Count))return changed();} /* the drawer: a section row falls through to navigation */
  if(keyboard_){
   if(id>=ib::KeyBase&&id<ib::KeyBase+128){if(query_.size()<48)query_+=QChar(char16_t(ib::keyCharacter(id,shift_)));shift_=false;offset_=0;return changed();}
@@ -135,7 +135,7 @@ LibraryView::Hit LibraryView::hit(int x,int y){
  case L::Wordmark:section_=Section::MyFiles;folder_.clear();query_.clear();offset_=0;return changed();
  case L::Search:keyboard_=true;shift_=false;symbols_=false;section_=section_==Section::Trash||section_==Section::Favorites?section_:Section::MyFiles;return changed();
  case L::ClearSearch:query_.clear();keyboard_=false;offset_=0;return changed();
- case L::Create:create_=true;return {Action::Changed,{},-1};
+ case L::Create:return {}; // No standalone creation action.
  case L::ViewMode:grid_=!grid_;offset_=0;return changed();
  case L::Menu:menu_=true;return {Action::Changed,{},-1};
  case L::Sort:recent_=!recent_;offset_=0;return changed();

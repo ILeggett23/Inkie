@@ -20,7 +20,7 @@ Rect closeRect()noexcept{const int w=layout::screenWidth();return side_==Side::L
 Rect topRect()noexcept{return {0,0,layout::screenWidth(),ToolbarItem};}
 Rect toolHandleRect()noexcept{return toolbarSlot(SlotHandle);}
 void closeButton(Canvas& c,Targets& tg){Rect r=closeRect();c.fill(r,t::Paper);icon(c,Icon::CloseCircle,centered(r,ToolbarGlyph,ToolbarGlyph),t::ToolbarInk);tg.add(Back,r);}
-void zoomBadge(Canvas& c,Targets& tg,int percent){const Rect r=ZoomBadgeRect;c.fill(r,t::Paper);const Rect b=inset(r,3);c.strokeRound(b,t::RadiusSmall,float(t::Outline),t::InkPrimary);text::centeredLine(c,{Face::SansSemibold,theme::Control.size},r,std::to_string(percent)+"%",t::InkPrimary,Align::Center);tg.add(ZoomBadge,hitArea(r));}
+void zoomBadge(Canvas& c,Targets& tg,int percent,Rect r){c.fill(r,t::Paper);const Rect b=inset(r,3);c.strokeRound(b,t::RadiusSmall,float(t::Outline),t::InkPrimary);text::centeredLine(c,{Face::SansSemibold,theme::Control.size},r,std::to_string(percent)+"%",t::InkPrimary,Align::Center);tg.add(ZoomBadge,hitArea(r));}
 void footer(Canvas& c,Targets& tg,const Chrome& m){
  // Quiet metadata under the page, as in the native reader: title or chapter left, position right.
  Rect r=footerRect();c.fill(r,t::Paper);Rect text{FooterInset,r.y0,r.x1-FooterInset,r.y1};const Font f{Face::Text,theme::Meta.size};
@@ -46,20 +46,26 @@ Rect gridCell(Rect r,int y,int rowHeight,unsigned i)noexcept{int cw=cellWidth(r)
 int widthTitleY(Rect r)noexcept{return r.y0+PaletteTitle+10+3*NibRow+2*PaletteGap+PalettePad+2;}
 int swatchY(Rect r)noexcept{return r.y0+PenPanelCompactHeight+2+30;}
 }
-Rect penCell(unsigned i,Rect r)noexcept{if(i>=9)return {};return gridCell(r,r.y0+PaletteTitle+10,NibRow,i);}
+Rect penCell(unsigned i,Rect r)noexcept{if(i>=9)return {};
+ // Reference order: ballpoint/fineliner/highlighter, pencil/mechanical/nib,
+ // marker/brush/shader. Tool IDs and persisted tool values never move.
+ static constexpr std::array<unsigned,9> slot{0,1,3,4,7,5,6,8,2};
+ return gridCell(r,r.y0+PaletteTitle+10,NibRow,slot[i]);}
 Rect widthCell(unsigned i,Rect r)noexcept{if(i>=3)return {};return gridCell(r,widthTitleY(r)+PaletteTitle,WidthRow,i);}
 Rect colorCell(unsigned i,Rect r)noexcept{if(i>=8)return {};return gridCell(r,swatchY(r),SwatchRow,i);}
 void toolbar(Canvas& c,Targets& tg,const Tools& m){
- // The native column, in two families: writing tools (pen, highlighter, eraser) are the objects themselves, slanted
- // pen silhouettes carrying their current ink as a band; usability tools (select, layers, undo, redo, document) are
- // outline icons. A dotted rule divides the families, the active tool sits on a rounded ink tile, and a rule runs
+ // Upright reference nibs and dotted eraser/selection glyphs. Current colour is a separate rail dot.
+ // A dotted rule divides the families, the active tool sits on a square ink tile, and a rule runs
  // along the page edge. Colour stays put while you write; selection is ink.
  Rect r=toolbarRect();c.fill(r,t::Paper);tg.add(RailBlank,r);c.fill(side_==Side::Left?Rect{r.x1-t::Hairline,r.y0,r.x1,r.y1}:Rect{r.x0,r.y0,r.x0+t::Hairline,r.y1},t::InkPrimary);
  {const int y=toolbarSlot(SlotSelect).y0,x0=r.x0+28,x1=r.x1-28;divider(c,x0,x1,y-1);}
  auto tile=[&](unsigned slot,int id,bool selected,bool enabled,auto&& draw){Rect cell=toolbarSlot(slot);
-  if(selected)c.fillRound(centered(cell,ToolbarTile,ToolbarTile),t::RadiusMedium,t::ToolSelected);
+  if(selected)c.fill(centered(cell,ToolbarTile,ToolbarTile),t::ToolSelected);
   draw(centered(cell,ToolbarGlyph,ToolbarGlyph),selected?t::OnSelected:enabled?t::ToolbarInk:t::Disabled,cell);if(enabled||selected)tg.add(id,cell);};
- auto pen=[&](Rect cell,Instrument kind,std::uint32_t ink,bool selected){penGlyph(c,kind,centered(cell,PenGlyph,PenGlyph),ink,selected);};
+ auto pen=[&](Rect cell,Instrument kind,std::uint32_t ink,bool selected){
+  penGlyph(c,kind,centered(cell,PenGlyph,PenGlyph),ink,selected);
+  if(ink&&ink!=t::Ink[0])c.fillCircle(float(cell.x1-20),float(cell.y0+20),8.f,ink);
+ };
  // One black tile at a time: an open document menu takes the selection from the writing tool.
  const unsigned shortcut=m.activeShortcut<2?m.activeShortcut:(m.highlighter?1u:0u);
  const bool tool=!m.menu,penActive=tool&&!m.eraser&&!m.selecting&&shortcut==0,hlActive=tool&&!m.eraser&&!m.selecting&&shortcut==1;
@@ -78,7 +84,7 @@ void penPanel(Canvas& c,Targets& tg,const Tools& m,Rect at){
  Rect r=at;if(!m.colors)r.y1=r.y0+PenPanelCompactHeight;popover(c,r);
  const Font title{Face::TextSemibold,theme::Label.size},label{Face::Text,theme::Meta.size};
  // Selected cells are rounded ink tiles; dotted rules divide tips, widths and colours.
- auto pick=[&](Rect cell){c.fillRound(inset(cell,4),t::RadiusMedium,t::ToolSelected);};
+ auto pick=[&](Rect cell){c.fill(inset(cell,4),t::ToolSelected);};
  auto rule=[&](int y){divider(c,r.x0+t::S3,r.x1-t::S3,y);};
  const char* name=m.eraser?"Eraser":instrumentName(m.highlighter?Instrument::Highlighter:m.pen);
  text::centeredLine(c,title,{r.x0+30,r.y0,r.x1-30,r.y0+PaletteTitle},name,t::InkPrimary,Align::Left);

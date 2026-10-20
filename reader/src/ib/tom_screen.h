@@ -27,6 +27,10 @@ struct Model {
  bool canSend{},canInterpret{},canStop{},canRetry{},confirmRetry{},canClear{},busy{},saved{};
  std::string status;bool failed{};
  unsigned answerScroll{};int zoomPercent{};
+ // Turned (docs/LANDSCAPE.md, PR 3): laid out in sheet pixels as upright, shown through layout::SheetMap. The tall
+ // sheets start at TurnedSheetTop (the writing and answer areas keep their place); the one line between header and
+ // paper, when it no longer fits, moves into the header; the zoom badge sits in the header, left of the tools.
+ bool turned{};
  // History overlay
  bool history{};std::vector<Thread> threads;std::vector<Turn> turns;unsigned threadOffset{},turnOffset{};bool confirmDelete{};
  bool outputPicker{},detailedInk{},nativeReply{},hasNativeOutput{};unsigned outputMode{};std::string illustrationModel;bool canSaveNote{};bool canExplain{}; /* a selected passage and nothing written yet: ask Tom to explain it */
@@ -51,6 +55,8 @@ HandProgress handProgress(const Model&,float ink);
 // Where answer line i (absolute) is drawn, for line-sized damage during the reveal.
 Rect answerLineBox(const Model&,unsigned line);
 int sheetTop(const Model&); // where the sheet starts for this model (compact, or tall for long writing)
+// Where the reply zoom badge is drawn and tapped: the top chrome row above the sheet, or (turned) the sheet's header.
+Rect zoomBadgeRect(const Model&);
 void paint(Canvas&,Targets&,const Model&);
 }
 namespace ib {
