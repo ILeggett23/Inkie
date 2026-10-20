@@ -208,7 +208,9 @@ void Shell::viewTick(){if(!document_||document_->contact())return;if(styled_){if
  const bool turning=std::exchange(turning_,false);if(!turning)openingTurn_=turn_;const unsigned orientation=degrees(openingTurn_); /* turning: the same view set, prepared in the new turn */
  const bool epubTurn=turning&&selectedFormat_=="epub"&&(orientation!=0)!=turned(); /* an EPUB changes layout between upright and turned */if(epubTurn&&orientation)portraitEpubSet_=currentViewSet_;const QString portraitSet=portraitEpubSet_;turnRefused_=false;
  startOpener([this,old,view,bounds,target,restore,bookmark,turning,orientation,epubTurn,portraitSet]{try{int destination=target;QString next;bool refused=false;unsigned turnTo=orientation;
-  if(epubTurn){ /* the landscape twin (lines a third longer, the same type size: 590 tall), or back to the book's own layout */
+  std::optional<Ahead> ready;if(turning){std::lock_guard run(aheadRun_); /* waits for a job still preparing */if(aheadResult_&&aheadResult_->document==selectedId_&&aheadResult_->from==old&&aheadResult_->page==target&&aheadResult_->orientation==orientation&&aheadResult_->prepared)ready=std::move(aheadResult_);aheadResult_.reset();}
+  if(ready){next=ready->next;destination=ready->destination;}
+  else if(epubTurn){ /* the landscape twin (lines a third longer, the same type size: 590 tall), or back to the book's own layout */
    const auto layout=reader::epubviews::readSet(selectedData_,old).receipt["layout"].toObject();const auto typography=epub::parse(layout["userCss"].toString()).value_or(epub::Typography{});const int font=layout["fontSize"].toInt(12);
    const int width=orientation?std::clamp(int(std::lround(layout["width"].toInt(600)*2160/1620.)),64,4094):reader::epubviews::readSet(selectedData_,portraitSet).receipt["layout"].toObject()["width"].toInt(600);
    openerReconciled_=false;try{auto staged=reader::stageEpubViewViaHelper(app_,selectedData_,old,width,font,target,stop_,typography,orientation?590:800);next=staged.viewId;destination=staged.targetPage;}
@@ -218,7 +220,7 @@ void Shell::viewTick(){if(!document_||document_->contact())return;if(styled_){if
    // current layout on the same page, with a notice: a refused text size is not a failed open.
    try{auto staged=reader::stageEpubViewViaHelper(app_,selectedData_,old,requestedEpubView_.lineWidth,requestedEpubView_.fontSize,target,stop_,requestedEpubView_.typography);next=staged.viewId;destination=staged.targetPage;}
    catch(const std::exception& e){if(stop_||!reader::lifecycle::reconciledHelperFailure(e))throw;next=old;destination=target;refused=true;recovery::v2::e2::mark("ui:layout-refused");}
-   openerReconciled_=true;}else next=reader::viewstore::stagePdf(selectedData_,old,target,bounds,view);openerReconciled_=false;auto p=reader::prepareViewPage(app_,selectedData_,destination,stop_,next,turnTo);openerReconciled_=true;auto descriptor=library::descriptor(selectedData_);int total=p.metadata["pages"].toInt();auto resume=reader::readViewResume(selectedData_,total,next);openerPositionKnown_=false;reader::writeViewResume(selectedData_,destination,total,resume.generation+1,false,next);if(refused||turning){}else if(selectedFormat_=="epub")reader::epubviews::activate(selectedData_,next,old);else reader::viewstore::activate(selectedData_,next,old);viewRefused_=refused;openerPositionKnown_=true;openingViewSet_=next;prepared_=std::make_unique<underlay::Prepared>(std::move(p));}catch(const std::exception& e){if(reader::lifecycle::reconciledHelperFailure(e))openerReconciled_=true;prepared_.reset();openFailed_=true;}catch(...){prepared_.reset();openFailed_=true;}done_.store(true,std::memory_order_release);});}
+   openerReconciled_=true;}else next=reader::viewstore::stagePdf(selectedData_,old,target,bounds,view);openerReconciled_=false;auto p=ready?std::move(*ready->prepared):reader::prepareViewPage(app_,selectedData_,destination,stop_,next,turnTo);openerReconciled_=true;if(ready){++aheadUsed_;recovery::v2::e2::mark("ui:turn-ready-ahead",turnTo);}auto descriptor=library::descriptor(selectedData_);int total=p.metadata["pages"].toInt();auto resume=reader::readViewResume(selectedData_,total,next);openerPositionKnown_=false;reader::writeViewResume(selectedData_,destination,total,resume.generation+1,false,next);if(refused||turning){}else if(selectedFormat_=="epub")reader::epubviews::activate(selectedData_,next,old);else reader::viewstore::activate(selectedData_,next,old);viewRefused_=refused;openerPositionKnown_=true;openingViewSet_=next;prepared_=std::make_unique<underlay::Prepared>(std::move(p));}catch(const std::exception& e){if(reader::lifecycle::reconciledHelperFailure(e))openerReconciled_=true;prepared_.reset();openFailed_=true;}catch(...){prepared_.reset();openFailed_=true;}done_.store(true,std::memory_order_release);});}
 // Closing Tom returns to the clean page, as closing Notes does; a toolbar left visible around the sheet is erased so no stale controls remain.
 void Shell::tomClosed(){if(tomReturn_==State::Picker)change_.full=true;if(state_==State::Chrome){selectMode_=false;if(menu_){menu_=false;pageBackgrounds();damage(menuRect_);}change_.regions|=ChromeRegions;}state_=tomReturn_;}
 bool Shell::openTom(semantic::Selection selection,QString note){if(stop_)return false;if(!libraryMode_||(document_&&document_->contact())||(styled_&&styled_->status().busy)||toolsView_.active()||(notes_&&notes_->active()))return false;if(!trimInactivePanel(true)){notice(QStringLiteral("Finishing the previous panel — try again in a moment"));return false;}QJsonObject page;try{if(document_){auto book=std::find_if(books_.begin(),books_.end(),[&](const auto& d){return d.id==selectedId_;});if(book==books_.end())return false;page=product::pageSnapshot(*book,document_->active().prepared);}if(!tom_)tom_=std::make_unique<tom::Panel>(app_,data_,tomNetworkEnabled_,tomTracking_,preparationTracking_);tomDestinationNote_=std::move(note);tomDestinationBinding_=tomDestinationNote_.isEmpty()?QJsonObject{}:page;tomReturn_=document_?State::Clean:State::Picker;tom_->setTitle(document_?selectedTitle_:QString());tom_->setTurned(turned());if(document_){backdrop(backdrop_);tom_->setBackdrop(sheetBackdrop());}else{backdrop_.assign(underlay::Pixels,0xffffffffu);tom_->setBackdrop(backdrop_);}tomSelection_=selection;tom_->setPresentation(prefs_.tomTyped,prefs_.tomHand,prefs_.tomReveal&&!prefs_.reduceMotion);tom_->open(page,std::move(selection),true);}catch(const std::exception&){if(!tom_){notice("Inkie could not open. Your reading session is safe.");return true;}if(!retireFailedTom()&&tom_&&tom_->unsaved()!=0)fail(6);return true;} /* Tom failed while opening (e.g. its store refused to open) */tomEpochStamp_=tom_->presentationStamp().ui;tomGestureStamp_=tom_->gestureEpoch();selectMode_=false;penSelect_={};penRangeCount_=0;penRangeOverflow_=false;chromeStale_=true; /* Tom opens ready to write: the selection tool is put away */semantics_->dismiss();semanticVisual_={};std::fill(semanticOverlay_.begin(),semanticOverlay_.end(),0);if(!document_)change_.full=true;else{sheetDamage(tom_->repaintArea());change_.preview=true; /* shown now, not after the helper binds */}++presentedVersion_;revealSceneChanged();return true;}
@@ -500,6 +502,35 @@ ib::layout::Turn Shell::wantedTurn()noexcept{if(!prefs_.autoRotate||!orientation
 // A PDF's reading view turns only when nothing else is open or in flight (as a view change): no contact, saving,
 // selection, panel, menu or sheet, and no legacy ink or highlight pinned to the portrait page.
 bool Shell::turnReady()noexcept{return libraryMode_&&!stop_&&document_&&(selectedFormat_=="pdf"||selectedFormat_=="epub")&&styled_&&!changingView_&&!opener_.joinable()&&(state_==State::Clean||state_==State::Chrome)&&!menu_&&!quickSettings_&&!toolsView_.active()&&!viewControls_.active()&&!wifiView_.active()&&!pdfPreviewActive_&&!epubZoomActive()&&lock_==Lock::None&&!(notes_&&notes_->active())&&!(tom_&&tom_->active());}
+// Turning ready ahead (see ux_shell.h): one background job per place (book, layout, page, turn), started once reading has
+// rested there for AheadIdle with nothing else under way, for the direction the next turn most likely goes (back upright
+// when turned; else the landscape direction last used).
+void Shell::aheadTick(){
+ if(ahead_.joinable()&&aheadDone_.load(std::memory_order_acquire))ahead_.join();
+ if(ahead_.joinable())return;
+ if(!libraryMode_||stop_||!document_||!styled_||!(selectedFormat_=="pdf"||selectedFormat_=="epub")||!prefs_.autoRotate||!orientationSensor()||leaveTurned_){aheadKey_.clear();return;}
+ const auto to=turned()?ib::layout::Turn::Portrait:lastLandscape_;
+ const QString key=selectedId_+"|"+currentViewSet_+"|"+QString::number(page())+"|"+QString::number(degrees(turn_))+"|"+QString::number(degrees(to));
+ const auto now=std::chrono::steady_clock::now();if(key!=aheadKey_){aheadKey_=key;aheadSince_=now;return;}
+ if(aheadTried_==key||now-aheadSince_<std::chrono::seconds(3))return;
+ if(!(state_==State::Clean||state_==State::Chrome)||changingView_||opener_.joinable()||document_->contact()||styled_->status().busy||styled_->hasLegacyInk()||semantics_->pending()||!semantics_->highlights().isEmpty()||semantics_->view()!=semantic::View::None||unsaved()||menu_||quickSettings_||toolsView_.active()||(notes_&&notes_->active())||(tom_&&tom_->active()))return;
+ if(refusedTurn_&&*refusedTurn_==to&&refusedDocument_==selectedId_)return;
+ aheadTried_=key;
+ const QString document=selectedId_,format=selectedFormat_,old=currentViewSet_,portraitSet=portraitEpubSet_;const auto data=selectedData_;const auto app=app_;const int target=page();const unsigned orientation=degrees(to);const bool epubTurn=format=="epub"&&(orientation!=0)!=turned();
+ aheadStop_=false;aheadDone_=false;recovery::v2::e2::mark("ui:turn-ahead-start",orientation);
+ try{ahead_=std::thread([this,document,old,portraitSet,data,app,target,orientation,epubTurn]{
+  {std::lock_guard run(aheadRun_);const auto started=std::chrono::steady_clock::now();
+   try{QString next=old;int destination=target;
+    if(epubTurn){ /* exactly as the turn's opener stages it */
+     const auto layout=reader::epubviews::readSet(data,old).receipt["layout"].toObject();const auto typography=epub::parse(layout["userCss"].toString()).value_or(epub::Typography{});const int font=layout["fontSize"].toInt(12);
+     const int width=orientation?std::clamp(int(std::lround(layout["width"].toInt(600)*2160/1620.)),64,4094):reader::epubviews::readSet(data,portraitSet).receipt["layout"].toObject()["width"].toInt(600);
+     auto staged=reader::stageEpubViewViaHelper(app,data,old,width,font,target,aheadStop_,typography,orientation?590:800);next=staged.viewId;destination=staged.targetPage;}
+    auto p=reader::prepareViewPage(app,data,destination,stop_,next,orientation);
+    aheadResult_=Ahead{document,old,target,orientation,next,destination,std::make_shared<underlay::Prepared>(std::move(p))};
+    std::fprintf(stderr,"TURN_AHEAD_READY orientation=%u ms=%lld\n",orientation,(long long)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-started).count());
+   }catch(const std::exception& e){aheadResult_.reset();std::fprintf(stderr,"TURN_AHEAD_FAILED reason=%s\n",e.what());}catch(...){aheadResult_.reset();}}
+  aheadDone_.store(true,std::memory_order_release);});}catch(...){aheadDone_=true;}
+}
 void Shell::turnTick(){if(!document_){if(turned()){turn_=openingTurn_=ib::layout::Turn::Portrait;ib::layout::setTurn(turn_);}refusedTurn_.reset();refusedDocument_.clear();blockedNotice_.clear();return;}
  if(leaveTurned_&&!turned()&&(state_==State::Clean||state_==State::Chrome)){leaveTurned_=false;(void)returnToLibrary();return;}
  const auto want=leaveTurned_?ib::layout::Turn::Portrait:selectedFormat_=="pdf"||selectedFormat_=="epub"?wantedTurn():ib::layout::Turn::Portrait;
@@ -511,6 +542,7 @@ void Shell::turnTick(){if(!document_){if(turned()){turn_=openingTurn_=ib::layout
     for this book and way of holding it, instead of staying upright without a word. */
  if(styled_->hasLegacyInk()||!semantics_->highlights().isEmpty()){const auto key=selectedId_+QString(":%1").arg(degrees(want));if(blockedNotice_!=key){blockedNotice_=key;notice("This page stays upright \u2014 its older ink or highlights are fixed to it");recovery::v2::e2::mark("ui:turn-blocked",styled_->hasLegacyInk()?1u:2u);}return;}
  // As a view change: the page is prepared again in the new turn; the view, reading position and ink are unchanged.
+ if(want!=ib::layout::Turn::Portrait)lastLandscape_=want; /* the direction prepared ahead next time */
  turning_=true;openingTurn_=want;viewPage_=page();viewControls_={};clearNavigation();viewportRefresh_=false;changingView_=true;state_=State::NavigationPending;loadingChrome_=true;paintChrome();change_.full=true;recovery::v2::e2::mark("ui:turn",degrees(want));}
 // Surfaces without a landscape layout yet (docs/LANDSCAPE.md, PR 1): selection, menus, palettes and sheets.
 bool Shell::portraitOnly(){notice("Turn the tablet upright for this");recovery::v2::e2::mark("ui:turn-portrait-only");return true;}
@@ -664,7 +696,7 @@ std::optional<std::string> Shell::inboxSignature()const{
 // on, so the session builds its next Engine with SessionDisplay::inputFrame() before it admits another contact.
 bool Shell::tick(){const bool ticked=tickScene();const unsigned frame=sheetTurned()?degrees(turn_):0u;if(frame!=inputTurn_){inputTurn_=frame;++presentedVersion_;}return ticked;}
 bool Shell::tickScene(){if((tom_&&tom_->contact())||(document_&&document_->contact()))return false;if(exiting())return false;{const auto before=light_.view();if(light_.tick()){const auto after=light_.view();const bool visible=before.available!=after.available||before.requested!=after.requested||before.power!=after.power||before.maximum!=after.maximum||before.error!=after.error||before.changing!=after.changing;refreshStatus(false);if(pendingLight_>=0){const int level=pendingLight_;pendingLight_=-1;if(light_.request(app_,level))refreshStatus(true);}if(visible&&menu_&&menuAnchor_.x0==LightAnchor.x0){auto previous=menuRect_;paintChrome(true);damage(joined(std::array{previous,menuRect_},2));}}}if(quickSettingsWait_&&(!light_.view().busy||std::chrono::steady_clock::now()>=quickSettingsUntil_)){quickSettingsWait_=false;refreshStatus(true);damage(statusPanel());++presentedVersion_;}if(statusTapPending_){statusTapPending_=false;(void)finger(statusLast_.x,statusLast_.y);}if(notes_&&notes_->failed()&&notes_->unsaved()==0)(void)retireFailedNotes();if(tom_&&tom_->failed()&&tom_->unsaved()==0)(void)retireFailedTom();
- if(notesReload_&&!notes_&&styled_&&!styled_->status().busy&&styled_->reload()){notesReload_=false;expectRemoval();}pollDevice();pollOrientation();turnTick();pollClock(QDateTime::currentSecsSinceEpoch());refreshStatus();coverTick();lockTick();
+ if(notesReload_&&!notes_&&styled_&&!styled_->status().busy&&styled_->reload()){notesReload_=false;expectRemoval();}pollDevice();pollOrientation();turnTick();aheadTick();pollClock(QDateTime::currentSecsSinceEpoch());refreshStatus();coverTick();lockTick();
  (void)dispatchNavigation();
  if(exitAfterNavigation_&&(!document_||returning_||(tom_&&tom_->active())||(notes_&&notes_->active())))exitAfterNavigation_=false;
  if(exitAfterNavigation_&&(state_==State::Clean||state_==State::Chrome)&&returnToLibrary())exitAfterNavigation_=false;
@@ -847,7 +879,7 @@ bool Shell::append(const spike::Point& original)noexcept{auto p=original;if(epub
  return ok;}
 void Shell::cancel()noexcept{statusContact_=statusTapPending_=false;if(penSelect_.active){penSelect_={};return;}if(tom_&&tom_->active())tom_->cancel();if(notes_&&notes_->active())notes_->cancel();if(styled_)styled_->cancel();if(document_)document_->cancel();}
 void Shell::beginQuiesce()noexcept{
- if(quiescing_)return;quiescing_=true;stop_=true;light_.beginQuiesce();covers_.beginQuiesce();companionStop_=true;wifiStop_=true;powerConstrained_=true;
+ if(quiescing_)return;quiescing_=true;stop_=true;aheadStop_=true;light_.beginQuiesce();covers_.beginQuiesce();companionStop_=true;wifiStop_=true;powerConstrained_=true;
  statusContact_=statusTapPending_=false;shutdownInterrupted_=(document_&&document_->contact())||(notes_&&notes_->contact())||(tom_&&tom_->contact());
  // Signal all domains before polling any slow helper. Canvas stop must precede
  // ordinary cancellation so interrupted Notes/Tom input remains explicit.
@@ -869,8 +901,9 @@ Shell::Shutdown Shell::pollQuiesce()noexcept{
  if(opener_.joinable()&&done_.load(std::memory_order_acquire)){opener_.join();if(!finishOpener())failed_=true;}
  (void)thumbnails_.collect(); // a cancelled thumbnail helper is reaped here; it never writes anything
  if(snapThread_.joinable()&&snapDone_.load(std::memory_order_acquire))snapThread_.join(); // a snap ends quickly once stop_ is set
+ if(ahead_.joinable()&&aheadDone_.load(std::memory_order_acquire))ahead_.join(); // its helpers stop with stop_/aheadStop_
  const bool writersDrained=(!tom_||tom_->drained())&&(!notes_||notes_->drained())&&(!styled_||styled_->drained())&&semantics_->drained();
- const bool helpersDrained=light_.drained()&&covers_.drained()&&!companionThread_.joinable()&&!wifiThread_.joinable()&&!opener_.joinable()&&thumbnails_.drained()&&!snapThread_.joinable()&&(!preparationTracking_.ledger||openerReconciled_.load(std::memory_order_acquire));
+ const bool helpersDrained=light_.drained()&&covers_.drained()&&!companionThread_.joinable()&&!wifiThread_.joinable()&&!opener_.joinable()&&thumbnails_.drained()&&!snapThread_.joinable()&&!ahead_.joinable()&&(!preparationTracking_.ledger||openerReconciled_.load(std::memory_order_acquire));
  // A failed document open or display is not an unsaved write. Preserve its
  // independent failed outcome while checking every persistence owner here.
  const bool canonicalSaved=!shutdownInterrupted_&&!semantics_->failed()&&(!styled_||!styled_->status().failed)&&(!notes_||!notes_->failed())&&(!tom_||!tom_->failed())&&unsaved()==0&&semantics_->pending()==0;
@@ -883,7 +916,7 @@ Shell::Shutdown Shell::pollQuiesce()noexcept{
 // 256 semantics pending, 512 interrupted; 1024 document not drained, 2048 document not saved.
 unsigned Shell::drainBlockers()noexcept{unsigned m=0;
  if(tom_&&!tom_->drained())m|=1u;if(notes_&&!notes_->drained())m|=2u;if(styled_&&!styled_->drained())m|=4u;if(!semantics_->drained())m|=8u;
- if(!light_.drained()||!covers_.drained()||companionThread_.joinable()||wifiThread_.joinable()||!thumbnails_.drained()||snapThread_.joinable())m|=16u;if(opener_.joinable())m|=32u;if(preparationTracking_.ledger&&!openerReconciled_.load(std::memory_order_acquire))m|=64u;
+ if(!light_.drained()||!covers_.drained()||companionThread_.joinable()||wifiThread_.joinable()||!thumbnails_.drained()||snapThread_.joinable()||ahead_.joinable())m|=16u;if(opener_.joinable())m|=32u;if(preparationTracking_.ledger&&!openerReconciled_.load(std::memory_order_acquire))m|=64u;
  if(unsaved())m|=128u;if(semantics_->pending())m|=256u;if(shutdownInterrupted_)m|=512u;
  if(document_&&!document_->pollQuiesce(!(m&127u),!(m&(128u|256u|512u))))m|=1024u;if(document_&&!document_->shutdownSaved())m|=2048u;return m;}
 bool Shell::finish(unsigned ms)noexcept{

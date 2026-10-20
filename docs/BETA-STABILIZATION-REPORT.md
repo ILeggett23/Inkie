@@ -415,6 +415,18 @@ Also seen, not changed here: a new Inkie request takes about 11 s on the tablet 
 (`TOM_HELPER_TIMING stage=created`); the service then reads the handwriting in about 3.7 s. While a reply's picture is
 pending, a new helper process starts every 1–2 s, and each shell tick then takes about 36 ms.
 
+### Turning ready ahead (user request, 2026-10-20)
+
+The user: turning must be near instant, as in Xochitl. A turn reopened the book: staging an EPUB's landscape layout,
+rendering the turned page in a new page-server process (about 2 s), then showing it.
+
+| # | Issue | Cause | Change | Verified |
+|---|---|---|---|---|
+| D25 | A turn shows the page seconds after the tilt is noticed | All of the turned page's work started at the turn | With Auto-rotate on, the page as the next turn would show it is prepared in the background once reading rests on a page for 3 s and nothing else is under way; the turn uses it when it matches (book, layout, page, direction) and otherwise works as before (docs/LANDSCAPE.md). Predicted direction: the last landscape direction used, or upright when turned. | [auto] `turn_uses_the_page_prepared_ahead_pdf` / `_epub`: the turn and the turn back each use the page prepared ahead. Device check 45 |
+
+What remains at a turn: closing and reopening the book's reader and ink (about 0.3–0.5 s on the tablet) and the full-page
+refresh.
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -480,6 +492,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 42 | (After the Companion is deployed) Ask Inkie a handwritten question; time Send to the answer's first words; start writing in an empty Inkie sheet | The answer starts clearly sooner than the 17–20 s before; the hint disappears as soon as the pen touches | `tom:read-answer-start` → `tom:ocr-end`, `TOM_HELPER_TIMING` |
 | 43 | Auto-rotate on: open an EPUB and turn the tablet, then turn back, twice | The first turn is a few seconds quicker; turning back and the second round trip are quicker still | `EPUB_STAGE_TIMING` (annotations reused=1 on the second round), `ui:turn` → `ui:turned` |
 | 44 | Auto-rotate on: turn the tablet with a PDF open; switch pens, colours and the eraser from the toolbar and the palette while writing | The turn starts within about half a second of the tilt; the toolbar shows each new tool at once | `ui:orientation-read-ms` (well under 100), `ui:turn` |
+| 45 | Auto-rotate on: read a page for a few seconds, then turn the tablet anticlockwise; read a few seconds, turn back; repeat with an EPUB | The page shows turned within about a second of the tilt, and back as quickly | `ui:turn-ready-ahead`, `TURN_AHEAD_READY` |
 
 | 40 | In landscape: open Document notes and Ask Inkie from the document menu, and Layers and Inkie from the toolbar | Each opens upright at the foot of the screen (the tall ones fill its height) with the page beside it; its controls act where drawn; a tap on the page beside it closes it | — |
 | 41 | In landscape: write a note, expand it, write more, type a title with the keyboard; tap Done; turn upright and reopen the note | The ink is where it was written on the note's paper, in both orientations; nothing moves | — |

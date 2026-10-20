@@ -121,6 +121,15 @@ reader's frame, painted upright, and hit on the panel:
   float coefficients) and live in `<document>/turn-<o>/epub-views/<id>/page-N`. The EPUB store's reclaim and strict
   inspection cover that tree.
 
+**Turning ready ahead (2026-10-20).** A turn used to stage the layout (EPUB), render the turned page in a page-server
+process and only then show it: about 12 s on the tablet. With Auto-rotate on, once reading rests on a page for 3 s with
+nothing else under way (no pen, nothing saving or pending, no sheet, menu or palette), Inkie prepares that page as the
+next turn would show it, in the background: the landscape layout staged and the page rendered for the last landscape
+direction used (anticlockwise at first), or the upright page when turned. The turn's opener waits for a job still running
+and uses its result when it is for the same book, layout, page and direction (`ui:turn-ready-ahead`); otherwise it
+stages and renders as before. Page requests share the page server's lock with reading; a job is never stopped mid-request.
+`TURN_AHEAD_READY` / `TURN_AHEAD_FAILED` journal each job.
+
 **Still portrait (a notice), with why:**
 - **Notes and Inkie sheets** were portrait here; PR 3 turns them (below).
 - **Document settings, Quick Browse and recents:** full-height portrait sheets with no landscape layout yet.
