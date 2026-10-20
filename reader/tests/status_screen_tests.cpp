@@ -24,13 +24,13 @@ int main(int argc,char**argv){try{if(argc!=2||!ib::text::load(std::filesystem::p
   auto axes=[&](int x,int y,int z){put(acc/"in_accel_x_raw",std::to_string(x));put(acc/"in_accel_y_raw",std::to_string(y));put(acc/"in_accel_z_raw",std::to_string(z));return device::readAccel(acc);};
   check(device::accelerometer(root/"iio")==acc&&!device::accelerometer(root/"none"));auto a=axes(0,1000,0);check(a&&a->x==1000&&a->y==0&&a->z==0); /* sensor y is device x */
   device::OrientationWatch o;using T=device::Turn;auto feed=[&](int dx,int dy,int dz){return o.update(device::Accel{double(dx),double(dy),double(dz)});};
-  check(!feed(0,1000,0)&&o.turn==T::Portrait);check(!feed(-1000,0,0)&&!feed(-1000,0,0)&&o.turn==T::Portrait&&feed(-1000,0,0)&&o.turn==T::Clockwise); /* top edge to the right */
+  check(!feed(0,1000,0)&&o.turn==T::Portrait);check(!feed(-1000,0,0)&&o.turn==T::Portrait&&feed(-1000,0,0)&&o.turn==T::Clockwise); /* top edge to the right: two settled readings */
   check(!feed(0,0,1000)&&!feed(0,0,1000)&&!feed(0,0,1000)&&o.turn==T::Clockwise); /* flat on a table: kept */
   check(!feed(-707,707,0)&&!feed(-707,707,0)&&!feed(-707,707,0)&&o.turn==T::Clockwise); /* 45 degrees: inside the margin, kept */
   check(!feed(0,-1000,0)&&!feed(0,-1000,0)&&!feed(0,-1000,0)&&o.turn==T::Clockwise); /* upside down: kept */
-  check(!feed(1000,0,0)&&!feed(1000,0,0)&&!feed(0,1000,0)&&o.turn==T::Clockwise); /* interrupted: no turn */
-  check(!feed(1000,0,0)&&!feed(1000,0,0)&&feed(1000,0,0)&&o.turn==T::Anticlockwise&&std::lround(device::OrientationWatch::angle({1000,0,0}))==90);
-  check(!feed(-200,1000,0)&&!feed(-200,1000,0)&&feed(-200,1000,0)&&o.turn==T::Portrait); /* 11 degrees off upright */
+  check(!feed(1000,0,0)&&!feed(0,1000,0)&&o.turn==T::Clockwise); /* interrupted: no turn */
+  check(!feed(1000,0,0)&&feed(1000,0,0)&&o.turn==T::Anticlockwise&&std::lround(device::OrientationWatch::angle({1000,0,0}))==90);
+  check(!feed(-200,1000,0)&&feed(-200,1000,0)&&o.turn==T::Portrait); /* 11 degrees off upright */
   // The reader thread: the caller never waits for a slow sensor (0.75 s a reading on the Paper Pro), each reading is
   // taken once, and a paused reader reads nothing more (at most the reading already under way, then discarded).
   {device::AccelReader r;std::atomic<int> reads{0};check(!r.take());r.run([&]{++reads;std::this_thread::sleep_for(std::chrono::milliseconds(400));return std::optional<device::Accel>(device::Accel{1,2,3});});

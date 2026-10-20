@@ -93,7 +93,7 @@ The page, ink, styled ink and semantic text stay physical. The chrome and its ta
 - `device::readAccel` reads the raw axes and applies the mount matrix.
 - `device::OrientationWatch` classifies portrait, clockwise, anticlockwise or flat:
   - a 30° margin, so a tablet at an angle keeps its orientation;
-  - the reading must hold for 3 polls at 300 ms;
+  - the reading must hold for 2 readings (about 1.5 s on the tablet, where a reading takes 0.75 s);
   - flat or upside down keeps the last orientation.
 - The first device run journals the raw readings (`ui:orientation`) to confirm the axis signs.
 - Readings come from their own thread (`device::AccelReader`). One reading takes about 0.75 s on the tablet; read on the

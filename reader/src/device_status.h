@@ -101,7 +101,7 @@ private:
 // Settles the way the tablet is held. A new orientation needs the tilt within 30 degrees of it for Polls readings in a
 // row, so a tablet held at an angle never flips; lying flat (the screen's plane carries under half of gravity) or upside
 // down keeps the last orientation. angle: 0 upright, -90 top edge to the right, +90 top edge to the left.
-struct OrientationWatch {static constexpr int Polls=3;static constexpr double Margin=30;Turn turn{Turn::Portrait};
+struct OrientationWatch {static constexpr int Polls=2; /* two readings: about 1.5 s on the tablet, where one takes 0.75 s (three took 2.3 s, not the ~1 s intended) */static constexpr double Margin=30;Turn turn{Turn::Portrait};
  static double angle(const Accel& a)noexcept{return std::atan2(a.x,a.y)*180/std::numbers::pi;}
  static std::optional<Turn> classify(const Accel& a)noexcept{const double plane=std::hypot(a.x,a.y),all=std::sqrt(a.x*a.x+a.y*a.y+a.z*a.z);if(!(all>0)||plane<.5*all)return std::nullopt;const double d=angle(a);
   if(std::abs(d)<=Margin)return Turn::Portrait;if(std::abs(d+90)<=Margin)return Turn::Clockwise;if(std::abs(d-90)<=Margin)return Turn::Anticlockwise;return std::nullopt;}
