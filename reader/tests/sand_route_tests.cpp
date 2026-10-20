@@ -16,7 +16,18 @@ struct Lease final:spike::RecoveryLease {bool live{true};bool valid()const noexc
 struct Calls final:spike::VendorCalls {
  std::vector<std::uint32_t> pixels=std::vector<std::uint32_t>(underlay::Pixels,0xffffffffu);unsigned full{},regions{};bool bad{};int lastQualityClass{-1},sampleClass{-1};spike::Rect sample{};bool trace{};
  bool acquire(spike::Pixels& out)noexcept override{out={reinterpret_cast<unsigned char*>(pixels.data()),1620,2160,4,6528};return true;}
- void region(spike::Rect r,int,int mode,int flags)noexcept override{bad|=r.empty()||r.x0<0||r.y0<0||r.x1>1620||r.y1>2160;if(flags&1)++full;else ++regions;bad|=flags!=0&&!(flags==1&&mode==3)&&!(flags==2&&mode==0);}
+ void region(spike::Rect r,int content,int mode,int flags)noexcept override{
+  if(!flags&&(mode==3||mode==4)){
+   lastQualityClass=content;
+   if(r.x0<sample.x1&&r.x1>sample.x0&&r.y0<sample.y1&&r.y1>sample.y0){
+    sampleClass=content;
+    if(trace)std::fprintf(stderr,"SAND_TEST_QUALITY x=%d y=%d w=%d h=%d class=%d mode=%d\n",r.x0,r.y0,r.x1-r.x0,r.y1-r.y0,content,mode);
+   }
+  }
+  bad|=r.empty()||r.x0<0||r.y0<0||r.x1>1620||r.y1>2160;
+  if(flags&1)++full;else ++regions;
+  bad|=flags!=0&&!(flags==1&&mode==3)&&!(flags==2&&mode==0);
+ }
  void events()noexcept override{}
 };
 struct Harness {
