@@ -141,6 +141,17 @@ int main(int argc,char** argv){QCoreApplication core(argc,argv);if(argc!=5)retur
   const auto turned=h.shell.document()->active().prepared.metadata;CHECK(turned["orientation"]==90&&turned["documentFormat"]=="epub"&&turned["view_receipt"].toObject()["layout"].toObject()["height"]==590&&ux::TurnTestAccess::viewSet(h.shell)!=portrait);
   hold(0,1000);until([&]{h.boundary();CHECK(!h.shell.failed());return ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Portrait&&h.shell.writable();});settle(h);
   CHECK(ux::TurnTestAccess::viewSet(h.shell)==portrait&&!h.shell.document()->active().prepared.metadata.contains("orientation"));CHECK(h.shell.finish(5000));});
+ // A book whose landscape layout is refused stays upright and says so once. Before, every refusal re-opened the book
+ // upright and the next tick tried again: a full refresh and the toolbar redrawn every few seconds (journal 2026-10-20).
+ test("refused_turn_is_not_retried",[&]{auto root=data/"turn-refused";{QProcess process;process.start(QString::fromStdString((app/"bin/reader-experience1-prepare").string()),{"--import",QString::fromStdString((source/"fixtures/library/authored-three-chapters.epub").string()),QString::fromStdString(root.string())});CHECK(process.waitForStarted(2000)&&process.waitForFinished(30000)&&process.exitStatus()==QProcess::NormalExit&&process.exitCode()==0);CHECK(library::documents(root).size()==1);}
+  Harness h(app,root);settle(h);h.stroke(300,900,450,900,5);settle(h);const auto book=library::documentRoot(root,library::documents(root)[0].id);std::filesystem::create_directories(book/"features"/"unknown-test"); /* the layout check refuses it */
+  const auto accel=data/"turn-refused-accel";std::filesystem::create_directories(accel);auto hold=[&](int x,int y){std::ofstream(accel/"in_accel_x_raw")<<x<<"\n";std::ofstream(accel/"in_accel_y_raw")<<y<<"\n";std::ofstream(accel/"in_accel_z_raw")<<0<<"\n";};
+  hold(-1000,0);ux::TurnTestAccess::sensor(h.shell,accel);until([&]{h.boundary();CHECK(!h.shell.failed());return h.shell.notice().contains("stays upright")&&h.shell.writable();});settle(h);
+  CHECK(ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Portrait);const auto full=h.calls.full;const auto end=std::chrono::steady_clock::now()+std::chrono::seconds(3);
+  while(std::chrono::steady_clock::now()<end){h.boundary();CHECK(!h.shell.failed());std::this_thread::sleep_for(std::chrono::milliseconds(5));}
+  CHECK(h.calls.full==full&&ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Portrait&&h.shell.writable());
+  std::filesystem::remove(book/"features"/"unknown-test");hold(0,1000);const auto upright=std::chrono::steady_clock::now()+std::chrono::seconds(2);while(std::chrono::steady_clock::now()<upright){h.boundary();std::this_thread::sleep_for(std::chrono::milliseconds(5));} /* held upright: the refusal is forgotten */
+  hold(-1000,0);until([&]{h.boundary();CHECK(!h.shell.failed());return ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Clockwise&&h.shell.writable();});settle(h);CHECK(h.shell.finish(5000));});
  // Turned (PR 3): Notes and Inkie open upright at the foot of the landscape screen (ib::layout::SheetMap), their controls
  // are where they are drawn, and the pen writes through the session's Engine frame (SessionDisplay::inputFrame) into the
  // writing area: the stored strokes are the same sheet-relative points either way up, and they show where they were

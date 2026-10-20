@@ -114,6 +114,8 @@ reader's frame, painted upright, and hit on the panel:
   stages the book's own layout (the same id).
 - **Nothing is activated.** Leaving a turned EPUB turns it upright first, so the book's own layout keeps the position.
 - **Ink** stays on the layout it was written on, as with any layout change.
+- **A refused turn** (the layout cannot be made) is not retried for that book until the tablet is held another way;
+  a page pinned upright by older ink or highlights says so once (D17–D19).
 - **Rendering:** turned pages use `pdfview::fitTurned` (`turn_fit.h`, shared with the PDF planner and the loader: exact
   float coefficients) and live in `<document>/turn-<o>/epub-views/<id>/page-N`. The EPUB store's reclaim and strict
   inspection cover that tree.

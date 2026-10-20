@@ -177,6 +177,9 @@ public:
  // An EPUB turns into a landscape twin of its layout (wider lines, same type size); portraitEpubSet_ is the layout it
  // returns to. Leaving a turned EPUB turns it back first, so its own layout keeps the reading position.
  QString portraitEpubSet_;bool leaveTurned_{};std::atomic<bool> turnRefused_{false};
+ // A turn that could not be made (refused layout) or may not be made (ink or highlights pinned upright) is not tried again
+ // for the same book, page and way of holding it: retrying re-opened the book every few seconds (journal 2026-10-20).
+ std::optional<ib::layout::Turn> refusedTurn_;QString refusedDocument_;QString blockedNotice_;
  static unsigned degrees(ib::layout::Turn t)noexcept{return t==ib::layout::Turn::Clockwise?90u:t==ib::layout::Turn::Anticlockwise?270u:0u;}
  bool turned()const noexcept{return turn_!=ib::layout::Turn::Portrait;}
  spike::Rect physical(spike::Rect logical)const noexcept{return ib::layout::Frame{turn_}.physical(logical);}

@@ -341,6 +341,24 @@ input path: an optional turn and offset in `spike::Transform`, set through `Sess
 session builds an Engine. [auto] sustained-session (`INPUT_FRAME_PASS`), ib-layout, ib-surface and ib-preview targets,
 and the `turned_note_sheet_…`/`turned_inkie_sheet_…` routes. Device checks 40–44.
 
+### Device report follow-up 6: Auto-rotate loops instead of turning (user report, 2026-10-20)
+
+The user, on PR #14 (`47d9889`): with Auto-rotate on, an opened EPUB or PDF did not turn to landscape; the toolbar kept
+opening and closing and the page refreshed by itself. The journal (read with the user's approval) shows the EPUB
+"Psycho-Cybernetics" from 16:25:04 to 16:25:26 UTC: `ui:turn 270`, then `EPUB_STAGE_FAILED
+reason=epub-view-feature-unknown-file` and `ui:turn-refused`, the book re-opened upright (a complete refresh) and the
+next turn attempt about 4 s later, six times until the session ended. The same refusal is in the 2026-10-19 sessions.
+
+| # | Issue | Root cause | Fix | Verified |
+|---|---|---|---|---|
+| D17 | A book with an interrupted erase can never turn | Styled ink keeps an interrupted eraser stroke as a draft in `features/interrupted/` (the book had one from 2026-10-16). The EPUB view store's strict feature inspection allowed only `features.lock`, `features.json`, `features.previous.json` and `legacy`, so every new layout of that book was refused. | `inspectFeatures` accepts `interrupted` as a directory; other unknown names are still refused. | [auto] `epub-view-store-tests`: a draft does not refuse staging or activation; a stray file and an `interrupted` file are still refused |
+| D18 | A refused turn is retried forever: the book re-opens upright with a full refresh and the toolbar redrawn every few seconds | `turnTick` tried the wanted turn again as soon as the refused one re-opened the book upright. | A refused turn is remembered for the book and the way the tablet is held (`refusedTurn_`) and not retried until the tablet is held another way or another book opens; "This book can’t turn — it stays upright" shows once. | [auto] `refused_turn_is_not_retried`: one refusal, then 3 s held turned with no further complete refresh; held upright and turned again (refusal gone), it turns |
+| D19 | A page with older ink or legacy highlights never turns, without a word | By design (as for view changes) such a page keeps its upright layout, but nothing said so. | "This page stays upright — its older ink or highlights are fixed to it" once per book and way of holding it; `ui:turn-blocked` 1 (ink) or 2 (highlights). | [inspect]; device check 40 |
+
+Not changed, noted: a PDF page that fails to prepare turned closes the book to the library like any failed open
+("This book could not open — its data is kept"), rather than staying upright. A retained interrupted-eraser draft is
+never applied (the protected `styled_ink.cpp` keeps the original ink unchanged by design).
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -401,6 +419,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 37 | Turn an EPUB, read on, then close it and reopen it upright | The book reopens where you stopped reading | — |
 | 38 | Write black and red ink; erase part of each with the Marker's eraser end, then with the toolbar eraser; erase a long scribble | Ink disappears under the eraser as it moves and nothing is left unerased (D15 reverted; residue colour compared with stock) | `ui:erase-live-removals`, `ui:erase-lift-cleanup`, `ui:removal-content-cleanup` |
 | 39 | Turn Auto-rotate on in quick settings; tap the toolbar, menus and page turns; then turn the tablet | Taps respond at once, as with Auto-rotate off; the page turns about 2 s after the tilt settles | `ui:orientation-read-ms`, no `reader:slow-tick-us` near 750 000 |
+| 40 | Auto-rotate on: open the EPUB that looped (Psycho-Cybernetics) and turn the tablet; then a PDF with highlights | The EPUB turns to landscape; a book that cannot turn stays upright with one notice and no repeated refreshes; the PDF says why it stays upright | `ui:turn`, `ui:turned`, `ui:turn-refused` at most once, `ui:turn-blocked` |
 
 | 40 | In landscape: open Document notes and Ask Inkie from the document menu, and Layers and Inkie from the toolbar | Each opens upright at the foot of the screen (the tall ones fill its height) with the page beside it; its controls act where drawn; a tap on the page beside it closes it | — |
 | 41 | In landscape: write a note, expand it, write more, type a title with the keyboard; tap Done; turn upright and reopen the note | The ink is where it was written on the note's paper, in both orientations; nothing moves | — |
