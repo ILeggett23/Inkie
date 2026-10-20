@@ -25,7 +25,7 @@ struct Model {
  // Security
  bool passcode{};int companion{-1}; /* -1 off on this device, 0 not paired, 1 pairing, 2 paired, 3 needs attention */
  // Accessibility
- bool highContrast{},reduceMotion{},plainText{};
+ bool highContrast{},reduceMotion{},plainText{};unsigned sandMode{};
  // Tom
  bool tomTyped{},tomReveal{true};unsigned tomHand{1};int tomOnline{-1};
  // What Inkie remembers: its notes about the reader, oldest first. Clear asks for a second tap (armed).
@@ -35,7 +35,7 @@ struct Model {
 // Ids 950-965 are the ones the settings rows have always used (routes and tests tap them).
 enum Id:int {Effects=950,Leave,Wifi,SleepCover,ToolHandle,LeftHanded,ReadingProgress,SnapHighlights,IdleBase=960,PageBase=970,
  TomStyleBase=980 /* +0 handwriting, +1 typed */,TomHandBase=982 /* +0..2 */,TomReveal=985,HighContrast=986,ReduceMotion=987,PasscodeSet=988,PasscodeOff=989,CompanionManage=990,TimeZone=991,PlainText=992,
- TomMemoryClear=993,TomMemoryForgetBase=994 /* +0..TomMemoryShown-1, newest first */};
+ TomMemoryClear=993,TomMemoryForgetBase=994 /* +0..TomMemoryShown-1, newest first */,SandMode=1005};
 inline constexpr int TomMemoryShown=5;
 inline constexpr Rect NavRect{80,300,388,2060},PaneRect{516,180,1510,2060};
 void paint(Canvas&,Targets&,const Model&);

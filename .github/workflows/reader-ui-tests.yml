@@ -77,7 +77,8 @@ jobs:
           ci_cmake_args=()
           if [ -n "$SANITIZER" ]; then ci_cmake_args+=('-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O1 -g1 -DNDEBUG'); fi
           cmake -S reader -B .ci-build -G Ninja -DCMAKE_CXX_COMPILER_LAUNCHER=ccache "${ci_cmake_args[@]}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_VENDOR_RUNTIME=ON -DSPIKE_SANITIZER="$SANITIZER" -DMUPDF_INCLUDE="$PWD/.ci-deps/mupdf-host/source/include" -DMUPDF_ARCHIVES="$PWD/.ci-deps/mupdf-host/lib/libmupdf.a;$PWD/.ci-deps/mupdf-host/lib/libmupdf-third.a"
-          cmake --build .ci-build --parallel 2 --target sustained-session-tests ui-damage-tests eink-refresh-tests ib-layout-tests ib-surface-tests ib-preview status-screen-tests
+          cmake --build .ci-build --parallel 2 --target sand-transition-tests sand-route-tests reveal-route-tests sustained-session-tests ui-damage-tests eink-refresh-tests ib-layout-tests ib-surface-tests ib-preview status-screen-tests
+          .ci-build/sand-transition-tests "$PWD/.ci-sand-stages"
           .ci-build/sustained-session-tests
           .ci-build/ui-damage-tests
           .ci-build/eink-refresh-tests
@@ -123,6 +124,8 @@ jobs:
           .ci-build/semantic-tests "$PWD/reader" "$PWD/.ci-test-data/semantic" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           .ci-build/selection-route-tests "$PWD/reader" "$PWD/.ci-test-data/selection" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           .ci-build/ux-behavior-tests "$PWD/reader" "$PWD/.ci-test-data/ux" "$PWD/.ci-build" "$PWD/.ci-sysroot"
+          .ci-build/sand-route-tests "$PWD/reader" "$PWD/.ci-test-data/sand-route" "$PWD/.ci-build" "$PWD/.ci-sysroot"
+          .ci-build/reveal-route-tests "$PWD/reader" "$PWD/.ci-test-data/legacy-reveal-route" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           echo 'Linux host regressions only; tablet ABI, optical behavior and live providers are not qualified.'
       - name: Run view and shell-route tests (previously local-only)
         run: |
@@ -164,7 +167,10 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: inkbound-host-previews
-          path: .ci-previews/
+          path: |
+            .ci-previews/
+            .ci-sand-stages/
+            .ci-test-data/sand-route/sand-captures/
           retention-days: 30
           include-hidden-files: true
           if-no-files-found: error

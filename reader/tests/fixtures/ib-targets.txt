@@ -124,6 +124,7 @@ settings-Accessibility 978 80 1100 388 1200
 settings-Accessibility 986 1390 374 1510 482
 settings-Accessibility 987 1390 666 1510 774
 settings-Accessibility 992 1390 958 1510 1066
+settings-Accessibility 1005 1210 1296 1510 1392
 settings-Inkie 5 62 40 174 152
 settings-Inkie 1 746 40 873 152
 settings-Inkie 16000 1080 40 1580 152

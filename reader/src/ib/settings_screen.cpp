@@ -114,10 +114,13 @@ void paint(Canvas& c,Targets& tg,const Model& m){
   p.group("Motion");
   p.toggleRow("Reduce motion",ReduceMotion,m.reduceMotion);
   p.note("Inkie's replies appear all at once instead of line by line, and page turn effects stay off.",1);
-  // Last on the page, so adding it moved no existing row.
+  // Keep existing rows in place.
   p.group("Text");
   p.toggleRow("Plain text instead of cursive",PlainText,m.plainText);
   p.note("Inkie writes everything in cursive. This shows labels, headings and Inkie's typed replies in Source Sans and Source Serif instead; the colours stay.",2);
+  p.group("Panel motion");
+  {static constexpr std::array<const char*,4> modes{"Off","Minimal","Reduced","Full"};Rect r=p.row("Wind-blown sand");button(c,tg,SandMode,{r.x1-300,r.y0+14,r.x1,r.y1-14},m.reduceMotion?"Off":modes[std::min(m.sandMode,3u)],ButtonKind::Secondary);}
+  p.note("Tap to choose Off, Minimal, Reduced or Full. Writing and Reduce motion always take priority.",2);
   break;
  case Page::Tom:
   p.group("Replies");
