@@ -157,7 +157,17 @@ class Display final:public spike::SessionDisplay,public spike::OperationSink {
  void compose(spike::Rect r){shell_.compose(vendor_.surface(),r);}
  // Compose and present r. Its class is read before compose: a quality update keeps what it removes (and settles the
  // cells it covers); a fast update leaves that class owed to the area's later cleanup.
- spike::Submit present(spike::Rect r,const char* what,RefreshIntent intent,bool generated)noexcept{const bool decorative=shell_.sandFrameFor(r);const int before=prior(r);compose(r);const bool quality=mechanics(intent)==RefreshMechanics::QualityRegion;const auto result=live(r,what,intent,generated,false,quality?before:-1);if(result!=spike::Submit::Accepted&&decorative){shell_.sandDisplayFailed();join(uiCleanup_,r);refresh_.failed(spike::monotonic());return spike::Submit::Busy;}if(result==spike::Submit::Accepted){if(quality)paid(r);else owe(r,before);}return result;}
+ spike::Submit present(spike::Rect r,const char* what,RefreshIntent intent,bool generated)noexcept{
+  const bool decorative=shell_.sandFrameFor(r);
+  auto refused=[&]{if(!decorative)return spike::Submit::Failed;shell_.sandDisplayFailed();join(uiCleanup_,r);refresh_.failed(spike::monotonic());return spike::Submit::Busy;};
+  // Ownership can be withdrawn between preparing a stage and submitting it.
+  // Never compose into the empty surface returned by a withdrawn lease.
+  if(!vendor_.surface().valid()){shell_.sandSubmitted(r,false);return refused();}
+  const int before=prior(r);compose(r);const bool quality=mechanics(intent)==RefreshMechanics::QualityRegion;
+  const auto result=live(r,what,intent,generated,false,quality?before:-1);
+  if(result!=spike::Submit::Accepted)return refused();
+  if(quality)paid(r);else owe(r,before);return result;
+ }
 public:
  Display(spike::VendorDisplay& v,Shell& s,reader::lifecycle::Foreground* foreground=nullptr,recovery::v2::sessionpower::SessionPower* sessionPower=nullptr,spike::Ns startupBudget=StartupBudget):vendor_(v),shell_(s),foreground_(foreground),sessionPower_(sessionPower),startupBudget_(startupBudget){}
  bool initialize(const spike::RecoveryLease& l)noexcept override{lease_=&l;
