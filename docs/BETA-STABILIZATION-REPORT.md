@@ -433,6 +433,14 @@ refresh.
 |---|---|---|
 | D26 | With Auto-rotate on, the library, its drawer and Settings turn with the tablet, laid out for the upright landscape frame (four cover columns, two rows; the settings pane to the right edge). Search, Notes, Inkie, pairing, Wi-Fi, time zone, passcode and the file menu stay upright for now and say so. | [auto] `library_turns_with_the_tablet` (laid out turned, search refused, a book opens from it and leaving keeps it turned, turns back); `ib-targets.txt` gains only the landscape previews; all Settings pages measured to fit in 1620 (the longest, Inkie with five notes, ends at y 1588). Device check 46 |
 
+### Books open turned; covers no longer flash; AppLoad shows Inkie (user report, 2026-10-20)
+
+| # | Issue | Cause | Change | Verified |
+|---|---|---|---|---|
+| D27 | From the turned library, a book takes seconds to turn | It opened upright and then turned (another reopen) | A PDF opens with its turned page prepared; an EPUB stages its landscape layout first (if that fails it opens upright). A book whose page has older ink or legacy highlights pinned upright turns upright once, with the notice. | [auto] `library_turns_with_the_tablet`: the book opens already turned (orientation 90) |
+| D28 | Library covers flash after launch | The shell asked the cover service to render every visible book not in its memory cache, even books with a saved cover already drawn, and repainted each tile as its render arrived | No render for a book with a saved cover; an arriving cover refreshes only the pixels that changed (`libraryRefresh`) | [inspect]; device check 47 |
+| D29 | AppLoad still shows "Inkbound" with the book icon | The Inkie manifest and icon (`reader/tools/appload`) were never installed | Installed on 2026-10-20 at the user's request: `external.manifest.json` ("Inkie") and `icon.png` replaced, the old ones kept in `/home/root/appload-inkbound-backup-20261020/`; `launch.sh` and the folder unchanged | Checked by hash on the tablet; AppLoad shows it once it reloads its list |
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -500,6 +508,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 44 | Auto-rotate on: turn the tablet with a PDF open; switch pens, colours and the eraser from the toolbar and the palette while writing | The turn starts within about half a second of the tilt; the toolbar shows each new tool at once | `ui:orientation-read-ms` (well under 100), `ui:turn` |
 | 45 | Auto-rotate on: read a page for a few seconds, then turn the tablet anticlockwise; read a few seconds, turn back; repeat with an EPUB | The page shows turned within about a second of the tilt, and back as quickly | `ui:turn-ready-ahead`, `TURN_AHEAD_READY` |
 | 46 | Auto-rotate on, in the library: turn the tablet; open the drawer, Settings and each settings page; page through My files; open a book; turn back upright | The library and Settings turn at once and lay out across the screen; taps land where drawn; search and Notes say to turn upright | `ui:turn-library`, `ui:turn-portrait-only` |
+| 47 | Launch Inkie with the tablet turned; watch the covers; open a PDF and an EPUB from the turned library | Covers do not flash after the library shows; each book opens already turned | `ui:turn-library`, no `ui:turn` right after opening |
 
 | 40 | In landscape: open Document notes and Ask Inkie from the document menu, and Layers and Inkie from the toolbar | Each opens upright at the foot of the screen (the tall ones fill its height) with the page beside it; its controls act where drawn; a tap on the page beside it closes it | — |
 | 41 | In landscape: write a note, expand it, write more, type a title with the keyboard; tap Done; turn upright and reopen the note | The ink is where it was written on the note's paper, in both orientations; nothing moves | — |

@@ -51,7 +51,7 @@ public:
  int offset()const{return offset_;}QVector<QString> visibleIds()const;
  // Swipe paging (the Prev/Next controls without a tap): true when the visible page changed.
  bool page(int delta);void showSection(Section s);
- const ib::Targets& targets()const noexcept{return targets_;}
+ const ib::Targets& targets()const noexcept{return targets_;}bool coverOnDisk(const std::filesystem::path& root,const QString& id){return bool(cover(root,id));} /* the book's saved cover, drawn on the first paint */
  const NoteEntry* note(int index)const{return index>=0&&index<notes_.size()?&notes_[index]:nullptr;}
 private:
  QVector<library::Document> all_;QVector<int> filtered_;QVector<QString> folders_;QHash<QString,int> folderCounts_;QSet<QString> favorites_;
