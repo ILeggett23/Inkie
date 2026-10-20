@@ -61,6 +61,9 @@ int main(int argc,char**argv){try{
  // were withheld. Intermediate structure must not contain those grey outlines;
  // consolidation and the final source restore the exact normal typography.
  {auto aa=final;for(int y=190;y<203;++y)for(int x=220;x<225;++x)aa[y*W+x]=0xff999999u;sand::Transition t;check(t.start(request(),policy(),0)&&t.capture(bg,W,H,W,0)&&t.buildSilhouette(aa,W,H,W),"antialias fixture prepares");auto u=t.advance(request().identity,policy(),0);paint(t,pixels,aa,u);t.acknowledge(u.stamp,u.damage);u=t.advance(request().identity,policy(),140);paint(t,pixels,aa,u);for(int y=190;y<203;++y)for(int x=220;x<225;++x)check(pixels[y*W+x]!=0xff999999u,"no grey glyph fringe in structural stage");t.acknowledge(u.stamp,u.damage);u=t.advance(request().identity,policy(),210);paint(t,pixels,aa,u);for(int y=190;y<203;++y)for(int x=220;x<225;++x)check(pixels[y*W+x]==aa[y*W+x],"consolidation restores complete antialias pixels");t.acknowledge(u.stamp,u.damage);finish(t,aa);}
+ // The wind's padding must not hold an unrelated neighboring control at its
+ // old pixels. Flying black grains may cross it; its new canonical colour stays.
+ {auto updated=final;for(int y=110;y<390;++y)for(int x=155;x<165;++x)updated[y*W+x]=0xffcc2255u;sand::Transition t;check(t.start(request(),policy(),0)&&t.capture(bg,W,H,W,0)&&t.buildSilhouette(updated,W,H,W),"neighbor update fixture prepares");auto u=t.advance(request().identity,policy(),0);paint(t,pixels,updated,u);for(int y=110;y<390;++y)for(int x=155;x<165;++x)check(pixels[y*W+x]==0xffcc2255u||pixels[y*W+x]==0xff000000u,"padding preserves current neighbor pixels");t.acknowledge(u.stamp,u.damage);finish(t,updated);}
  // Warm a bounded cache; profile every intermediate stage and final cleanup,
  // not just the cheapest initial gust. These are CPU-only host measurements.
  std::vector<std::uint64_t> renderNs,staticNs,generationNs;std::array<std::vector<std::uint64_t>,5> perStage;

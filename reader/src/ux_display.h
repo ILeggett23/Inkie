@@ -57,6 +57,7 @@ class Display final:public spike::SessionDisplay,public spike::OperationSink {
  int prior(spike::Rect r)noexcept{int content=std::max(owedIn(r),vendor_.removalContent(r));
   if(sandClass_>=0&&std::max(r.x0,sandHistory_.x0)<std::min(r.x1,sandHistory_.x1)&&std::max(r.y0,sandHistory_.y0)<std::min(r.y1,sandHistory_.y1))content=std::max(content,sandClass_);
   if(erasedClass_>=0&&std::max(r.x0,erasedBounds_.x0)<std::min(r.x1,erasedBounds_.x1)&&std::max(r.y0,erasedBounds_.y0)<std::min(r.y1,erasedBounds_.y1))content=std::max(content,erasedClass_);
+  if(shell_.sandWorkFor(r))sandClass_=std::max(sandClass_,content);
   return content;}
  static spike::Rect around(int x,int y,int r)noexcept{return {std::max(0,x-r-3),std::max(0,y-r-3),std::min(1620,x+r+4),std::min(2160,y+r+4)};}
  static void grow(spike::Rect& a,spike::Rect b)noexcept{if(b.empty())return;if(a.empty())a=b;else a.include(b);}

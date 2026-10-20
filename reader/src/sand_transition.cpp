@@ -109,6 +109,9 @@ bool Transition::paint(std::uint64_t stamp,std::span<std::uint32_t> dst,int w,in
   const int progress=semantic==1?0:semantic==2?300:semantic==3?680:1000;
   const int sign=request_.direction==Direction::LeftToRight?1:-1;
   for(int y=clip.y0;y<clip.y1;++y)for(int x=clip.x0;x<clip.x1;++x){
+   // Padding is for flying grains and cleanup, not for masking a neighboring
+   // control or background update back to the captured old scene.
+   if(x<request_.target.x0||x>=request_.target.x1||y<request_.target.y0||y>=request_.target.y1)continue;
    auto& pixel=dst[std::size_t(y)*stride+x];const auto old=before_[std::size_t(y-region_.y0)*rw+x-region_.x0];
    if(pixel==old)continue; // actual final/old difference is the silhouette
    const int u=sign>0?x-request_.target.x0:request_.target.x1-1-x;
