@@ -377,6 +377,17 @@ GhostBuster does, to see whether it removes the yellow and whether it flashes.
 - **Verified:** [auto] `ghost_clearing_runs_once_after_an_erase_settles` (once, after every cleanup of the erased area,
   never for writing alone). Optics and flashing: device check 41.
 
+### Inkie replies sooner; the writing hint goes at once (user request, 2026-10-20)
+
+The journal (read with the user's approval) times eight handwritten questions from 2026-10-18 to 10-20: about 1.1–1.6 s
+on the tablet before the request leaves (`tom:ink-captured` → `tom:read-answer-start`), **15–18 s until the handwriting
+is read** (`tom:ocr-end`), then 1.3–6 s to the answer's first words.
+
+| # | Issue | Cause | Change | Verified |
+|---|---|---|---|---|
+| D20 | Reading a handwritten question takes 15–18 s | The Companion reads the handwriting in its own provider call before answering. It asked gpt-5.4-mini for reasoning effort `low`; that model's documented efforts are none (its default), low, medium, high and xhigh. The tablet's helper also asked for the status of a request it had just created (one more HTTPS round trip and store write before the stream opened). | **Companion:** the transcription call uses effort `none` on GPT-5.1 and later, `minimal` on the original GPT-5 models (`transcriptionEffort`); answers are unchanged. **Reader:** the helper skips the status request for a request just accepted as queued (a replayed or resumed one still asks), and journals `TOM_HELPER_TIMING` (created, stream-open, question, first-delta; ms since the helper started) to split the remaining wait between the tablet, the network and the service. | [auto] Companion `tom_reliability` (none for gpt-5.4-mini, minimal for gpt-5-mini, answers unchanged). Device check 42; needs the Companion deployed |
+| D21 | "Write to Inkie…" and "Continue the conversation…" stay while writing | The hint is drawn while the paper is empty, and the sheet is repainted only after the first stroke is saved. | At pen-down the hint's strip is painted paper again (`ib::tom::clearHint`) and joins the ink's live damage, so it leaves with the first ink; the sheet's next repaint gives the strip its quality refresh. | [auto] `tom-panel-tests` `hint_cleared_at_pen_down_and_presented_with_the_ink` |
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -439,6 +450,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 39 | Turn Auto-rotate on in quick settings; tap the toolbar, menus and page turns; then turn the tablet | Taps respond at once, as with Auto-rotate off; the page turns about 2 s after the tilt settles | `ui:orientation-read-ms`, no `reader:slow-tick-us` near 750 000 |
 | 40 | Auto-rotate on: open the EPUB that looped (Psycho-Cybernetics) and turn the tablet; then a PDF with highlights | The EPUB turns to landscape; a book that cannot turn stays upright with one notice and no repeated refreshes; the PDF says why it stays upright | `ui:turn`, `ui:turned`, `ui:turn-refused` at most once, `ui:turn-blocked` |
 | 41 | (Test build) Highlight a passage with snap-to-text and erase it with the eraser end; erase black and red handwriting; wait 2 s each time | The yellow or grey left along the eraser's path clears about a second after the erase; note whether the area or the whole screen flashes | `ui:ghost-clear` 1, `REFRESH_GHOST_CLEAR`, `DIRECT_GHOST_CLEAR available=1` |
+| 42 | (After the Companion is deployed) Ask Inkie a handwritten question; time Send to the answer's first words; start writing in an empty Inkie sheet | The answer starts clearly sooner than the 17–20 s before; the hint disappears as soon as the pen touches | `tom:read-answer-start` → `tom:ocr-end`, `TOM_HELPER_TIMING` |
 
 | 40 | In landscape: open Document notes and Ask Inkie from the document menu, and Layers and Inkie from the toolbar | Each opens upright at the foot of the screen (the tall ones fill its height) with the page beside it; its controls act where drawn; a tap on the page beside it closes it | — |
 | 41 | In landscape: write a note, expand it, write more, type a title with the keyboard; tap Done; turn upright and reopen the note | The ink is where it was written on the note's paper, in both orientations; nothing moves | — |

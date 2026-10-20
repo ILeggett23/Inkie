@@ -29,6 +29,13 @@ int main(int argc,char** argv){QCoreApplication app(argc,argv);try{fixture.ready
   forceBusy=false;forceCommitPending=true;++streamRevision;panel.tick();check(!panel.canLeave()&&!panel.writable(),"queued_close_waits_for_unsaved_commit");panel.closed();check(panel.active(),"queued_close_preserves_unsaved_work");
   forceCommitPending=false;panel.tick();check(panel.canLeave()&&panel.closeRequested()&&!panel.reserve(),"queued_close_reaches_safe_leave_without_another_tap");panel.closed();check(!panel.active()&&!panel.closeRequested(),"deferred_close_completes_once");streamRevision=0;
  }
+ // The writing hint ("Write to Inkie…") goes as the pen touches the paper: its strip is paper again at once and joins the
+ // ink's live damage, so it leaves with the first ink instead of after the stroke is saved and the sheet repainted.
+ {tom::Panel panel("/fixture/app","/fixture/library");panel.open({});panel.tick();const auto hint=ib::tom::hintRect(tom::PanelTestAccess::model(panel));check(!hint.empty()&&tom::PanelTestAccess::model(panel).empty,"hint_shown_on_empty_paper");
+  auto marks=[&]{unsigned n=0;const auto paper=panel.background();for(int y=hint.y0;y<hint.y1;++y)for(int x=hint.x0;x<hint.x1;++x)if(paper[std::size_t(y)*1632+x]!=0xffffffffu)++n;return n;};const auto before=marks();
+  check(panel.reserve()&&panel.append(spike::Point{hint.x0+300,hint.y1+120,spike::Phase::Down,spike::monotonic()}),"pen_down_in_writing_area");const auto after=marks();const auto damage=panel.inkDamage();
+  check(after<=400&&before>after+300&&damage.x0<=hint.x0&&damage.y0<=hint.y0&&damage.x1>=hint.x1&&damage.y1>=hint.y1,"hint_cleared_at_pen_down_and_presented_with_the_ink");
+  check(panel.append(spike::Point{hint.x0+300,hint.y1+120,spike::Phase::Up,spike::monotonic()}),"pen_up");}
  {tom::Panel panel("/fixture/app","/fixture/library");panel.open({});panel.tick();check(panel.active()&&panel.writable()&&panel.view().model=="fixture-exact-model"&&panel.view().maxOutputTokens==128,"open_composing");forceCommitPending=true;++streamRevision;panel.tick();check(!panel.writable(),"pending_completion_closes_admission");forceCommitPending=false;panel.tick();check(panel.writable(),"completion_without_view_revision_reopens_admission");streamRevision=0;panel.tick();
   // A compact sheet over the page: the compact writing area, with the book visible above the sheet.
   check(panel.inkDamage().y0==tom::WritingArea.y0&&tom::WritingArea.y0>ib::tom::SheetTop&&ib::tom::SheetTop>=900,"compact_writing_sheet");

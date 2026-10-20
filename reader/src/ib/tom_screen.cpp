@@ -45,6 +45,11 @@ bool writingTools(const Model& m){return !m.history&&m.composing&&!m.historyTurn
 int toolsLeft(const Model& m){return Right+t::S3-(writingTools(m)?4:2)*t::MinTarget;}
 }
 Rect zoomBadgeRect(const Model& m){if(!m.turned)return reader::ZoomBadgeRect;const Rect b=reader::ZoomBadgeRect;const int x1=toolsLeft(m)-t::S2,y0=sheetTop(m)+30;return {x1-width(b),y0,x1,y0+height(b)};}
+namespace {Rect writingArea(const Model& m){return m.inlineComposer?WritingArea:m.expanded&&m.composing?ExpandedWritingArea:WritingArea;}}
+Rect hintRect(const Model& m){if(m.history||!m.empty)return {};constexpr int Strip=96; /* the first guide row: the hint's line and its dots */
+ if(m.inlineComposer)return m.draftQuestion.empty()?Rect{WritingArea.x0,WritingArea.y0,WritingArea.x1,WritingArea.y0+Strip}:Rect{};
+ if(m.showAnswer||!m.question.empty()||m.historyTurn)return {};const Rect a=writingArea(m);return {a.x0,a.y0,a.x1,a.y0+Strip};}
+void clearHint(Canvas& c,const Model& m){const Rect r=hintRect(m);if(r.x1<=r.x0||r.y1<=r.y0)return;auto strip=c.clipped(r);strip.fill(r,t::Paper);ruledPaper(strip,m.inlineComposer?WritingArea:writingArea(m));}
 void paint(Canvas& c,Targets& tg,const Model& m){
  // Native lower sheet: the book stays in view above it; one ink rule, opaque paper.
  const int top=sheetTop(m);contextSheet(c,top,t::TomAccent,m.turned);
@@ -54,7 +59,7 @@ void paint(Canvas& c,Targets& tg,const Model& m){
  tool(Close,Icon::Close);tool(History,Icon::Clock,m.history);if(writingTools(m)){if(!m.inlineComposer)tool(Expand,m.expanded?Icon::ChevronDown:Icon::ChevronUp);else tool(Half,m.lowerHalf?Icon::ChevronUp:Icon::ChevronDown);tool(InkTools,Icon::Handwrite,m.picker);}
  // Turned, there is no page row above a tall sheet: the zoom badge joins the header and the subtitle ends before it.
  if(m.turned&&m.zoomPercent>0){const Rect badge=zoomBadgeRect(m);reader::zoomBadge(c,tg,m.zoomPercent,badge);right=badge.x0;}
- const Rect area=m.inlineComposer?WritingArea:m.expanded&&m.composing?ExpandedWritingArea:WritingArea;
+ const Rect area=writingArea(m);
  // The one line between header and paper (the passage, or the question above an answer). A turned tall sheet starts
  // where that line was: the question then becomes the header's subtitle (the passage is already named there).
  const int lineBottom=(m.inlineComposer?680:area.y0)-8;const bool lineFits=lineBottom>head.y1;

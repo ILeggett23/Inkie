@@ -23,6 +23,9 @@ class Panel final:public spike::OperationSink {
  int sheetTop()const noexcept{return ib::layout::sheetTop((inline_||(expanded_&&composing_))&&!history_?ib::tom::ExpandedSheetTop:ib::tom::SheetTop,turned_);}
  QString retryAfterConsent_;bool writingBack_{true},sendAfterConsent_{}; /* writingBack_: a fresh question is being written (else the reply shows); sendAfterConsent_: Send consents, then sends */
  int historyTurn_{-1};std::uint64_t canvasRevision_{~0ull},damageRevision_{},revealSceneEpoch_{},gestureEpoch_{};
+ /* The writing hint goes as the pen touches the paper, with the first ink (before, it stayed until the stroke was saved and the
+    sheet repainted): its strip is paper again in paper_ and owed to the ink's live damage until presented. */
+ void clearHint()noexcept;spike::Rect hintOwed_{};
  std::array<spike::Rect,4> damage_{};unsigned damageCount_{};spike::Rect replyOwed_{};std::uint64_t replyAckRevision_{};bool reset_{},paperChanged_{true};
  void paint();bool send(Command);bool reviewConsent(bool);void updateWriting()noexcept;void context();QJsonObject frozenContext()const;bool decideNew();int beginNew();void hideOld();void mark(bool canvas=false);
  // Handwritten reveal: complete lines appear one at a time for the visible request; Show all, the typed view
@@ -59,12 +62,12 @@ public:
  void closed(){if(canLeave()){reply_.reset();open_=false;close_=false;autoInkPending_=false;sendAfterConsent_=false;retryAfterConsent_.clear();canvas_.enable(false);}}
  bool pinch(float,int,int);bool viewportPan(int,int);double zoom()const noexcept{return replyZoom_.scale();}spike::Rect takeReplyCleanup();
  bool finger(int,int);bool tick();bool pan(int,int,int,int);bool panAvailable()const noexcept{return open_&&inline_&&!history_&&!picker_&&!canvas_.contact();}bool generatedPlaying()const noexcept{return !history_&&historyTurn_<0&&reply_.playing();}bool generatedQuiet()const noexcept{return !generatedPlaying()||reply_.quiet();}spike::Rect repaintArea()const noexcept{return {0,zoomedEver_?0:std::min(markedTop_,sheetTop()),1620,2160};}std::size_t inkRoom()const noexcept{return canvas_.room();}bool contact()const noexcept{return canvas_.contact();}bool writable()const noexcept{return open_&&!close_&&!picker_&&!outputPicker_&&composing_&&!input_.active()&&!history_&&historyTurn_<0&&canvas_.writable();}
- bool reserve()noexcept override{if(!writable())return false;++gestureEpoch_;(void)reply_.tick(true);return canvas_.reserve();}bool append(const spike::Point& p)noexcept override{return canvas_.append(p);}void cancel()noexcept override{canvas_.cancel();}
+ bool reserve()noexcept override{if(!writable())return false;++gestureEpoch_;(void)reply_.tick(true);return canvas_.reserve();}bool append(const spike::Point& p)noexcept override{if(p.phase==spike::Phase::Down)clearHint();return canvas_.append(p);}void cancel()noexcept override{canvas_.cancel();}
  spike::Surface ink()noexcept{return canvas_.surface();}std::span<const std::uint32_t> background()const noexcept{return paper_;}
  void composite(spike::Surface,spike::Rect)const noexcept;
  // Non-consuming: only presentationCovered after accepted submit retires matching generations.
  bool takeReset()const{return reset_;}unsigned takeDamage(std::array<spike::Rect,4>& out)const{out=damage_;return damageCount_;}
- spike::Rect inkDamage()const noexcept{return canvas_.damage();}PresentationStamp presentationStamp()const noexcept{return {damageRevision_,canvas_.damageGeneration()};}
+ spike::Rect inkDamage()const noexcept{auto r=canvas_.damage();if(!hintOwed_.empty()){if(r.empty())r=hintOwed_;else r.include(hintOwed_);}return r;}PresentationStamp presentationStamp()const noexcept{return {damageRevision_,canvas_.damageGeneration()};}
  void presentationCovered(spike::Rect accepted,PresentationStamp)noexcept;
  bool renderSettled()const noexcept{return !canvas_.contact()&&!canvas_.pending()&&canvasRevision_==view_.canvasRevision;}
  bool drained()const noexcept{return runtime_.drained()&&reply_.drained();}
