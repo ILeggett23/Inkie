@@ -46,6 +46,7 @@ public:
  void finishImmediately()noexcept{finish(Reason::Interrupted);}
  void reset()noexcept{finish(Reason::Interrupted);} // never discards painted debt
  bool needsCapture()const noexcept{return state_==State::Preparing&&!captured_;}
+ bool prepareIdentity(Identity id)noexcept{if(!needsCapture()||id.ui!=request_.identity.ui)return false;request_.identity=id;return true;}
  bool active()const noexcept{return state_==State::Preparing||state_==State::Revealing||state_==State::Dismissing;}
  bool pending()const noexcept{return active()||bool(update_)||finishing_;}
  bool cleanupPending()const noexcept{return finishing_;}

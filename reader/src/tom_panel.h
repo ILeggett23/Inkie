@@ -54,6 +54,7 @@ public:
  bool revealReady()const noexcept{return open_&&bound_&&view_.ready&&!view_.busy&&!view_.unsaved&&!view_.active&&!view_.helperBusy&&!commandPending_&&!canvas_.contact()&&!canvas_.unsaved()&&!canvas_.failed()&&!input_.active()&&(history_||historyTurn_<0)&&!close_;}
  spike::Rect revealContent()const noexcept;
  std::uint64_t revealSceneEpoch()const noexcept{return revealSceneEpoch_;}std::uint64_t gestureEpoch()const noexcept{return gestureEpoch_;}
+ bool inkPending()const noexcept{return canvas_.pending()!=0||canvas_.unsaved()!=0;}
  bool active()const noexcept{return open_;}unsigned unsaved()const noexcept{return runtime_.unsaved();}bool failed()const noexcept{return canvas_.failed()||runtime_.failed();}
  bool canLeave()const noexcept{return !canvas_.contact()&&!unsaved()&&!failed()&&!view_.busy&&!commandPending_&&!input_.active();}
  void closed(){if(canLeave()){reply_.reset();open_=false;close_=false;autoInkPending_=false;sendAfterConsent_=false;retryAfterConsent_.clear();canvas_.enable(false);}}

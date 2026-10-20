@@ -13,7 +13,8 @@ sand::Policy Shell::sandPolicy()const noexcept{
  p.contact=(document_&&document_->contact())||(notes_&&notes_->contact())||(tom_&&tom_->contact());
  p.selecting=penSelect_.active||selectMode_;p.power=powerConstrained_||stop_||quiescing_||lock_!=Lock::None;
  p.heavy=turned()||changingView_||returning_||syncing_||companionBusy_||pdfPreviewActive_||epubZoomActive()||generatedPlaying()||
-  (state_!=State::Clean&&state_!=State::Chrome&&state_!=State::Picker)||(styled_&&styled_->status().busy)||semantics_->pending()||unsaved()!=0;
+  (state_!=State::Clean&&state_!=State::Chrome&&state_!=State::Picker)||(styled_&&styled_->status().busy)||semantics_->pending()||
+  (document_&&document_->unsaved()!=0)||(tom_&&tom_->active()&&tom_->inkPending())||(notes_&&notes_->active()&&notes_->inkPending());
  p.congested=sandCongested_;p.expensive=sand_.pending()&&sand_.metrics().lastPaintNs>12000000;return p;
 }
 void Shell::sandSceneChanged(){
@@ -33,7 +34,7 @@ void Shell::sandSceneChanged(){
  sandScene_=scene;sandKey_=key;sandTarget_=target;sandDirection_=direction;++sandEpoch_;
  if(sand_.pending()){sand_.cancel(sand::Reason::Scene);return;} // newer UI wins; no transition queue
  if(!prefs_.sandMode||turned()||!reveal_.quiescent())return;
- const bool dismissal=wasVisible&&scene==0;
+ const bool dismissal=wasVisible&&scene==0;sandDismiss_=dismissal;
  if(!scene&&!dismissal)return;
  if(dismissal){target=oldTarget;direction=oldDirection==sand::Direction::RightToLeft?sand::Direction::LeftToRight:sand::Direction::RightToLeft;}
  // No full-screen decoration, or decoration on security/navigation installs.
@@ -51,7 +52,15 @@ void Shell::prepareSand(spike::Surface old){
   // A real scene install bypasses the effect. Capture is bounded and occurs
   // once off-contact, before Display modifies its borrowed source pixels.
   if(change_.full||change_.pageTurn)sand_.cancel(sand::Reason::Scene);
-  else {auto policy=sandPolicy();sand_.advance({presentedVersion_,sandEpoch_},policy,sandNow());
+  else {
+   auto target=sandTarget_;
+   if(tom_&&tom_->active())target=sheetPhysical(tom_->repaintArea());
+   else if(notes_&&notes_->active())target=sheetPhysical(notes_->repaintArea());
+   if(!sandDismiss_&&box(target)!=box(sandTarget_))sand_.cancel(sand::Reason::Geometry);
+   // Opening a panel consumes its initial reset in this same boundary. Align
+   // that version only BEFORE borrowing old pixels; a later reset cancels.
+   sand_.prepareIdentity({presentedVersion_,sandEpoch_});
+   auto policy=sandPolicy();sand_.advance({presentedVersion_,sandEpoch_},policy,sandNow());
    if(sand_.needsCapture()&&sand_.capture(old.pixels,old.width,old.height,old.stridePixels,sandNow())){
     // Display has already retained the old pigment class. Borrowed source reuse
     // is serial; this CPU compose does not submit an update or change ownership.
