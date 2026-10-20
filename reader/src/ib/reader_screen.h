@@ -3,6 +3,7 @@
 // Reading view chrome (concepts #2, #3, #5, #6). Everything here is transient
 // and drawn over the document; the clean state shows only the footer strip.
 #include "ib/components.h"
+#include "ib/layout.h"
 #include <string>
 #include <vector>
 namespace ib::reader {
@@ -12,12 +13,12 @@ namespace ib::reader {
 // search, bookmarks, settings, notes and Tom live in the document menu at the bottom of the toolbar.
 struct Chrome {std::string title,chapter;int page{},total{1};bool bookmarked{},loading{},search{true},bookmark{false};std::string status;bool menuMark{};bool progress{true}; /* Settings > Reading: chapter and page under the page */};
 enum ChromeId:int {Back=1,Title,PageLabel,Search,Bookmark,More,Footer,PreviousZone,NextZone,RevealZone,ToolHandle,ZoomBadge};
-// Toolbar side follows handedness: Left (the default) for right-handed writers, Right for left-handed.
-// One process-wide setting, applied by the shell from ui-toolbar.json before any chrome is painted.
-enum class Side:unsigned {Left,Right};
+// Toolbar side (Side, ib/layout.h): one process-wide setting, applied by the shell from ui-toolbar.json before any
+// chrome is painted. Every rect below follows it; layout::zones() describes the same geometry.
 Side toolbarSide()noexcept;void setToolbarSide(Side)noexcept;
-inline constexpr int ToolbarWidth=112,ToolbarItem=112,ToolbarGlyph=44,HandleGlyph=40;
-inline constexpr Rect FooterRect{0,2060,1620,2160};
+inline constexpr int ToolbarWidth=112,ToolbarItem=layout::TopRow,ToolbarGlyph=48,HandleGlyph=44,ToolbarTile=84,PenGlyph=58; // tile: the selected tool's ink square; PenGlyph: writing tools
+inline constexpr Rect FooterRect{0,2060,1620,2160}; // portrait; footerRect() follows the turn
+Rect footerRect()noexcept;  // the quiet footer under the page, in the current turn (layout::turn)
 inline constexpr int FooterInset=160; // footer text margin, clear of the toolbar column
 Rect toolbarRect()noexcept;  // the full-height column (page area) on the toolbar side
 Rect closeRect()noexcept;    // circled close, top corner opposite the toolbar
@@ -71,12 +72,12 @@ enum SelectionId:int {SelNote=120,SelTom,SelHighlight,SelCopy,SelMore,SelDefine,
  DefClose=150,DefWriteNote,DefWriteTom,DefMore,DefPrevious,DefNext};
 struct SelectionBar {Rect anchor{};bool define{},copy{true},more{},highlighted{},note{true},tom{true},highlight{true};}; // more: no action is routed for it, so it is off
 // Returns the toolbar rect so a caller can place the color row beneath it.
-Rect selectionToolbar(Canvas&,Targets&,const SelectionBar&,Rect bounds={0,0,1620,2060});
+Rect selectionToolbar(Canvas&,Targets&,const SelectionBar&,Rect bounds=layout::popoverBounds());
 // Stacks on the side of the toolbar away from the passage so it never covers it.
 Rect highlightColors(Canvas&,Targets&,Rect toolbar,Rect passage,unsigned selectedColor,bool removable);
 struct Sense {std::string partOfSpeech,definition;};
 struct Definition {std::string word,pronunciation,partOfSpeech,status,attribution;std::vector<Sense> senses;bool loading{},actions{true},expanded{};unsigned lineOffset{};};
-Rect definitionCard(Canvas&,Targets&,Rect anchor,const Definition&,Rect bounds={0,0,1620,2060});
+Rect definitionCard(Canvas&,Targets&,Rect anchor,const Definition&,Rect bounds=layout::popoverBounds());
 // Selection wash and handles drawn over page text quads (axis-aligned line boxes).
 void selectionWash(Canvas&,std::span<const Rect> lines);
 void highlightWash(Canvas&,std::span<const Rect> lines,std::uint32_t color);
