@@ -42,8 +42,9 @@ int main(int argc,char**argv){QCoreApplication application(argc,argv);LibraryVie
  tap(view,L::NavBase+int(LibraryView::Section::MyFiles),docs);tap(view,L::Search,docs);tap(view,ib::KeySymbols,docs);tap(view,ib::KeyBase+'1',docs);tap(view,ib::KeyBase+'1',docs);check(view.query()=="11"&&view.visibleIds().size()==1,"numeric_search");
  tap(view,ib::KeyBackspace,docs);check(view.query()=="1","keyboard_backspace");tap(view,ib::KeyClear,docs);check(view.query().isEmpty(),"keyboard_clear");tap(view,ib::KeyDone,docs);
  check(tap(view,L::Menu,docs).action==LibraryView::Action::Changed&&view.effectScene()==2,"menu_opens");check(tap(view,L::Menu,docs).action==LibraryView::Action::Changed&&view.effectScene()==0,"menu_closes");
- check(tap(view,L::Create,docs).action==LibraryView::Action::Changed&&view.effectScene()==2,"create_menu_opens");check(tap(view,901,docs).action==LibraryView::Action::NewNotebook,"create_new_notebook");
- check(tap(view,L::Create,docs).action==LibraryView::Action::Changed&&view.targets().rect(900).empty(),"inbox_import_is_automatic_not_a_menu_action");check(tap(view,L::Create,docs).action==LibraryView::Action::Changed,"close_create_menu");
+ check(view.targets().rect(L::Create).empty(),"reader_has_no_standalone_creation_control");
+ check(view.targets().rect(901).empty(),"retired_notebook_target_is_absent");
+ check(!view.targets().rect(L::Search).empty(),"search_stays_available_without_creation");
  // Notes section shows caller-supplied notes and opens their source.
  check(tap(view,L::NavBase+int(LibraryView::Section::Notes),docs).action==LibraryView::Action::NotesChanged,"notes_section_requests_notes");
  LibraryView::NoteEntry note;note.document=id(5);note.noteId="n1";note.title="Reflection";note.excerpt="What feels natural";note.linked=true;view.setNotes({note});

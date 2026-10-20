@@ -4,6 +4,7 @@
 #include "ux_support.h"
 #include "library.h"
 #include "ib/library_screen.h"
+#include "tom_store.h"
 #include <QCoreApplication>
 #include <QProcess>
 #include <QImage>
@@ -328,9 +329,14 @@ int main(int argc,char**argv){QCoreApplication core(argc,argv);if(argc!=5&&(argc
    {ux::Shell shell(application,root,true);Canvas canvas(shell);CHECK(shell.locked());code(shell,canvas,"1234");CHECK(!shell.locked());
     open(shell,canvas,S::Page::Security);CHECK(uitest::library(shell,S::PasscodeOff));shell.tick();canvas.changes();CHECK(shell.locked());code(shell,canvas,"1234");CHECK(!shell.locked()&&!shell.passcodeSet());
     // Accessibility and Tom preferences.
-    open(shell,canvas,S::Page::Accessibility);const auto normal=ib::theme::InkSecondary;CHECK(uitest::library(shell,S::HighContrast));shell.tick();canvas.changes();CHECK(shell.prefs().highContrast&&ib::theme::InkSecondary!=normal);
+    open(shell,canvas,S::Page::Accessibility);const auto normal=ib::theme::Disabled; /* Inkie text and lines are ink in both modes: high contrast darkens disabled controls */CHECK(uitest::library(shell,S::HighContrast));shell.tick();canvas.changes();CHECK(shell.prefs().highContrast&&ib::theme::HighContrast&&ib::theme::Disabled!=normal);
     CHECK(uitest::library(shell,S::ReduceMotion));shell.tick();canvas.changes();CHECK(shell.prefs().reduceMotion&&!shell.quietEffectsEnabled());
     open(shell,canvas,S::Page::Tom);CHECK(uitest::library(shell,S::TomStyleBase+1));shell.tick();canvas.changes();CHECK(uitest::library(shell,S::TomHandBase+2));shell.tick();canvas.changes();CHECK(shell.prefs().tomTyped&&shell.prefs().tomHand==2);
+    // What Inkie remembers: Forget removes the note it sits beside (newest first); Clear all asks once more, then clears.
+    CHECK(companion::memory::apply(root,"route-seed","+ The reader's name is Sam.\n+ Sam likes drawings in colour."));open(shell,canvas,S::Page::Tom);
+    CHECK(uitest::library(shell,S::TomMemoryForgetBase));shell.tick();canvas.changes();CHECK(companion::memory::read(root)==QStringList{"The reader's name is Sam."});
+    CHECK(uitest::library(shell,S::TomMemoryClear));shell.tick();canvas.changes();CHECK(companion::memory::read(root).size()==1);
+    CHECK(uitest::library(shell,S::TomMemoryClear));shell.tick();canvas.changes();CHECK(companion::memory::read(root).isEmpty());
     CHECK(shell.finish(2000));}
    {ux::Shell shell(application,root,true);CHECK(!shell.locked()&&shell.prefs().highContrast&&shell.prefs().reduceMotion&&shell.prefs().tomTyped&&shell.prefs().tomHand==2);CHECK(shell.finish(2000));}
    ib::theme::setHighContrast(false);});

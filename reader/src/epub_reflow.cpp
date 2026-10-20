@@ -1,5 +1,6 @@
 #include "epub_typography.h"
 #include "epub_reflow.h"
+#include "turn_fit.h"
 #include <QCryptographicHash>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -85,16 +86,21 @@ struct ReflowDocument::Impl {
 ReflowDocument::ReflowDocument(const std::filesystem::path& path,QString document,QString expected,Layout layout):impl_(std::make_unique<Impl>()){impl_->open(path,std::move(document),std::move(expected),layout);}
 ReflowDocument::~ReflowDocument()=default;int ReflowDocument::pageCount()const{return impl_->pages;}QString ReflowDocument::sourceSha256()const{return impl_->source;}QString ReflowDocument::layoutId()const{return impl_->layoutIdentity;}
 QJsonObject ReflowDocument::layoutDescriptor()const{return impl_->layoutObject;}
-PageRaster ReflowDocument::renderPage(int global){
- need(global>=0&&global<impl_->pages,"epub-reflow-page-index");auto* ctx=impl_->ctx;auto location=mupdf(ctx,[&]{return fz_location_from_page_number(ctx,impl_->doc,global);});
+PageRaster ReflowDocument::renderPage(int global){return renderPage(global,0);}
+PageRaster ReflowDocument::renderPage(int global,unsigned orientation){
+ need(global>=0&&global<impl_->pages&&(orientation==0||orientation==90||orientation==270),"epub-reflow-page-index");auto* ctx=impl_->ctx;auto location=mupdf(ctx,[&]{return fz_location_from_page_number(ctx,impl_->doc,global);});
  fz_page* page=mupdf(ctx,[&]{return fz_load_chapter_page(ctx,impl_->doc,location.chapter,location.page);});fz_pixmap* pixels{};fz_device* device{};
  try{
   auto box=mupdf(ctx,[&]{return fz_bound_page(ctx,page);});double x=box.x0,y=box.y0,w=double(box.x1)-x,h=double(box.y1)-y;need(std::isfinite(x)&&std::isfinite(y)&&std::isfinite(w)&&std::isfinite(h)&&w>0&&h>0,"epub-raster-bounds");
-  constexpr int width=1620,height=2060;constexpr std::size_t maxBytes=std::size_t(width)*height*4;double fit=std::min(width/w,height/h);need(std::isfinite(fit)&&fit>=0.1&&fit<=16,"epub-raster-fit-scale");
+  const auto port=reader::pdfview::viewport(orientation);const int width=orientation?port.width:1620,height=orientation?port.height:2060;const std::size_t maxBytes=std::size_t(1620)*2060*4;double fit=orientation?std::min(port.width/h,port.height/w):std::min(width/w,height/h);need(std::isfinite(fit)&&fit>=0.1&&fit<=16,"epub-raster-fit-scale");
   // MuPDF consumes floats: publish those exact coefficients, not a rounded
   // double calculation which could diverge from the pixels at glyph edges.
-  fz_matrix transform{float(fit),0,0,float(fit),float((width-w*fit)/2-x*fit),float((height-h*fit)/2-y*fit)};for(float v:{transform.a,transform.d,transform.e,transform.f})need(std::isfinite(v),"epub-raster-transform");
-  PageRaster out;out.bounds={x,y,w,h};double scale=transform.a,tx=transform.e,ty=transform.f;out.forward={scale,0,0,scale,tx,ty};out.inverse={1/scale,0,0,1/scale,-tx/scale,-ty/scale};need(std::size_t(out.stride)*out.height<=maxBytes/sizeof(std::uint32_t),"epub-raster-output-capacity");out.rgb32.resize(std::size_t(out.stride)*out.height);
+  fz_matrix transform{float(fit),0,0,float(fit),float((width-w*fit)/2-x*fit),float((height-h*fit)/2-y*fit)};PageRaster out;out.bounds={x,y,w,h};out.width=out.stride=width;out.height=height;
+  if(orientation){const auto t=reader::pdfview::fitTurned(x,y,w,h,orientation);transform={t[0],t[1],t[2],t[3],t[4]-float(port.x),t[5]-float(port.y)}; /* panel pixels to raster pixels */
+   const double a=t[0],b=t[1],c=t[2],d=t[3],e=t[4],f=t[5],det=a*d-b*c;need(std::isfinite(det)&&std::abs(det)>0,"epub-raster-transform");out.forward={a,b,c,d,e,f};out.inverse={d/det,-b/det,-c/det,a/det,(c*f-d*e)/det,(b*e-a*f)/det};}
+  else{double scale=transform.a,tx=transform.e,ty=transform.f;out.forward={scale,0,0,scale,tx,ty};out.inverse={1/scale,0,0,1/scale,-tx/scale,-ty/scale};}
+  for(float v:{transform.a,transform.b,transform.c,transform.d,transform.e,transform.f})need(std::isfinite(v),"epub-raster-transform");
+  need(std::size_t(out.stride)*out.height<=maxBytes/sizeof(std::uint32_t),"epub-raster-output-capacity");out.rgb32.resize(std::size_t(out.stride)*out.height);
   pixels=mupdf(ctx,[&]{return fz_new_pixmap_with_bbox(ctx,fz_device_rgb(ctx),fz_irect{0,0,width,height},nullptr,0);});mupdf(ctx,[&]{fz_clear_pixmap_with_value(ctx,pixels,255);return 0;});device=mupdf(ctx,[&]{return fz_new_draw_device(ctx,fz_identity,pixels);});mupdf(ctx,[&]{fz_run_page(ctx,page,device,transform,nullptr);fz_close_device(ctx,device);return 0;});fz_drop_device(ctx,device);device=nullptr;
   need(pixels->w==width&&pixels->h==height&&pixels->n==3&&pixels->alpha==0&&pixels->stride>=width*3&&std::size_t(pixels->stride)*height<=maxBytes,"epub-raster-pixel-layout");for(int row=0;row<height;++row){const auto* source=pixels->samples+std::size_t(row)*pixels->stride;for(int col=0;col<width;++col){auto i=col*3;out.rgb32[std::size_t(row)*out.stride+col]=0xff000000u|(std::uint32_t(source[i])<<16)|(std::uint32_t(source[i+1])<<8)|source[i+2];}}
   fz_drop_pixmap(ctx,pixels);fz_drop_page(ctx,page);return out;

@@ -107,13 +107,42 @@ void liveDeadline(){++cases;
  Rig q;TestLease revoked;revoked.policy={S,4,1000};revoked.end=far();check(q.contact(revoked,1,true),"admitted");
  revoked.live=false;check(!q.contact(revoked,1,true),"revoked lease refuses immediately");
 }
+// Landscape PR 3 (approved change): the pen's input frame. A display may turn and offset the Engine's Transform into a
+// turned sheet's own pixels; the session applies it whenever it builds an Engine, and only the frame is the display's.
+struct FramedDisplay final:SessionDisplay,OperationSink {
+ int turn{},offsetX{},offsetY{};std::vector<Point> appended;Rect delivered{};
+ void inputFrame(Transform& t)noexcept override{t.turn=turn;t.offsetX=offsetX;t.offsetY=offsetY;t.width=9;t.height=9;t.x={0,1};t.rotation=180;t.mirrorX=true;} /* only the turn and offset stick */
+ bool reserve()noexcept override{return true;}bool append(const Point& p)noexcept override{appended.push_back(p);return true;}void cancel()noexcept override{}
+ Submit submit(Rect r)noexcept override{delivered.include(r);return Submit::Accepted;}bool initialize(const RecoveryLease&)noexcept override{return false;}Surface surface()const noexcept override{return {};}bool initialPage()noexcept override{return true;}void pump()noexcept override{}void shutdown()noexcept override{}
+};
+void inputFrame(){++cases;
+ const Transform panel{{0,1619},{0,2159},1620,2160,0,false};Point p;
+ check(panel.valid()&&panel.map({300,400,Phase::Down,1},p)&&p.x==300&&p.y==400,"no frame: the panel's own pixels, unchanged");
+ // Turned clockwise (90): upright (2159-y, x), then (-270, +540) into the sheet; anticlockwise (270): (y, 1619-x).
+ Transform cw=panel;cw.turn=90;cw.offsetX=-270;cw.offsetY=540;Transform acw=cw;acw.turn=270;check(cw.valid()&&acw.valid(),"turned frames valid");
+ check(cw.map({300,400,Phase::Down,1},p)&&p.x==2159-400-270&&p.y==300+540,"clockwise frame");
+ check(acw.map({300,400,Phase::Down,1},p)&&p.x==400-270&&p.y==1619-300+540,"anticlockwise frame");
+ // Beside the sheet the point is kept on the surface: at its edge, outside every writing area.
+ check(cw.map({300,2100,Phase::Move,2},p)&&p.x==0&&p.y==840,"left of the sheet clamps to its edge");
+ check(acw.map({1619,2159,Phase::Move,2},p)&&p.x==1619&&p.y==540,"right of the sheet clamps to its edge");
+ Transform bad=panel;bad.turn=45;check(!bad.valid()&&!bad.map({1,1,Phase::Down,1},p),"only quarter turns");bad=panel;bad.offsetY=9000;check(!bad.valid(),"bounded offset");
+ // engineTransform: the display's frame with the marker's axes, size, rotation and mirror.
+ FramedDisplay d;d.turn=90;d.offsetX=-270;d.offsetY=540;const auto t=engineTransform(panel,d);
+ check(t.turn==90&&t.offsetX==-270&&t.offsetY==540&&t.width==1620&&t.height==2160&&t.x.min==0&&t.x.max==1619&&t.rotation==0&&!t.mirrorX,"only the frame is the display's");
+ WakeObserver plain;const auto u=engineTransform(panel,plain);check(!u.turn&&!u.offsetX&&!u.offsetY&&u.width==1620&&u.height==2160,"the default display keeps the panel's pixels");
+ // An Engine built with it draws, damages and hands its sink the sheet's pixels.
+ std::vector<std::uint32_t> pixels(1632u*2160u,0xffffffffu);Engine engine{t,{pixels,1620,2160,1632},d};FrameAssembler a;Scheduler sched;SessionStats st;TestLease lease;lease.end=far();
+ const input_event down[]={ev(EV_KEY,BTN_TOOL_PEN,1),ev(EV_KEY,BTN_TOOL_RUBBER,0),ev(EV_ABS,ABS_X,300),ev(EV_ABS,ABS_Y,400),ev(EV_KEY,BTN_TOUCH,1),ev(EV_SYN,SYN_REPORT,0)};
+ check(consumeEvents(down,a,engine,sched,st,S,&lease,&d)&&d.appended.size()==1&&d.appended[0].x==1489&&d.appended[0].y==840,"the session's sink receives the sheet's pixels");
+ check(d.delivered.contains(1489,840)&&pixels[std::size_t(840)*1632+1489]==0xff000000u,"the fast path draws and submits in the sheet's pixels");
+ std::puts("INPUT_FRAME_PASS turns=90,270 offset=-270,540 clamped=true default=UNCHANGED physical=NOT_RUN");}
 void policyValidity(){++cases;
  check(!SustainedPolicy{}.enabled(),"V1 default has no policy");check(!SustainedPolicy{S,0,10}.enabled()&&!SustainedPolicy{0,1,10}.enabled()&&!SustainedPolicy{S,10,5}.enabled(),"incomplete or inconsistent policy disabled");
  TestLease v1;check(!v1.sustained().enabled(),"RecoveryLease default is V1");
 }
 }
 int main(){
- try{wakeGate();batchAdmissionPressure();v1ContactCap();v1SampleCap();sustainedContacts();windowQuota();fixedMemory();retireContinuity();liveDeadline();policyValidity();
+ try{wakeGate();batchAdmissionPressure();v1ContactCap();v1SampleCap();sustainedContacts();windowQuota();fixedMemory();retireContinuity();liveDeadline();policyValidity();inputFrame();
   std::printf("SUSTAINED_SESSION_PASS cases=%u checks=%u v1_limits=UNCHANGED sustained=V2_ONLY physical=NOT_RUN\n",cases,checks);return 0;
  }catch(const std::exception& e){std::fprintf(stderr,"SUSTAINED_SESSION_FAIL %s checks=%u\n",e.what(),checks);return 1;}
 }
