@@ -401,6 +401,20 @@ every highlight and note for the layout again).
 |---|---|---|---|---|
 | D22 | A turn takes about 12 s; turning back about 11 s | The tilt needed three readings (2.3 s on the tablet, not the ~1 s intended); staging rendered a test page even for the book's own layout and derived the annotation cache again on every turn. | **Two settled readings** (about 1.5 s). **No test render** for the book's own layout (`base_layout`), which always renders. **The annotation cache is reused** when it was derived from exactly the same annotations (`annotationsSha256` in the cache, written by the stage command; older builds ignore it). `EPUB_STAGE_TIMING` journals layouts, render, store and annotations. | [auto] `status-screen-tests` (two readings to turn; interruptions and the margin unchanged); `epub-annotation-cache-tests` (reused only for the same annotations), now run in CI. Device check 43 |
 
+### Tool switching and turn detection (user report, 2026-10-20)
+
+The user: switching tools is slow, and Auto-rotate takes too long to notice the tablet was turned. Read with the user's
+approval: the journal since 17:40 UTC and the accelerometer's sysfs settings (read-only).
+
+| # | Issue | Cause | Change | Verified |
+|---|---|---|---|---|
+| D23 | A turn is noticed 2–3 s late | The accelerometer runs at 12 Hz, its lowest rate (`sampling_frequency_available` 12–1600); a one-shot reading of the three axes waits for fresh samples: five readings took 3.83 s on the tablet (0.77 s each). Xochitl itself listens to the chip's orientation interrupt (`lis2dw12_orientation`, `in_rot0_change_either_en` = 1) and holds its event descriptor, which the kernel gives to one reader at a time. | While Auto-rotate runs, Inkie raises the rate to 100 Hz (`device::SamplingBoost`, only a listed value, read back after writing) and the reader thread puts the original rate back when reading stops or Inkie ends; readings every 200 ms. The user approved this runtime setting once measured. | [auto] `status-screen-tests`: raised only when listed, restored, left alone when not offered, restored by the reader thread when paused (also under ThreadSanitizer). Device check 44 (`ui:orientation-read-ms`) |
+| D24 | A tool change shows late, once 10 s late | A tool change saved the tool setting and its toolbar repaint waited until saving was durable; each save rewrites the book's feature state (about 0.5 s on the tablet, `styled:batch-write-us`), and a tap at 18:16 waited behind ten queued saves (10.2 s). | Rail taps, pen-palette commands and closing the palette present at once (`change_.preview`, as strip commands do); the setting still saves in order. | [inspect]; device check 44 |
+
+Also seen, not changed here: a new Inkie request takes about 11 s on the tablet before the service has it
+(`TOM_HELPER_TIMING stage=created`); the service then reads the handwriting in about 3.7 s. While a reply's picture is
+pending, a new helper process starts every 1–2 s, and each shell tick then takes about 36 ms.
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -465,6 +479,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 41 | (Test build) Highlight a passage with snap-to-text and erase it with the eraser end; erase black and red handwriting; wait 2 s each time | The yellow or grey left along the eraser's path clears about a second after the erase; note whether the area or the whole screen flashes | `ui:ghost-clear` 1, `REFRESH_GHOST_CLEAR`, `DIRECT_GHOST_CLEAR available=1` |
 | 42 | (After the Companion is deployed) Ask Inkie a handwritten question; time Send to the answer's first words; start writing in an empty Inkie sheet | The answer starts clearly sooner than the 17–20 s before; the hint disappears as soon as the pen touches | `tom:read-answer-start` → `tom:ocr-end`, `TOM_HELPER_TIMING` |
 | 43 | Auto-rotate on: open an EPUB and turn the tablet, then turn back, twice | The first turn is a few seconds quicker; turning back and the second round trip are quicker still | `EPUB_STAGE_TIMING` (annotations reused=1 on the second round), `ui:turn` → `ui:turned` |
+| 44 | Auto-rotate on: turn the tablet with a PDF open; switch pens, colours and the eraser from the toolbar and the palette while writing | The turn starts within about half a second of the tilt; the toolbar shows each new tool at once | `ui:orientation-read-ms` (well under 100), `ui:turn` |
 
 | 40 | In landscape: open Document notes and Ask Inkie from the document menu, and Layers and Inkie from the toolbar | Each opens upright at the foot of the screen (the tall ones fill its height) with the page beside it; its controls act where drawn; a tap on the page beside it closes it | — |
 | 41 | In landscape: write a note, expand it, write more, type a title with the keyboard; tap Done; turn upright and reopen the note | The ink is where it was written on the note's paper, in both orientations; nothing moves | — |

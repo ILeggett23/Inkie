@@ -157,7 +157,9 @@ bool Shell::railAction(int id){if(!styled_||!document_||document_->contact())ret
  case RailMore:toolsView_={};if(menu_){menu_=false;pageBackgrounds();damage(joined(std::array{menuRect_,physical(toolbarSlot(SlotDocument))},2));return true;}menuAnchor_=toolbarSlot(SlotDocument);menu_=true;paintChrome(true);damage(joined(std::array{menuRect_,physical(toolbarSlot(SlotDocument))},2));return true;
  default:return false;}
  if(!ok){recovery::v2::e2::mark("ui:tool-command-refused",unsigned(id));notice_="Still saving — try again in a moment";}
- ++toolsRevision_;if(toolsView_.active())toolsView_.update(toolsSnapshot());toolsPaint();return true;}
+ /* A tool change shows at once (preview), as strip commands do: it used to wait until the tool setting and any ink saves
+    queued before it were durable, 0.5 s per save on the tablet and once 10 s behind a run of saves (journal 2026-10-20). */
+ ++toolsRevision_;if(toolsView_.active())toolsView_.update(toolsSnapshot());toolsPaint();change_.preview=true;return true;}
 // The first failure names its call site in the device journal (reader:shell-fail value=<code>); later ones would only
 // repeat the outcome. Codes are listed in docs/hardware-validation.md.
 void Shell::fail(unsigned reason)noexcept{if(!failed_){recovery::v2::e2::mark("reader:shell-fail",reason);std::fprintf(stderr,"READER_SHELL_FAILURE reason=%u\n",reason);}failed_=true;state_=State::Failed;}
@@ -423,11 +425,11 @@ bool Shell::finger(int x,int y,bool longPress,bool markerContact){if(lock_!=Lock
   for(auto shortcut:{ib::reader::RailPen,ib::reader::RailHighlighter}){const unsigned slot=shortcut==ib::reader::RailPen?0u:1u;if(slot!=activeShortcut_&&chromeTargets_.rect(shortcut).contains(x,y)){toolsView_={};return railAction(shortcut);}}
   const auto [px,py]=upright(x,y); /* the palette is laid out in the reader's frame */
   bool panelTarget=ToolsView::panel().contains(px,py)||toolsView_.closeRect().contains(px,py)||ToolsView::eraser().contains(px,py)||ToolsView::undo().contains(px,py)||ToolsView::redo().contains(px,py);
-  if(!panelTarget){int id=chromeTargets_.find(x,y);if(id>=ib::reader::RailPen&&id<=ib::reader::RailMore)return railAction(id);toolsView_={};toolsPaint();return true;}
+  if(!panelTarget){int id=chromeTargets_.find(x,y);if(id>=ib::reader::RailPen&&id<=ib::reader::RailMore)return railAction(id);toolsView_={};toolsPaint();change_.preview=true;return true;}
   auto command=toolsView_.hit(px,py,toolsSnapshot());if(command.refusal!=ToolsView::Refusal::None)recovery::v2::e2::mark("ui:tool-refusal",unsigned(command.refusal));bool ok=false;using A=ToolsView::Action;
   switch(command.action){case A::Snap:setSnapHighlights(command.snapHighlights);ok=true;break;case A::Tool:ok=styled_->selectTool(styled::Tool(command.style.tool));if(ok)selectMode_=false;break;case A::Width:ok=styled_->selectWidth(styled::Width(command.style.width));break;case A::Color:ok=styled_->selectColor(command.style.color);break;case A::Eraser:ok=styled_->setEraser(command.style.eraser);break;case A::Undo:ok=styled_->undo();if(ok)expectRemoval();break;case A::Redo:ok=styled_->redo();if(ok)expectRemoval();break;case A::Reveal:ok=styled_->setRevealEnabled(command.quietEffects);break;case A::Close:ok=true;break;default:break;}
   if(ok&&(command.action==A::Tool||command.action==A::Width||command.action==A::Color))rememberShortcut();
-  if(command.action!=A::None){recovery::v2::e2::mark(ok?"ui:tool-command-admitted":"ui:tool-command-refused",unsigned(command.action));++toolsRevision_;if(toolsView_.active())toolsView_.update(toolsSnapshot());toolsPaint();}return ok||command.consumed;}
+  if(command.action!=A::None){recovery::v2::e2::mark(ok?"ui:tool-command-admitted":"ui:tool-command-refused",unsigned(command.action));++toolsRevision_;if(toolsView_.active())toolsView_.update(toolsSnapshot());toolsPaint();change_.preview=true;}return ok||command.consumed;}
  if(libraryMode_&&state_==State::Picker&&!markerContact){
   if(companionView_.active()){if(longPress)return false;auto hit=companionView_.hit(x,y);using A=CompanionView::Action;if(hit.action==A::Close){libraryPaint();change_.full=true;return true;}
    QString action;switch(hit.action){case A::StartPair:action="pair";break;case A::PollPair:action="poll";break;case A::Approve:action="approve";break;case A::Reject:action="reject";break;case A::Sync:action="sync";break;case A::RetryTransfer:action="retry";break;case A::Unpair:action="unpair";break;default:break;}
@@ -538,7 +540,8 @@ template<class F>void Shell::paintTurned(std::vector<std::uint32_t>& pixels,ib::
 // The accelerometer is read on its own thread (device::AccelReader): one reading takes about 0.75 s on the tablet, and
 // read here it held up every tap and paint while Auto-rotate was on. Off, the reader idles.
 void Shell::pollOrientation(){if(!prefs_.autoRotate||!orientationSensor()){if(accelOn_){accelReader_.pause();accelOn_=false;}return;}
- if(!accelOn_){accelReader_.run([path=*accel_]{return device::readAccel(path);});accelOn_=true;}
+ if(!accelOn_){auto boost=std::make_shared<device::SamplingBoost>();boost->device=*accel_; /* 100 Hz while reading, the original rate back when reading stops */
+  accelReader_.run([path=*accel_,boost]{(void)boost->raise();return device::readAccel(path);},[boost]{boost->restore();});accelOn_=true;}
  const auto a=accelReader_.take();if(!a)return;if(!accelTimed_){accelTimed_=true;recovery::v2::e2::mark("ui:orientation-read-ms",unsigned(accelReader_.lastRead().count()));}
  if(orientationWatch_.update(*a)){ /* value: turn*1000 + angle+180, so the first device run shows the axis signs */
   recovery::v2::e2::mark("ui:orientation",static_cast<unsigned long long>(unsigned(orientationWatch_.turn)*1000u+unsigned(std::lround(device::OrientationWatch::angle(*a)+180))));}}

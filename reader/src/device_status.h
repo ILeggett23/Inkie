@@ -76,27 +76,41 @@ inline std::optional<Accel> readAccel(const std::filesystem::path& device)noexce
   if(ok&&count==9)m=parsed;}
  return Accel{m[0]*raw[0]+m[1]*raw[1]+m[2]*raw[2],m[3]*raw[0]+m[4]*raw[1]+m[5]*raw[2],m[6]*raw[0]+m[7]*raw[1]+m[8]*raw[2]};
 }
+// The accelerometer's sampling rate (iio sampling_frequency). The tablet keeps it at 12 Hz, its lowest; a one-shot reading
+// of the three axes then waits for fresh samples (0.77 s measured on the tablet, 2026-10-20), so a turn took seconds to
+// notice. While Auto-rotate runs Inkie raises it to 100 Hz (a runtime sensor setting, approved by the user) and puts the
+// original rate back when reading stops. Only a value the driver lists as available is written; any failure leaves the
+// sensor as it was.
+struct SamplingBoost {
+ std::filesystem::path device;std::string original;bool raised{},tried{};static constexpr const char* Fast="100";
+ bool raise()noexcept{if(raised)return true;if(tried)return false;tried=true;try{auto now=detail::line(device/"sampling_frequency");std::optional<std::string> available;{std::ifstream in(device/"sampling_frequency_available");std::string text;if(in&&std::getline(in,text)&&text.size()<=256)available=text;}if(!now||!available||*now==Fast)return false;
+   bool listed=false;std::size_t at=0;const std::string& a=*available;while(at<a.size()){auto end=a.find(' ',at);if(end==std::string::npos)end=a.size();if(a.substr(at,end-at)==Fast)listed=true;at=end+1;}if(!listed)return false;
+   {std::ofstream out(device/"sampling_frequency");if(!out)return false;out<<Fast<<"\n";if(!out.flush())return false;}auto after=detail::line(device/"sampling_frequency");if(!after||*after!=Fast)return false;original=*now;raised=true;return true;}catch(...){return false;}}
+ void restore()noexcept{tried=false;if(!raised)return;try{auto now=detail::line(device/"sampling_frequency");if(now&&*now==Fast){std::ofstream out(device/"sampling_frequency");out<<original<<"\n";}}catch(...){}raised=false;}
+};
 // Reads the accelerometer away from the caller's thread. On the Paper Pro one reading of the three raw axes takes about
 // 0.75 s (journal 2026-10-19, build fbb431d: with Auto-rotate on, every shell tick took 755 ms, so every tap waited
 // that long). The caller takes the newest reading without waiting; the reader thread takes one reading per Period at
 // most, and idles while paused. Each reading is taken once.
 class AccelReader {
 public:
- using Read=std::function<std::optional<Accel>()>;
- static constexpr std::chrono::milliseconds Period{300};
+ using Read=std::function<std::optional<Accel>()>;using Hook=std::function<void()>;
+ static constexpr std::chrono::milliseconds Period{200};
  AccelReader()=default;AccelReader(const AccelReader&)=delete;AccelReader& operator=(const AccelReader&)=delete;
  ~AccelReader(){{std::lock_guard<std::mutex> l(m_);stop_=true;}wake_.notify_all();if(thread_.joinable())thread_.join();}
- // Read with r (on the reader thread) until paused; the thread starts on first use. Never waits for a reading.
- void run(Read r)noexcept{{std::lock_guard<std::mutex> l(m_);read_=std::move(r);on_=true;}if(!thread_.joinable()){try{thread_=std::thread([this]{loop();});}catch(...){std::lock_guard<std::mutex> l(m_);on_=false;}}wake_.notify_all();}
+ // Read with r (on the reader thread) until paused; the thread starts on first use. Never waits for a reading. idle, if
+ // given, runs on the reader thread once reading stops (paused, or the reader ending) after it has read.
+ void run(Read r,Hook idle={})noexcept{{std::lock_guard<std::mutex> l(m_);read_=std::move(r);idle_=std::move(idle);on_=true;}if(!thread_.joinable()){try{thread_=std::thread([this]{loop();});}catch(...){std::lock_guard<std::mutex> l(m_);on_=false;}}wake_.notify_all();}
  void pause()noexcept{{std::lock_guard<std::mutex> l(m_);on_=false;fresh_=false;}wake_.notify_all();}
  std::optional<Accel> take()noexcept{std::lock_guard<std::mutex> l(m_);if(!fresh_)return std::nullopt;fresh_=false;return latest_;}
  std::chrono::milliseconds lastRead()const noexcept{std::lock_guard<std::mutex> l(m_);return took_;}
 private:
- void loop()noexcept{std::unique_lock<std::mutex> l(m_);while(!stop_){if(!on_||!read_){wake_.wait(l,[&]{return stop_||(on_&&read_);});continue;}
-   auto read=read_;const auto start=std::chrono::steady_clock::now();l.unlock();std::optional<Accel> a;try{a=read();}catch(...){}l.lock();
+ void settle(std::unique_lock<std::mutex>& l)noexcept{if(!read_since_)return;read_since_=false;auto idle=idle_;l.unlock();if(idle)try{idle();}catch(...){}l.lock();}
+ void loop()noexcept{std::unique_lock<std::mutex> l(m_);while(!stop_){if(!on_||!read_){settle(l);if(stop_)break;wake_.wait(l,[&]{return stop_||(on_&&read_);});continue;}
+   auto read=read_;const auto start=std::chrono::steady_clock::now();read_since_=true;l.unlock();std::optional<Accel> a;try{a=read();}catch(...){}l.lock();
    took_=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-start);if(a&&on_){latest_=*a;fresh_=true;}
-   wake_.wait_until(l,start+Period,[&]{return stop_||!on_;});}}
- mutable std::mutex m_;std::condition_variable wake_;Read read_;bool on_{},stop_{},fresh_{};Accel latest_{};std::chrono::milliseconds took_{};std::thread thread_;
+   wake_.wait_until(l,start+Period,[&]{return stop_||!on_;});}settle(l);}
+ mutable std::mutex m_;std::condition_variable wake_;Read read_;Hook idle_;bool on_{},stop_{},fresh_{},read_since_{};Accel latest_{};std::chrono::milliseconds took_{};std::thread thread_;
 };
 // Settles the way the tablet is held. A new orientation needs the tilt within 30 degrees of it for Polls readings in a
 // row, so a tablet held at an angle never flips; lying flat (the screen's plane carries under half of gravity) or upside
