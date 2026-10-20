@@ -21,6 +21,9 @@ public:
  int pageCount()const;QString sourceSha256()const;QString layoutId()const;
  QJsonObject layoutDescriptor()const;
  PageRaster renderPage(int globalPage); // Same immutable document/layout as text and anchors.
+ // Turned (docs/LANDSCAPE.md, 90 or 270): the page fitted upright into the landscape viewport (pdfview::fitTurned);
+ // the raster is the viewport (1520x2160), forward/inverse map to panel pixels.
+ PageRaster renderPage(int globalPage,unsigned orientation);
  QJsonObject page(int globalPage);
  // Capture returns {status:"anchored",anchor:{...}} or explicit unresolved reason.
  QJsonObject captureSelection(int globalPage,int firstUtf16,int lastUtf16,const QString& expectedText);

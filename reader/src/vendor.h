@@ -30,16 +30,19 @@ struct VendorCalls {
  // Boolean is local mask admission only; the vendor swap itself is void.
  virtual bool eraseRegion(Rect r,int content,int mode,int flags,std::span<const unsigned char>,int)noexcept{region(r,content,mode,flags);return true;}
  virtual void events()noexcept=0;
+ // Gallery 3 ghost clearing (EPFramebufferAcep2::ghostControl, mode 2 only). False when the pinned call is unavailable.
+ virtual bool ghostClear()noexcept{return false;}
  virtual ~VendorCalls()=default;
 };
 // Owns no vendor memory; normal return authorizes serial SOURCE reuse only.
 class VendorDisplay final:public SessionDisplay {
  VendorCalls& calls_;RecoveryLease const* lease_{};Pixels pixels_{};bool active_{},retired_{},inside_{};
- std::array<std::uint64_t,unsigned(ux::FullRefreshReason::Recovery)> completeReasons_{};std::uint32_t submissions_{};std::uint64_t area_{};std::vector<std::uint32_t> beforeErase_;std::vector<unsigned char> eraseMask_;Rect eraseSnapshot_{};
+ std::array<std::uint64_t,unsigned(ux::FullRefreshReason::Recovery)> completeReasons_{};std::uint32_t submissions_{};std::uint64_t area_{};std::vector<std::uint32_t> beforeErase_;std::vector<unsigned char> eraseMask_;Rect eraseSnapshot_{};std::uint32_t ghostClears_{};
  // Paper Pro (libqsgepaper acep2) swapBuffers(QRect, EPContentType, EPScreenMode, UpdateFlags), read from the
  // library's own tables: content Mono=0 Grayscale=1 Color=3; screen mode Pen=0 Mono=1 Animation=2 UI=3 Content=4.
  // UpdateFlags 1 = full (flashing) update. Until D2 every update was sent as Mono content.
- // ModeContent (4) is NOT used: on the Paper Pro a Content-mode page swap after the first one blocked the
+ // ModeContent (4) is used only for regional removal cleanup (cleanContent). Full pages stay in UI mode: on the Paper Pro
+ // a Content-mode complete page swap after the first one blocked the
  // main thread forever (run 13, session 2b4e36d0); full pages use UI mode (3) as in every earlier run.
  // Regional quality classifies composed RGB as Mono/Grayscale/Color and uses
  // UI3/flags0. The owned maintenance timer is adapted to defer a busy batch lock
@@ -71,8 +74,12 @@ public:
  // Removal quality retains the richer of the old footprint and new pixels.
  int removalContent(Rect r)const noexcept{return ready(r)?qualityContent(r):ContentMono;}
  Submit cleanRemoval(Rect,int previousContent)noexcept;
+ // cleanRemoval in Content mode: the waveform stock uses to clean erased ink (see vendor.cpp).
+ Submit cleanContent(Rect,int previousContent)noexcept;
  // Regional UI quality, sharing clean()'s RGB and extent semantics.
  Submit ui(Rect)noexcept;
+ // TEST BUILD (user request 2026-10-20): the panel driver's own ghost clearing, as Xochitl's GhostBuster uses it.
+ bool clearGhosting()noexcept;std::uint32_t ghostClears()const noexcept{return ghostClears_;}
  void pump()noexcept override;
  void shutdown()noexcept override;
  std::uint32_t submissions()const noexcept{return submissions_;}
