@@ -6,9 +6,9 @@ std::string utf8(const QString& v){auto b=v.toUtf8();return std::string(b.constD
 // Display order is top-most first; the stored array is bottom-most first.
 int stored(const QJsonArray& rows,int display){return int(rows.size())-1-display;}
 }
-void Layers::paint(spike::Surface s,const View& view,ib::Targets& targets,std::string status){
+void Layers::paint(spike::Surface s,const View& view,ib::Targets& targets,std::string status,bool turned){
  auto rows=view.doc["layers"].toArray();if(selected_.isEmpty())selected_=view.doc["activeLayer"].toString();if(offset_>=unsigned(rows.size()))offset_=0;
- ib::Canvas c(s);ib::sheets::Layers m;m.offset=offset_;m.menuFor=menuFor_;m.confirmDelete=confirmDelete_;m.busy=view.busy;m.status=std::move(status);
+ ib::Canvas c(s);ib::sheets::Layers m;m.offset=offset_;m.menuFor=menuFor_;m.confirmDelete=confirmDelete_;m.busy=view.busy;m.status=std::move(status);m.rect=ib::sheets::layersRect(turned);
  m.canUndo=!view.doc["undo"].toArray().isEmpty();m.canRedo=!view.doc["redo"].toArray().isEmpty();m.background=view.page["format"]=="epub"?"Book (EPUB)":"Document (PDF)";
  for(int d=0;d<rows.size();++d){auto layer=rows[stored(rows,d)].toObject();ib::sheets::Layer l;l.name=utf8(layer["name"].toString());l.visible=layer["visible"].toBool();l.locked=layer["locked"].toBool();
   l.active=layer["id"]==view.doc["activeLayer"];l.selected=layer["id"].toString()==selected_;
