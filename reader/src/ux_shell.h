@@ -91,6 +91,7 @@ class Shell final:public spike::OperationSink {
 
  std::unique_ptr<styled::Ink> styled_;unsigned retiredStyledCommits_{};QByteArray styledPage_;std::vector<std::uint32_t> engineScratch_,toolsPixels_;ToolsView toolsView_;std::uint64_t toolsRevision_{1};
  mutable sand::Transition sand_;mutable std::uint64_t sandPaintStamp_{};std::uint64_t sandDebugStamp_{};int sandScene_{};QString sandKey_;std::uint64_t sandEpoch_{1};spike::Rect sandTarget_{};bool sandCongested_{},sandDismiss_{};sand::Direction sandDirection_{sand::Direction::RightToLeft};
+ std::uint64_t sandContent_{};std::uint64_t sandContentStamp()const noexcept;
  sand::Policy sandPolicy()const noexcept;void sandSceneChanged();void sandTick();void cancelSandForInput()noexcept;
  mutable localized::Reveal reveal_;localized::Update revealUpdate_;mutable std::uint64_t revealPaintStamp_{};std::uint64_t revealUiEpoch_{1},revealOpeningEpoch_{};int revealView_{-1};QString revealSelection_;bool reducedMotion_{},powerConstrained_{},libraryEffects_{};
  product::AnimationPolicy revealPolicy(bool contact=false)const noexcept;void revealTick();void revealSceneChanged();void cancelRevealForContact()noexcept;void compositeReveal(spike::Surface,spike::Rect)const noexcept;void revealCovered(spike::Rect)noexcept;

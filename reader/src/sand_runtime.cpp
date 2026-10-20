@@ -17,6 +17,11 @@ sand::Policy Shell::sandPolicy()const noexcept{
   (document_&&document_->unsaved()!=0)||(tom_&&tom_->active()&&tom_->inkPending())||(notes_&&notes_->active()&&notes_->inkPending());
  p.congested=sandCongested_;p.expensive=sand_.pending()&&sand_.metrics().lastPaintNs>12000000;return p;
 }
+std::uint64_t Shell::sandContentStamp()const noexcept{
+ if(tom_&&tom_->active())return tom_->presentationStamp().ui;
+ if(notes_&&notes_->active())return notes_->uiRevision();
+ return 0;
+}
 void Shell::sandSceneChanged(){
  if(!prefs_.sandMode&&!sand_.pending()){sandScene_=0;sandKey_.clear();sandTarget_={};return;}
  // Surface identity only: streamed content, worker revisions, scrolling and
@@ -66,6 +71,7 @@ void Shell::prepareSand(spike::Surface old){
     // is serial; this CPU compose does not submit an update or change ownership.
     const auto r=sand_.region();try{composeCanonical(old,{r.x0,r.y0,r.x1,r.y1});
      if(!sand_.buildSilhouette(old.pixels,old.width,old.height,old.stridePixels))sand_.cancel(sand::Reason::Geometry);
+     sandContent_=sandContentStamp();
     }catch(...){sand_.cancel(sand::Reason::Memory);}
    }}
  }
@@ -73,6 +79,10 @@ void Shell::prepareSand(spike::Surface old){
 }
 void Shell::sandTick(){
  if(!sand_.pending())return;
+ // A worker can update panel content without changing the page/input epoch.
+ // That primary update settles immediately, rather than briefly appearing in
+ // full between stages and then being masked again by a later wind frame.
+ if(!sand_.needsCapture()&&!sand_.cleanupPending()&&sandContentStamp()!=sandContent_)sand_.cancel(sand::Reason::Scene);
  if(change_.full||change_.pageTurn)sand_.cancel(sand::Reason::Scene);
  auto update=sand_.advance({presentedVersion_,sandEpoch_},sandPolicy(),sandNow());
  // Contact cancels logically without introducing display work on the pen path.

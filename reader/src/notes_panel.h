@@ -69,6 +69,7 @@ public:
  bool revealReady()const noexcept{return open_&&view_.ready&&!view_.busy&&!pendingCommand_&&!contact()&&!canvas_.unsaved()&&!canvas_.failed()&&!keyboard_.active()&&!close_;}
  std::uint64_t revealSceneEpoch()const noexcept{return revealSceneEpoch_;}
  bool inkPending()const noexcept{return canvas_.pending()!=0||canvas_.unsaved()!=0;}
+ std::uint64_t uiRevision()const noexcept{return view_.revision;}
  bool active()const noexcept{return open_;}unsigned unsaved()const noexcept{return runtime_.unsaved();}bool failed()const noexcept{return runtime_.failed();}
  bool canLeave()const noexcept{return !playback_.active()&&!finishingPlayback_&&!contact()&&!unsaved()&&!view_.busy&&!pendingCommand_&&!failed();}
  bool takeCanvasContentChanged()noexcept{bool changed=canvasContentChanged_;canvasContentChanged_=false;return changed;}bool renderSettled()const noexcept{return !waitingBinding_&&!bindingRejected_&&!pendingCommand_&&!view_.busy&&!finishingPlayback_&&!contact()&&!canvas_.pending()&&view_.error.isEmpty();}
