@@ -29,6 +29,10 @@ struct SessionDisplay:Display {
  virtual void pageInstalled()noexcept{}
  virtual bool diagnosticSegment()const noexcept{return true;}
  virtual struct OperationSink* operationSink()noexcept{return nullptr;}
+ // The frame pen input is mapped into (docs/LANDSCAPE.md, PR 3; approved change): the display may set the Transform's
+ // turn and offset, e.g. into a turned sheet's own pixels. Applied whenever the session builds an Engine (engineTransform);
+ // the default keeps the surface's pixels.
+ virtual void inputFrame(Transform&)noexcept{}
  virtual bool initialize(const RecoveryLease&)noexcept=0;
  virtual Surface surface()const noexcept=0;
  virtual bool initialPage()noexcept=0;
@@ -51,6 +55,9 @@ struct OperationSink {
  virtual ~OperationSink()=default;
 };
 struct InputGate {bool open{true},blocked{};Ns notBefore{};std::uint64_t rejected{};};
+// The Transform of a new Engine: the marker's mapping onto the surface, with the display's input frame. Only the frame
+// (turn and offset) is the display's; axes, size, rotation and mirror stay the marker's.
+Transform engineTransform(const Transform& marker,SessionDisplay&)noexcept;
 bool consumeEvents(std::span<const input_event>,FrameAssembler&,Engine&,Scheduler&,SessionStats&,Ns,RecoveryLease* =nullptr,OperationSink* =nullptr,InputGate* =nullptr,SessionDisplay* =nullptr)noexcept;
 int runDirectSession(RecoveryLease&,SessionDisplay&)noexcept;
 }

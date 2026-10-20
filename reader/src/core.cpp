@@ -14,7 +14,8 @@ void Rect::include(Rect r)noexcept{
 }
 bool Transform::valid()const noexcept{
  return x.max>x.min&&y.max>y.min&&width>0&&height>0&&width<=8192&&height<=8192&&
- (rotation==0||rotation==90||rotation==180||rotation==270);
+ (rotation==0||rotation==90||rotation==180||rotation==270)&&(turn==0||turn==90||turn==270)&&
+ offsetX>=-8192&&offsetX<=8192&&offsetY>=-8192&&offsetY<=8192;
 }
 bool Transform::map(const Sample&s,Point&p)const noexcept{
  if(!valid()||s.x<x.min||s.x>x.max||s.y<y.min||s.y>y.max)return false;
@@ -23,6 +24,8 @@ bool Transform::map(const Sample&s,Point&p)const noexcept{
  int py=scale(s.y,y,(rotation==90||rotation==270)?width:height);
  switch(rotation){case 90:p.x=width-1-py;p.y=px;break;case 180:p.x=width-1-px;p.y=height-1-py;break;case 270:p.x=py;p.y=height-1-px;break;default:p.x=px;p.y=py;}
  if(mirrorX)p.x=width-1-p.x;
+ if(turn||offsetX||offsetY){const int px=p.x,py=p.y;if(turn==90){p.x=height-1-py;p.y=px;}else if(turn==270){p.x=py;p.y=width-1-px;}
+  p.x=std::clamp(p.x+offsetX,0,width-1);p.y=std::clamp(p.y+offsetY,0,height-1);}
  p.phase=s.phase;p.receipt=s.receipt;p.eraser=s.eraser;return true;
 }
 bool Surface::valid()const noexcept{return width>0&&height>0&&width<=8192&&height<=8192&&stridePixels>=width&&stridePixels<=16384&&std::size_t(stridePixels)*height<=8*1024*1024&&pixels.size()>=std::size_t(stridePixels)*height;}

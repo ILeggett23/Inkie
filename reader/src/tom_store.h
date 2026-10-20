@@ -27,6 +27,9 @@ class TomStore {
 public:
  static constexpr qint64 MaxTotalBytes=64*1024*1024;
  explicit TomStore(std::filesystem::path libraryRoot);~TomStore();TomStore(const TomStore&)=delete;
+ // How opening went, for the helper's TOM_HELPER_TIMING journal: the store's bytes and turns, how many settled turns
+ // were checked (this process had not validated them yet) and how long opening took.
+ struct OpenStats {qint64 bytes{};unsigned turns{},checked{};long long ms{};};OpenStats opened()const;
  QString createConversation(QString title);
  QString saveDraft(const QString& conversation,const TomDraft&,QString turn={});
  void linkInterpretation(const QString& conversation,const QString& interpretationTurn,const QString& sourceDraftTurn);
@@ -52,4 +55,16 @@ public:
  TomDraft draft(const QString& conversation,const QString& turn)const;
  enum class Fault {None,BeforeReplace,AfterReplace};void injectFault(Fault);
 };
+// Inkie's long-term memory: short notes about the reader ("The reader's name is Sam."), kept on this tablet in
+// <library>/inkie/memory.json, oldest first. The service proposes them from what the reader says (a `memory` event of
+// "+ note" / "- note" lines, applied once per request); they go with each question when the service accepts them, and
+// Settings → Inkie shows, forgets and clears them. At most MaxFacts notes of MaxChars, MaxTotal characters in all.
+namespace memory {
+inline constexpr int MaxFacts=60,MaxChars=240,MaxTotal=4096;
+std::filesystem::path path(const std::filesystem::path& library);
+QStringList read(const std::filesystem::path& library)noexcept; // empty when there are none or the file can't be read
+bool apply(const std::filesystem::path& library,const QString& request,const QString& operations)noexcept;
+bool forget(const std::filesystem::path& library,const QString& fact)noexcept;
+bool clear(const std::filesystem::path& library)noexcept;
+}
 }
