@@ -15,7 +15,7 @@ struct Policy {
 };
 struct Request {Rect target,screen;Identity identity;Direction direction{Direction::RightToLeft};std::uint32_t seed{1};bool dismiss{};unsigned durationMs{280};};
 struct Update {Rect damage;std::uint64_t stamp{};unsigned stage{};bool intermediate{};explicit operator bool()const noexcept{return stamp&&!damage.empty();}};
-struct Metrics {std::uint64_t starts{},accepted{},skipped{},cancelled{},cleanups{},generationNs{},paintNs{},lastPaintNs{},worstPaintNs{};std::size_t cacheBytes{};Quality quality{Quality::Disabled};Reason reason{Reason::None};};
+struct Metrics {std::uint64_t starts{},masks{},requests{},refused{},accepted{},skipped{},cancelled{},cleanups{},generationNs{},paintNs{},lastPaintNs{},worstPaintNs{};std::size_t cacheBytes{};Quality quality{Quality::Disabled};Reason reason{Reason::None};};
 // Pure CPU composition, with one cached old-scene crop and one outstanding
 // source stage. This never owns a display, sleeps, or equates acceptance to a
 // physical fence. The caller composes the CURRENT canonical scene before paint.
@@ -36,6 +36,9 @@ public:
  bool start(Request,Policy,std::uint64_t nowMs)noexcept;
  // Snapshot the old, software-submitted scene BEFORE canonical composition.
  bool capture(std::span<const std::uint32_t>,int width,int height,int stride,std::uint64_t nowMs)noexcept;
+ // One deterministic reservoir of destinations on the real component artwork;
+ // no atlas scaling, alpha fade, extra final-image cache or particle simulation.
+ bool buildSilhouette(std::span<const std::uint32_t> canonical,int width,int height,int stride)noexcept;
  Update advance(Identity,Policy,std::uint64_t nowMs)noexcept;
  bool paint(std::uint64_t,std::span<std::uint32_t>,int width,int height,int stride,Rect clip)noexcept;
  bool acknowledge(std::uint64_t,Rect)noexcept;
@@ -48,6 +51,7 @@ public:
  bool cleanupPending()const noexcept{return finishing_;}
  State state()const noexcept{return state_;}Rect region()const noexcept{return region_;}
  Identity identity()const noexcept{return request_.identity;}Update update()const noexcept{return update_;}
+ void submitted(bool accepted)noexcept{++metrics_.requests;if(!accepted)++metrics_.refused;}
  const Metrics& metrics()const noexcept{return metrics_;}
 };
 }

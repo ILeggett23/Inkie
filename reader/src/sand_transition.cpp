@@ -40,7 +40,7 @@ bool Transition::start(Request r,Policy p,std::uint64_t now)noexcept{
 }
 bool Transition::capture(std::span<const std::uint32_t> src,int w,int h,int stride,std::uint64_t now)noexcept{
  if(!needsCapture())return false;
- if(now==Invalid||now<lastTime_||!valid(w,h,stride,src.size())||!contains({0,0,w,h},region_)){finish(Reason::Geometry);return false;}
+ if(!src.data()||now==Invalid||now<lastTime_||!valid(w,h,stride,src.size())||!contains({0,0,w,h},region_)){finish(Reason::Geometry);return false;}
  const auto begin=nanos();const int width=region_.x1-region_.x0;
  try{const auto n=std::size_t(area(region_));if(n>before_.capacity()){std::vector<std::uint32_t> fresh(n);before_.swap(fresh);}else before_.resize(n);}catch(...){finish(Reason::Memory);return false;}
  for(int y=region_.y0;y<region_.y1;++y)std::copy_n(src.data()+std::size_t(y)*stride+region_.x0,width,before_.data()+std::size_t(y-region_.y0)*width);
@@ -52,6 +52,19 @@ bool Transition::capture(std::span<const std::uint32_t> src,int w,int h,int stri
  // the hard snapshot budget rather than silently retaining an oversized cache.
  if(metrics_.cacheBytes>MaxCacheBytes){std::vector<std::uint32_t>().swap(before_);metrics_.cacheBytes=0;captured_=false;finish(Reason::Memory);return false;}
  issue(1,true);return true;
+}
+bool Transition::buildSilhouette(std::span<const std::uint32_t> src,int w,int h,int stride)noexcept{
+ if(!captured_||!update_||!src.data()||!valid(w,h,stride,src.size())||!contains({0,0,w,h},region_))return false;
+ const auto begin=nanos();unsigned seen=0;const int rw=region_.x1-region_.x0;
+ for(int y=request_.target.y0;y<request_.target.y1;++y)for(int x=request_.target.x0;x<request_.target.x1;++x){
+  const auto old=before_[std::size_t(y-region_.y0)*rw+x-region_.x0],next=src[std::size_t(y)*stride+x];
+  if(old==next)continue;
+  const auto ink=request_.dismiss?old:next;
+  if(((ink>>16)&255)>200&&((ink>>8)&255)>200&&(ink&255)>200)continue;
+  const unsigned index=seen<grainCount_?seen:hash(request_.seed^seen)%(seen+1);++seen;
+  if(index<grainCount_){grains_[index].x=x;grains_[index].y=y;}
+ }
+ ++metrics_.masks;metrics_.generationNs+=nanos()-begin;return true;
 }
 Update Transition::issue(unsigned stage,bool intermediate)noexcept{
  if(serial_==Invalid)return {}; // no stamp reuse
@@ -77,16 +90,16 @@ Update Transition::advance(Identity identity,Policy p,std::uint64_t now)noexcept
   lastTime_=now;
  }
  if(finishing_)return update_;
- if(!captured_)return {};
+ if(!captured_){if(state_==State::Preparing&&now>=started_&&now-started_>=duration_)finish(Reason::Timeout);return {};}
  const auto elapsed=now-started_;
- if(elapsed>=duration_){finish(Reason::None);return update_;}
+ if(elapsed>=duration_){if(stages_>stage_)metrics_.skipped+=stages_-stage_;finish(update_?Reason::Timeout:Reason::None);return update_;}
  if(update_)return update_; // one outstanding source; never queue frames
  unsigned next=1+unsigned(elapsed*stages_/duration_);next=std::min(stages_,next);
  if(next<=stage_)return {};
  metrics_.skipped+=next-stage_-1;return issue(next,true);
 }
 bool Transition::paint(std::uint64_t stamp,std::span<std::uint32_t> dst,int w,int h,int stride,Rect clip)noexcept{
- if(!update_||stamp!=update_.stamp||!valid(w,h,stride,dst.size())||!contains({0,0,w,h},region_))return false;
+ if(!update_||stamp!=update_.stamp||!dst.data()||!valid(w,h,stride,dst.size())||!contains({0,0,w,h},region_))return false;
  clip=intersect(clip,region_);if(clip.empty())return false;
  const auto begin=nanos();
  if(update_.intermediate){
@@ -104,7 +117,10 @@ bool Transition::paint(std::uint64_t stamp,std::span<std::uint32_t> dst,int w,in
    const unsigned row=unsigned(y)/24,phase=unsigned(y)%24;
    const int a=int(hash(request_.seed^row*131u)%321)-160,b=int(hash(request_.seed^(row+1)*131u)%321)-160;
    const int noise=(a*int(24-phase)+b*int(phase))/24+int(hash(request_.seed^unsigned(x/3)*31u^unsigned(y/3)*131u)%97)-48;
-   const bool formed=progress==1000||(progress>0&&u*1000/std::max(1,tw)<progress+noise);
+   // Arrival is directional but consolidation happens in coherent granular
+   // islands across the active front, rather than a straight rectangular wipe.
+   const int settling=int(hash(request_.seed^unsigned(x/3)*619u^unsigned(y/3)*137u)%361);
+   const bool formed=progress==1000||(progress>0&&u*640/std::max(1,tw)+settling<progress+noise);
    if(!formed)pixel=old;
    else if(!request_.dismiss&&semantic<4&&x>request_.target.x0+2&&x<request_.target.x1-3&&y>request_.target.y0+2&&y<request_.target.y1-3&&((pixel>>16)&255)<96&&((pixel>>8)&255)<96&&(pixel&255)<96)pixel=0xffffffffu; // interior text/icons appear intact at consolidation
   }
@@ -114,7 +130,8 @@ bool Transition::paint(std::uint64_t stamp,std::span<std::uint32_t> dst,int w,in
    // Converging, deterministic tracks; dismissal continues with the wind.
    const int displacement=request_.dismiss?g.travel*progress/1000:-g.travel*(1000-progress)/1000;
    const int entry=sign>0?request_.target.x0:request_.target.x1-1;
-   const int x=semantic==4?entry-sign*(4+int(i%24)):(semantic==1?entry+sign*int(i%24):g.x)+sign*displacement,y=g.y+g.drift*(1000-progress)/1000;
+   const int exit=sign>0?request_.target.x1:request_.target.x0;
+   const int x=semantic==4?(request_.dismiss?exit+sign*(4+int(i%24)):entry-sign*(4+int(i%24))):(semantic==1?entry+sign*int(i%24):g.x)+sign*displacement,y=g.y+g.drift*(1000-progress)/1000;
    const int u=sign>0?g.x-request_.target.x0:request_.target.x1-1-g.x;
    const int edge=u*1000/std::max(1,tw)-progress;
    if(semantic!=1&&(edge<-140||edge>320)&&i%9)continue;

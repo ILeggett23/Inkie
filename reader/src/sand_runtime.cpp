@@ -51,7 +51,13 @@ void Shell::prepareSand(spike::Surface old){
   // once off-contact, before Display modifies its borrowed source pixels.
   if(change_.full||change_.pageTurn)sand_.cancel(sand::Reason::Scene);
   else {auto policy=sandPolicy();sand_.advance({presentedVersion_,sandEpoch_},policy,sandNow());
-   if(sand_.needsCapture())sand_.capture(old.pixels,old.width,old.height,old.stridePixels,sandNow());}
+   if(sand_.needsCapture()&&sand_.capture(old.pixels,old.width,old.height,old.stridePixels,sandNow())){
+    // Display has already retained the old pigment class. Borrowed source reuse
+    // is serial; this CPU compose does not submit an update or change ownership.
+    const auto r=sand_.region();try{composeCanonical(old,{r.x0,r.y0,r.x1,r.y1});
+     if(!sand_.buildSilhouette(old.pixels,old.width,old.height,old.stridePixels))sand_.cancel(sand::Reason::Geometry);
+    }catch(...){sand_.cancel(sand::Reason::Memory);}
+   }}
  }
  sandTick();
 }
@@ -62,6 +68,9 @@ void Shell::sandTick(){
  // Contact cancels logically without introducing display work on the pen path.
  // The first off-contact boundary restores the complete canonical footprint.
  if(!update||sandPolicy().contact||change_.full)return;
+#ifdef INKBOUND_SAND_DEBUG
+ if(update.stamp!=sandDebugStamp_){sandDebugStamp_=update.stamp;const auto& m=sand_.metrics();std::fprintf(stderr,"SAND_STAGE stamp=%llu stage=%u intermediate=%d quality=%u reason=%u x=%d y=%d w=%d h=%d masks=%llu generation_ns=%llu last_paint_ns=%llu requests=%llu refused=%llu accepted=%llu skipped=%llu cleanup=%llu cache_bytes=%zu fence=SOURCE_ONLY\n",(unsigned long long)update.stamp,update.stage,update.intermediate,unsigned(m.quality),unsigned(m.reason),update.damage.x0,update.damage.y0,update.damage.x1-update.damage.x0,update.damage.y1-update.damage.y0,(unsigned long long)m.masks,(unsigned long long)m.generationNs,(unsigned long long)m.lastPaintNs,(unsigned long long)m.requests,(unsigned long long)m.refused,(unsigned long long)m.accepted,(unsigned long long)m.skipped,(unsigned long long)m.cleanups,m.cacheBytes);}
+#endif
  damage({update.damage.x0,update.damage.y0,update.damage.x1,update.damage.y1});
  change_.preview=true; // existing regional UI quality, never new flags/modes
 }

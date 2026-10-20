@@ -8,13 +8,13 @@
 #include <iostream>
 using Path=std::filesystem::path;
 namespace ux {
-struct DisplayTestAccess {static void lease(Display& d,const spike::RecoveryLease& l){d.lease_=&l;}static int sandClass(const Display& d){return d.sandClass_;}};
+struct DisplayTestAccess {static void lease(Display& d,const spike::RecoveryLease& l){d.lease_=&l;}static int sandClass(const Display& d){return d.sandClass_;}static spike::Submit decorative(Display& d,spike::Rect r){return d.present(r,"test:sand-refusal",RefreshIntent::UIUpdate,false);}};
 struct QolTestAccess {static void mode(Shell& s,unsigned n){s.prefs_.sandMode=n;}static bool note(Shell& s,QString id={}){return s.openNotes(notes::Mode::Note,{},id);}static void select(Shell& s,bool on){s.selectMode_=on;}static void orientationCancel(Shell& s){++s.presentedVersion_;}static void budget(Shell& s,bool on){s.sandCongested_=on;}};
 }
 namespace {
-struct Lease final:spike::RecoveryLease {bool valid()const noexcept override{return true;}spike::Ns deadline()const noexcept override{return spike::monotonic()+300000000000ULL;}bool stopRequested()const noexcept override{return false;}spike::SustainedPolicy sustained()const noexcept override{return {1000000000ull,8,4096};}};
+struct Lease final:spike::RecoveryLease {bool live{true};bool valid()const noexcept override{return live;}spike::Ns deadline()const noexcept override{return spike::monotonic()+300000000000ULL;}bool stopRequested()const noexcept override{return false;}spike::SustainedPolicy sustained()const noexcept override{return {1000000000ull,8,4096};}};
 struct Calls final:spike::VendorCalls {
- std::vector<std::uint32_t> pixels=std::vector<std::uint32_t>(underlay::Pixels,0xffffffffu);unsigned full{},regions{};bool bad{};int lastQualityClass{-1};
+ std::vector<std::uint32_t> pixels=std::vector<std::uint32_t>(underlay::Pixels,0xffffffffu);unsigned full{},regions{};bool bad{};int lastQualityClass{-1},sampleClass{-1};
  bool acquire(spike::Pixels& out)noexcept override{out={reinterpret_cast<unsigned char*>(pixels.data()),1620,2160,4,6528};return true;}
  void region(spike::Rect r,int,int mode,int flags)noexcept override{bad|=r.empty()||r.x0<0||r.y0<0||r.x1>1620||r.y1>2160;if(flags&1)++full;else ++regions;bad|=flags!=0&&!(flags==1&&mode==3)&&!(flags==2&&mode==0);}
  void events()noexcept override{}
@@ -42,7 +42,7 @@ int main(int argc,char**argv){QCoreApplication app(argc,argv);if(argc!=5)return 
  // Synthetic prior-panel pigment in the borrowed source tests the real vendor
  // classification contract; it is deliberately distinct from stored page ink.
  for(int y=900;y<925;++y)for(int x=500;x<540;++x)h.calls.pixels[std::size_t(y)*1632+x]=0xffffd900u;
- auto starts=h.shell.sandMetrics().starts;CHECK(uitest::openTools(h.shell));h.boundary();CHECK(h.shell.sandMetrics().starts>starts);h.effect("tools");CHECK(h.calls.lastQualityClass==3);h.canonical(ux::ToolsView::panel());CHECK(uitest::tap(h.shell,uitest::toolsClose(h.shell)));h.effect("tools-dismiss");h.settle();CHECK(h.calls.full==full&&inkHash(h.shell)==ink);
+ auto starts=h.shell.sandMetrics().starts;CHECK(uitest::openTools(h.shell));h.boundary();CHECK(h.shell.sandMetrics().starts>starts);h.effect("tools");CHECK(h.calls.sampleClass==3);h.canonical(ux::ToolsView::panel());CHECK(uitest::tap(h.shell,uitest::toolsClose(h.shell)));h.effect("tools-dismiss");h.settle();CHECK(h.calls.full==full&&inkHash(h.shell)==ink);
  // Reduce motion is a hard override, and a disabled effect does not snapshot.
  h.shell.setReducedMotion(true);starts=h.shell.sandMetrics().starts;CHECK(uitest::openTools(h.shell));h.boundary();CHECK(!h.shell.sandPending()&&h.shell.sandMetrics().starts==starts);CHECK(uitest::tap(h.shell,uitest::toolsClose(h.shell)));h.effect("");h.shell.setReducedMotion(false);
  // Definitions stay tied to the original selected word; dismissal restores page.
@@ -57,6 +57,9 @@ int main(int argc,char**argv){QCoreApplication app(argc,argv);if(argc!=5)return 
  // A book-linked note is created by the normal explicit action only. Reopening
  // that same note for a transition must never create another object.
  CHECK(ux::QolTestAccess::note(h.shell));h.boundary();h.effect("note");until([&]{h.boundary();return h.shell.notesPanel()->canLeave();});auto id=h.shell.notesPanel()->view().note["id"].toString();CHECK(!id.isEmpty());CHECK(uitest::notes(h.shell,ib::notes::NoteDone));until([&]{h.boundary();return !h.shell.notesPanel()->active();});h.effect("");h.settle();CHECK(ux::QolTestAccess::note(h.shell,id));h.boundary();h.effect("");until([&]{h.boundary();return h.shell.notesPanel()->canLeave();});CHECK(h.shell.notesPanel()->view().note["id"].toString()==id);CHECK(uitest::notes(h.shell,ib::notes::NoteDone));until([&]{h.boundary();return !h.shell.notesPanel()->active();});h.effect("");h.settle();
+ // Transient decorative submission refusal retains cleanup and keeps the UI
+ // alive. Do not report false source acceptance or swallow unrelated failures.
+ CHECK(h.shell.action(ux::Action::Show));h.boundary();h.settle();CHECK(uitest::openTools(h.shell));h.shell.prepareSand(h.vendor.surface());CHECK(h.shell.sandFrameFor(h.shell.sandRegion()));h.lease.live=false;CHECK(ux::DisplayTestAccess::decorative(h.display,h.shell.sandRegion())==spike::Submit::Busy);h.lease.live=true;h.effect("");CHECK(!h.shell.failed());CHECK(uitest::tap(h.shell,uitest::toolsClose(h.shell)));h.effect("");h.settle();
  // Navigation and selection cancel rather than replaying on ordinary updates.
  CHECK(h.shell.action(ux::Action::Show));h.boundary();h.settle();CHECK(uitest::openTools(h.shell));h.boundary();ux::QolTestAccess::orientationCancel(h.shell);h.effect("");CHECK(uitest::tap(h.shell,uitest::toolsClose(h.shell)));h.effect("");h.settle();CHECK(h.shell.navigateTo(1));until([&]{h.boundary();return h.shell.page()==1&&h.shell.writable();});h.effect("");CHECK(h.calls.full==full);CHECK(h.shell.finish(5000));
  std::cout<<"SAND_ROUTE_PASS tom_cycles=20 tom_starts="<<tomStarts<<" notes_identity=RETAINED definition=FOUND pen_erase=PRODUCTION_ENGINE max_cache="<<h.shell.sandMetrics().cacheBytes<<" no_new_complete_updates=true providers=NONE raw_input=NONE optics=NOT_RUN\n";return 0;

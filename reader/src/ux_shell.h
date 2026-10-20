@@ -90,7 +90,7 @@ class Shell final:public spike::OperationSink {
  std::vector<std::uint32_t> pdfPreviewPixels_;std::array<double,6> pdfPreviewToOld_{};bool pdfPreviewActive_{};bool beginPdfPreview(const reader::pdfview::Plan&);void composePdfPreview(spike::Surface,spike::Rect)const;
 
  std::unique_ptr<styled::Ink> styled_;unsigned retiredStyledCommits_{};QByteArray styledPage_;std::vector<std::uint32_t> engineScratch_,toolsPixels_;ToolsView toolsView_;std::uint64_t toolsRevision_{1};
- mutable sand::Transition sand_;mutable std::uint64_t sandPaintStamp_{};int sandScene_{};QString sandKey_;std::uint64_t sandEpoch_{1};spike::Rect sandTarget_{};bool sandCongested_{};sand::Direction sandDirection_{sand::Direction::RightToLeft};
+ mutable sand::Transition sand_;mutable std::uint64_t sandPaintStamp_{};std::uint64_t sandDebugStamp_{};int sandScene_{};QString sandKey_;std::uint64_t sandEpoch_{1};spike::Rect sandTarget_{};bool sandCongested_{};sand::Direction sandDirection_{sand::Direction::RightToLeft};
  sand::Policy sandPolicy()const noexcept;void sandSceneChanged();void sandTick();void cancelSandForInput()noexcept;
  mutable localized::Reveal reveal_;localized::Update revealUpdate_;mutable std::uint64_t revealPaintStamp_{};std::uint64_t revealUiEpoch_{1},revealOpeningEpoch_{};int revealView_{-1};QString revealSelection_;bool reducedMotion_{},powerConstrained_{},libraryEffects_{};
  product::AnimationPolicy revealPolicy(bool contact=false)const noexcept;void revealTick();void revealSceneChanged();void cancelRevealForContact()noexcept;void compositeReveal(spike::Surface,spike::Rect)const noexcept;void revealCovered(spike::Rect)noexcept;
@@ -162,6 +162,7 @@ public:
  bool quietEffectsEnabled()const noexcept{return !turned()&&(styled_?styled_->revealEnabled():libraryEffects_);} /* page effects are portrait only for now */bool revealPending()const noexcept{return !reveal_.quiescent()||sand_.pending();}
  bool sandEnabled()const noexcept{return prefs_.sandMode!=0;}bool sandPending()const noexcept{return sand_.pending();}bool sandNeedsCapture()const noexcept{return sand_.needsCapture();}spike::Rect sandRegion()const noexcept{auto r=sand_.region();return {r.x0,r.y0,r.x1,r.y1};}const sand::Metrics& sandMetrics()const noexcept{return sand_.metrics();}
  bool sandFrameFor(spike::Rect r)const noexcept{auto u=sand_.update();auto a=sand_.region();return u&&u.intermediate&&std::max(r.x0,a.x0)<std::min(r.x1,a.x1)&&std::max(r.y0,a.y0)<std::min(r.y1,a.y1);}
+ void sandSubmitted(spike::Rect r,bool accepted)noexcept{auto u=sand_.update();auto a=sand_.region();if(u&&std::max(r.x0,a.x0)<std::min(r.x1,a.x1)&&std::max(r.y0,a.y0)<std::min(r.y1,a.y1))sand_.submitted(accepted);}
  void sandDisplayFailed()noexcept{sand_.cancel(sand::Reason::Congestion);}
  void prepareSand(spike::Surface);void setSandCongested(bool busy)noexcept{sandCongested_=busy;}
  bool viewPreviewActive()const noexcept{return pdfPreviewActive_;}
