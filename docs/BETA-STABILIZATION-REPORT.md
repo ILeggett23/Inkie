@@ -310,9 +310,11 @@ Undo (two-finger double tap) removes the same ink completely.
 |---|---|---|---|---|
 | D15 | Erased black and coloured ink leaves yellow; Undo of the same ink leaves none | Undo's removal is one Content-mode update from the ink on the panel to the page beneath. The eraser first showed each sample with the vendor's masked fast erase (pen mode, flags 2), driving the erased pixels to white in the pen waveform. That leaves Gallery 3's yellow pigment (black ink is made of the colour pigments too), and the panel then held those pixels as white: the Content-mode cleanup at lift (D8, D11) went from white to white, had nothing to drive, and the yellow stayed. | Erasing never sends a fast update. Each eraser sample is composed only; while the eraser moves, what it has erased is removed with the same Content-mode update as Undo, at most every 100 ms (`eraseLive_`, `liveRemoval`). The rest goes with the lift cleanup, which covers all of it (`ui:erase-live-removals` counts the live removals). Both erasers, in the page, Notes and Inkie. The vendor's masked erase is left in place, unused by the reader. | [auto] `eraser_removes_ink_like_undo`: black ink (Marker's eraser end) and red ink (toolbar eraser); a Content-mode removal goes out while the eraser moves; no fast update touches an erased ink pixel; every erased pixel is covered by a Content-mode update; the page beneath shows. `onlyRegional` now refuses the masked erase anywhere. Optics [device], check 38 |
 
-How it looks: erased ink fades out in the quality waveform a moment behind the eraser, as an undone stroke does, instead
-of vanishing in the fast waveform. Not measured on the device yet: whether 100 ms between live removals feels right, and
-whether overlapping Content-mode removals stay as clean as one.
+**D15 reverted (2026-10-20).** On the tablet, erasing with Content-mode removals while the eraser moved left parts
+of the ink unerased or marked (user report). The eraser is back to stock's live erase (the masked fast erase, lower 1/14
+as in the 2026-10-14 stock erase pilot) with the Content-mode cleanup when it lifts. The yellow residue that D15 aimed
+at is open again; the next step is a visual test of stock Xochitl erasing black, coloured and highlighter ink, then
+Inkie variants compared against it.
 
 ### Device report follow-up 5: every tap takes seconds with Auto-rotate on (user report, 2026-10-19)
 
@@ -386,7 +388,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 35 | In landscape: long-press a word; select a passage and highlight it | The definition card and the selection strip are upright on the page; the highlight lands on the text | — |
 | 36 | Open an EPUB with Auto-rotate on and turn the tablet; read a few pages; turn back | Longer lines at the same type size; the same passage after each turn | `ui:turn`, `ui:turned` |
 | 37 | Turn an EPUB, read on, then close it and reopen it upright | The book reopens where you stopped reading | — |
-| 38 | Write black and red ink; erase part of each with the Marker's eraser end, then with the toolbar eraser; erase a long scribble | The erased ink fades out behind the eraser and leaves no yellow, as Undo does; nothing flashes | `ui:erase-live-removals`, `ui:erase-lift-cleanup`, `ui:removal-content-cleanup` |
+| 38 | Write black and red ink; erase part of each with the Marker's eraser end, then with the toolbar eraser; erase a long scribble | Ink disappears under the eraser as it moves and nothing is left unerased (D15 reverted; residue colour compared with stock) | `ui:erase-live-removals`, `ui:erase-lift-cleanup`, `ui:removal-content-cleanup` |
 | 39 | Turn Auto-rotate on in quick settings; tap the toolbar, menus and page turns; then turn the tablet | Taps respond at once, as with Auto-rotate off; the page turns about 2 s after the tilt settles | `ui:orientation-read-ms`, no `reader:slow-tick-us` near 750 000 |
 
 ## 11. Beta-readiness recommendation

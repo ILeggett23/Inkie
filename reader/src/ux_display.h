@@ -34,13 +34,7 @@ class Display final:public spike::SessionDisplay,public spike::OperationSink {
  bool detached_{};std::uint64_t splits_{},tailPoints_{};
  // D2 eraser: when the eraser lifts, its area gets one regional quality cleanup (liftCleanup_, as stock does). Optical removal of ghosting still requires device qualification. (A ring cursor drawn with the fast pen waveform left
  // ghost trails on the colour panel, so the live feedback is the erased band itself.)
- // D15: erased ink goes the way Undo removes it: one Content-mode update from the ink still on the panel to the page beneath.
- // The masked fast erase used before drove the erased pixels to white in the pen waveform, which leaves Gallery 3's
- // yellow pigment of black and coloured ink, and the panel then held them as white: the Content-mode cleanup that
- // followed had nothing left to drive and the yellow stayed (Undo, with no fast update first, removed ink cleanly).
- // While the eraser moves, what it has erased (eraseLive_, composed but not yet shown) is removed this way at most every
- // EraseLiveInterval; the rest when it lifts (liftCleanup_ covers all of it).
- static constexpr int EraserRing=22;static constexpr spike::Ns EraseLiveInterval=100000000ull;spike::Rect eraseLive_{};spike::Ns eraseLiveAt_{};unsigned eraseLiveCount_{};
+ static constexpr int EraserRing=22;
  bool pageTurnPending_{};std::uint64_t installedVersion_{};RefreshPlan uiCleanup_;RefreshController refresh_;std::array<std::uint32_t,1620*64> sceneRows_;bool penContact_{},erasing_{},eraseSubmission_{};int ringX_{-1},ringY_{-1};spike::Rect eraseArea_{},cleanup_{},liftCleanup_{},strokeArea_{};RefreshPlan inkPlan_,removal_;bool colorStroke_{};
  // What the Gallery 3 panel still holds. A fast (pen-mode) update, or one whose class came only from its new pixels,
  // leaves the pigment of what it replaced: colour ink erased to white, a coloured sheet closed over a page. A later
@@ -66,19 +60,19 @@ class Display final:public spike::SessionDisplay,public spike::OperationSink {
  // change finish in visible stages (a closing drawer's lower part stayed up for a second after its upper part).
  // keep >= 0: the class of what a quality update removes (prior()); cleanRemoval keeps the richer of it and the new pixels.
  static constexpr int LiveArea=1620*2160/4;
- spike::Submit live(spike::Rect r,const char* what,RefreshIntent intent=RefreshIntent::FastInk,bool generated=false,int keep=-1)noexcept{
+ spike::Submit live(spike::Rect r,const char* what,RefreshIntent intent=RefreshIntent::FastInk,bool generated=false,bool erase=false,int keep=-1)noexcept{
   if(r.empty())return spike::Submit::Accepted;
-  const bool penMode=mechanics(intent)==RefreshMechanics::FastRegion;
+  const bool penMode=erase||mechanics(intent)==RefreshMechanics::FastRegion;
   const int rows=penMode?std::max(1,LiveArea/std::max(1,r.x1-r.x0)):r.y1-r.y0;
   if(r.y1-r.y0>rows)recovery::v2::e2::mark("reader:live-banded",unsigned((r.y1-r.y0+rows-1)/rows));
-  for(int y=r.y0;y<r.y1;y+=rows){spike::Rect band{r.x0,y,r.x1,std::min(r.y1,y+rows)};if((!penMode&&keep>=0?vendor_.cleanRemoval(band,keep):applyRefresh(vendor_,band,intent))!=spike::Submit::Accepted){recovery::v2::e2::mark(what,unsigned(std::uint64_t(r.x1-r.x0)*unsigned(r.y1-r.y0)));return spike::Submit::Failed;}refresh_.accepted(band,intent,generated);}
+  for(int y=r.y0;y<r.y1;y+=rows){spike::Rect band{r.x0,y,r.x1,std::min(r.y1,y+rows)};if((erase?vendor_.erase(band):!penMode&&keep>=0?vendor_.cleanRemoval(band,keep):applyRefresh(vendor_,band,intent))!=spike::Submit::Accepted){recovery::v2::e2::mark(what,unsigned(std::uint64_t(r.x1-r.x0)*unsigned(r.y1-r.y0)));return spike::Submit::Failed;}refresh_.accepted(band,intent,generated);}
   return spike::Submit::Accepted;}
  void track(const spike::Point& p)noexcept{if(p.phase==spike::Phase::Down)eraseSubmission_=p.eraser||shell_.eraseMode();
   // Coloured ink: stock gives each coloured stroke a local quality update after it (the red-ink pilot: fast 1/14, then
   // local quality 2/16, 5/16; red appears after it). Inkie gave one only to grid cells that passed the 96-update counter,
   // so a stroke across two cells came out half in fast-mode colour. Each stroke's live damage is kept (strokeArea_) and
   // queued once the pen is up and ink is settled. Black ink keeps no extra update, as in stock's black-dot pilot.
-  if(!eraseSubmission_){if(p.phase==spike::Phase::Down){join(inkPlan_,strokeArea_);strokeArea_={};colorStroke_=shell_.colorInk();}return;}if(p.phase==spike::Phase::Down){erasing_=true;eraseArea_={};eraseLiveAt_=0;}ringX_=p.x;ringY_=p.y;grow(eraseArea_,around(p.x,p.y,int(std::ceil((EraserRing+10)*shell_.inputScale()))));if(p.phase==spike::Phase::Up){erasing_=false;grow(liftCleanup_,eraseArea_);eraseArea_={};}}
+  if(!eraseSubmission_){if(p.phase==spike::Phase::Down){join(inkPlan_,strokeArea_);strokeArea_={};colorStroke_=shell_.colorInk();}return;}if(p.phase==spike::Phase::Down){erasing_=true;eraseArea_={};}ringX_=p.x;ringY_=p.y;grow(eraseArea_,around(p.x,p.y,int(std::ceil((EraserRing+10)*shell_.inputScale()))));if(p.phase==spike::Phase::Up){erasing_=false;grow(liftCleanup_,eraseArea_);eraseArea_={};}}
  void detach(const char* why)noexcept{detached_=true;std::fprintf(stderr,"INK_STROKE_TAIL_UNSAVED reason=%s splits=%llu\n",why,(unsigned long long)splits_);}
  bool appendSplit(const spike::Point& p)noexcept{
   penContact_=p.phase!=spike::Phase::Up;track(p);
@@ -155,7 +149,7 @@ class Display final:public spike::SessionDisplay,public spike::OperationSink {
  void compose(spike::Rect r){shell_.compose(vendor_.surface(),r);}
  // Compose and present r. Its class is read before compose: a quality update keeps what it removes (and settles the
  // cells it covers); a fast update leaves that class owed to the area's later cleanup.
- spike::Submit present(spike::Rect r,const char* what,RefreshIntent intent,bool generated)noexcept{const int before=prior(r);compose(r);const bool quality=mechanics(intent)==RefreshMechanics::QualityRegion;const auto result=live(r,what,intent,generated,quality?before:-1);if(result==spike::Submit::Accepted){if(quality)paid(r);else owe(r,before);}return result;}
+ spike::Submit present(spike::Rect r,const char* what,RefreshIntent intent,bool generated)noexcept{const int before=prior(r);compose(r);const bool quality=mechanics(intent)==RefreshMechanics::QualityRegion;const auto result=live(r,what,intent,generated,false,quality?before:-1);if(result==spike::Submit::Accepted){if(quality)paid(r);else owe(r,before);}return result;}
 public:
  Display(spike::VendorDisplay& v,Shell& s,reader::lifecycle::Foreground* foreground=nullptr,recovery::v2::sessionpower::SessionPower* sessionPower=nullptr,spike::Ns startupBudget=StartupBudget):vendor_(v),shell_(s),foreground_(foreground),sessionPower_(sessionPower),startupBudget_(startupBudget){}
  bool initialize(const spike::RecoveryLease& l)noexcept override{lease_=&l;
@@ -164,13 +158,7 @@ public:
   return startupWindow("reader:display-initialize-us",[&]{return vendor_.initialize(l);})&&touch_.open(l.valid());}
  spike::Surface surface()const noexcept override{return shell_.ink();}
  bool initialPage()noexcept override{try{return startupWindow("reader:initial-page-us",[&]{compose({0,0,1620,2160});const bool accepted=vendor_.initialPreparedPage(vendor_.surface().pixels);if(accepted)refresh_.accepted({0,0,1620,2160},RefreshIntent::PageTransition);return accepted;});}catch(...){return false;}}
- spike::Submit submit(spike::Rect r)noexcept override{try{r=shell_.presentationDamage(r);
-  // Erasing: compose only. The panel keeps showing the ink until a Content-mode removal drives it (liveRemoval, or the
-  // lift cleanup); the area is covered for the shell, so no fast plan presents it first.
-  if(eraseSubmission_){if(!vendor_.surface().valid())return spike::Submit::Failed;const int shown=vendor_.removalContent(r);compose(r);owe(r,std::max(0,shown));grow(liftCleanup_,r);grow(eraseLive_,r);shell_.presentationCovered(r);liveRemoval();return spike::Submit::Accepted;}
-  compose(r);auto result=live(r,"reader:submit-failed",RefreshIntent::FastInk,false);if(result==spike::Submit::Accepted){if(colorStroke_)grow(strokeArea_,r);shell_.presentationCovered(r);}return result;}catch(...){return spike::Submit::Failed;}}
- void liveRemoval()noexcept{const auto now=spike::monotonic();if(!erasing_||eraseLive_.empty()||(eraseLiveAt_&&now-eraseLiveAt_<EraseLiveInterval)||!refresh_.ready(now))return;eraseLiveAt_=now;const auto rect=eraseLive_;const int before=prior(rect);compose(rect);
-  if(vendor_.cleanContent(rect,std::max(0,before))==spike::Submit::Accepted){eraseLive_={};paid(rect);refresh_.accepted(rect,RefreshIntent::Cleanup);++eraseLiveCount_;}else refresh_.failed(now);}
+ spike::Submit submit(spike::Rect r)noexcept override{try{r=shell_.presentationDamage(r);const int shown=eraseSubmission_?vendor_.removalContent(r):-1;if(eraseSubmission_&&!vendor_.beginErase(r))return spike::Submit::Failed;compose(r);auto result=live(r,"reader:submit-failed",RefreshIntent::FastInk,false,eraseSubmission_);if(result==spike::Submit::Accepted){if(eraseSubmission_){grow(liftCleanup_,r);owe(r,std::max(0,shown));}else if(colorStroke_)grow(strokeArea_,r);shell_.presentationCovered(r);}return result;}catch(...){return spike::Submit::Failed;}}
  void pump()noexcept override{pumped_=true;cadence_.tick("reader:loop");vendor_.pump();if(foreground_)foreground_->publish(shell_.failed());logWorkers();if(sessionPower_&&!sessionPower_->tick(spike::monotonic(),lease_&&lease_->valid()))powerEnd_=true;sleepTick(false);}void shutdown()noexcept override{shell_.beginQuiesce();vendor_.shutdown();lease_=nullptr;}
  bool diagnosticSegment()const noexcept override{return false;}spike::OperationSink* operationSink()noexcept override{return this;}
  bool reserve()noexcept override{if(asleep()||restoreSleep_||pageTurnPending_)return false;if(sessionPower_)sessionPower_->activity(spike::monotonic());touch_.block();return shell_.reserve();}
@@ -204,13 +192,13 @@ public:
    change.preview=true;
    refresh_.sceneComposed();recovery::v2::e2::mark("reader:scene-regions",count);
   }
-  if(change.full){if(!erasing_){cleanup_={};liftCleanup_={};eraseLive_={};removal_={};owed_.fill(-1);}strokeArea_={};inkPlan_={};uiCleanup_={};}else{if(!change.cleanup.empty()){owe(change.cleanup,vendor_.removalContent(change.cleanup));grow(cleanup_,change.cleanup);}for(unsigned i=0;i<change.uiCleanupCount;++i)owe(change.uiCleanup[i],vendor_.removalContent(change.uiCleanup[i]));for(unsigned i=0;i<change.uiCleanupCount;++i)if(!uiCleanup_.add(change.uiCleanup[i])){spike::Rect joined=change.uiCleanup[i];for(unsigned n=0;n<uiCleanup_.count;++n)joined.include(uiCleanup_.regions[n]);uiCleanup_={};(void)uiCleanup_.add(joined);}}
+  if(change.full){if(!erasing_){cleanup_={};liftCleanup_={};removal_={};owed_.fill(-1);}strokeArea_={};inkPlan_={};uiCleanup_={};}else{if(!change.cleanup.empty()){owe(change.cleanup,vendor_.removalContent(change.cleanup));grow(cleanup_,change.cleanup);}for(unsigned i=0;i<change.uiCleanupCount;++i)owe(change.uiCleanup[i],vendor_.removalContent(change.uiCleanup[i]));for(unsigned i=0;i<change.uiCleanupCount;++i)if(!uiCleanup_.add(change.uiCleanup[i])){spike::Rect joined=change.uiCleanup[i];for(unsigned n=0;n<uiCleanup_.count;++n)joined.include(uiCleanup_.regions[n]);uiCleanup_={};(void)uiCleanup_.add(joined);}}
   // Stock erase cleanup (Xochitl three-dot erase pilot, docs/refresh-reverse-engineering/STOCK_REFRESH_TRACE.md): in the
   // same millisecond the eraser lifts, one regional quality update covers the erased stroke's bounds (380x460, 372x444),
   // with no dark fill and no wait. Inkie used to wait until the stroke was saved (0.5-2 s). The removed class is kept
   // (prior); a refused update joins the ordinary removal cleanup and is retried with it. Strokes removed beyond the
   // eraser's path arrive with the saved result and keep the existing removal cleanup.
-  RefreshPlan removalNow;if(!penContact_&&!erasing_&&!liftCleanup_.empty()&&refresh_.qualityAllowed({},spike::monotonic())){recovery::v2::e2::mark("ui:erase-lift-cleanup",unsigned(std::min<std::uint64_t>(RefreshPlan::area(liftCleanup_),UINT32_MAX)));recovery::v2::e2::mark("ui:erase-live-removals",eraseLiveCount_);eraseLiveCount_=0;eraseLive_={};join(removalNow,liftCleanup_);
+  RefreshPlan removalNow;if(!penContact_&&!erasing_&&!liftCleanup_.empty()&&refresh_.qualityAllowed({},spike::monotonic())){recovery::v2::e2::mark("ui:erase-lift-cleanup",unsigned(std::min<std::uint64_t>(RefreshPlan::area(liftCleanup_),UINT32_MAX)));join(removalNow,liftCleanup_);
    /* The erased area leaves any colour-stroke refresh still pending (UI mode, inkPlan_/strokeArea_): sent after this
       cleanup it would redraw the erased highlight's area last, in the waveform that leaves its yellow. */
    join(inkPlan_,strokeArea_);strokeArea_={};if(inkPlan_.count&&!inkPlan_.subtract(liftCleanup_))inkPlan_={};liftCleanup_={};}
