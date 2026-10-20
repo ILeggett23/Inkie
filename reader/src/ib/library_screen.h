@@ -32,6 +32,12 @@ inline constexpr Rect NoticeRect{ContentLeft,292,ContentRight,334}; // one quiet
 inline constexpr Rect StatusRect=ib::status::LibraryBar; /* device status in the mast (refreshed alone when it changes) */
 inline constexpr Rect DrawerRect{0,0,474,2160},PillRect{698,1992,922,2092},CreateRect{540,0,1080,1990}; // CreateRect: bottom edge; height follows its rows
 Rect createMenuRect(std::size_t rows)noexcept;
+// The library's layout for its frame: the portrait panel (1620x2160, the constants above) or, with the tablet turned,
+// an upright 2160x1620 frame (docs/LANDSCAPE.md): wider content with four cover columns, the pill and pager at the foot,
+// the drawer the frame's height, device status at its top right. paint() lays out for the canvas it is given.
+struct Geometry {int width{1620},height{2160},contentLeft{ContentLeft},contentRight{ContentRight},bottomLimit{1985},gridCols{3},pagerLeft{1160};Rect notice{NoticeRect},status{StatusRect},drawer{DrawerRect},pill{PillRect};};
+Geometry geometry(int width,int height)noexcept;
+int capacity(bool grid,int folderCount,const Geometry&)noexcept;
 void paint(Canvas&,Targets&,const Model&); // base + overlays
 // Split for callers that draw section content (Notes, Settings) between the base and the overlays.
 void base(Canvas&,Targets&,const Model&);void overlays(Canvas&,Targets&,const Model&); // pill, create menu, drawer

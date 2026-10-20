@@ -63,6 +63,8 @@ int main(){try{
   calls.pixels[520*1632+420]=0xffffffffu;
   check(display.cleanRemoval(erase,old)==spike::Submit::Accepted);
   check(calls.content==3&&calls.mode==3&&calls.flags==0&&covers(calls.rect,erase));
+  check(display.cleanContent(erase,old)==spike::Submit::Accepted); /* removal cleanup: Content mode, regional, class kept */
+  check(calls.content==3&&calls.mode==4&&calls.flags==0&&covers(calls.rect,erase));
  }
  std::puts("UI_DAMAGE_PASS bounded_queue_coverage=true large_panel_partial=true consecutive_color_removal=30 vendor=FAKE optical=NOT_RUN");
 #else
