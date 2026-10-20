@@ -22,6 +22,10 @@ struct Rect {
 struct Axis {int min{},max{};};
 struct Transform {
  Axis x,y;int width{},height{},rotation{};bool mirrorX{};
+ // Optional input frame (docs/LANDSCAPE.md, PR 3; approved change): after the mapping onto the surface above, turn 90 or
+ // 270 brings the point upright as the screen is turned that way (90: (height-1-y, x); 270: (y, width-1-x)), then
+ // (offsetX, offsetY) is added and the point is kept on the surface. All zero (the default) leaves the mapping unchanged.
+ int turn{},offsetX{},offsetY{};
  bool valid()const noexcept;
  bool map(const Sample&,Point&)const noexcept;
 };

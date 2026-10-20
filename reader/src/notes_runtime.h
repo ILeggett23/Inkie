@@ -6,6 +6,8 @@
 #include <optional>
 #include <QRectF>
 namespace notes {
+// The Notes worker's nice value: the page ink worker's (0). At 19 it was starved behind page rendering on the tablet.
+inline constexpr int WorkerNice=0;
 struct View {std::uint64_t revision{},canvasRevision{},contentRevision{},exports{};bool ready{},busy{},editable{},saved{};QString error,status,document,selected;QJsonObject page,doc,note,highlight;std::shared_ptr<const tomink::PlaybackPlan> playback;bool highlightCreated{},generating{},generationError{};QString generation;QJsonArray notes,selectedInk;QRectF selectedBounds;Window window;unsigned strokeCount{},pointCount{};std::shared_ptr<const std::vector<std::uint32_t>> pixels;};
 class Runtime final {
  std::filesystem::path features_;Canvas& canvas_;std::shared_ptr<tomink::IllustrationProvider> illustration_;std::shared_ptr<const tomink::PlaybackPlan> playback_;bool retiredClean_{};std::thread worker_;std::atomic<bool> generationStop_{false};std::atomic<bool> stop_{false},done_{false},failed_{false},queuedCommand_{false},durabilityFailure_{false};

@@ -68,7 +68,7 @@ bool DocumentControls::paint(spike::Surface s)noexcept{
   else if(notice_==Refusal::Invalid)m.notice="That change isn’t available — settings kept";
   else if(layoutTab)m.notice=m.pdf?"Preview only — Apply to use these settings":"Changing text size repaginates the book";
   char location[64];std::snprintf(location,sizeof location,"Page %d of %d",applied_.page+1,applied_.pages);
-  m.about={{"Title",applied_.title.empty()?"Untitled":applied_.title},{"Format",m.pdf?"PDF · original pages":"EPUB · reflowed to this screen"},{"Location",location},{"Dictionary","WordNet 3.0 · Princeton University"},{"Typefaces","Source Serif 4, Source Sans 3 · SIL Open Font License"}};
+  m.about={{"Title",applied_.title.empty()?"Untitled":applied_.title},{"Format",m.pdf?"PDF · original pages":"EPUB · reflowed to this screen"},{"Location",location},{"Dictionary","WordNet 3.0 and GCIDE · offline"},{"Typefaces","Caveat, Source Serif 4, Source Sans 3 · SIL Open Font License"}};
   ib::sheets::settings(c,targets_,m);}catch(...){return false;}return true;
 }
 }
