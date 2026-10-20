@@ -17,6 +17,7 @@ sand::Policy Shell::sandPolicy()const noexcept{
  p.congested=sandCongested_;p.expensive=sand_.pending()&&sand_.metrics().lastPaintNs>12000000;return p;
 }
 void Shell::sandSceneChanged(){
+ if(!prefs_.sandMode&&!sand_.pending()){sandScene_=0;sandKey_.clear();sandTarget_={};return;}
  // Surface identity only: streamed content, worker revisions, scrolling and
  // ordinary page changes never start decorative frames.
  int scene=0;QString key;spike::Rect target;auto direction=sand::Direction::RightToLeft;

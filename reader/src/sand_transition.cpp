@@ -42,7 +42,7 @@ bool Transition::capture(std::span<const std::uint32_t> src,int w,int h,int stri
  if(!needsCapture())return false;
  if(!src.data()||now==Invalid||now<lastTime_||!valid(w,h,stride,src.size())||!contains({0,0,w,h},region_)){finish(Reason::Geometry);return false;}
  const auto begin=nanos();const int width=region_.x1-region_.x0;
- try{const auto n=std::size_t(area(region_));if(n>before_.capacity()){std::vector<std::uint32_t> fresh(n);before_.swap(fresh);}else before_.resize(n);}catch(...){finish(Reason::Memory);return false;}
+ try{const auto n=std::size_t(area(region_));if(n>before_.capacity()){std::vector<std::uint32_t>().swap(before_);metrics_.cacheBytes=0;}before_.resize(n);}catch(...){finish(Reason::Memory);return false;}
  for(int y=region_.y0;y<region_.y1;++y)std::copy_n(src.data()+std::size_t(y)*stride+region_.x0,width,before_.data()+std::size_t(y-region_.y0)*width);
  grainCount_=metrics_.quality==Quality::Full?256:metrics_.quality==Quality::Reduced?128:48;
  for(unsigned i=0;i<grainCount_;++i){auto a=hash(request_.seed+i*0x9e3779b9u),b=hash(a);grains_[i]={request_.target.x0+int(a%unsigned(request_.target.x1-request_.target.x0)),request_.target.y0+int(b%unsigned(request_.target.y1-request_.target.y0)),8+int((a>>16)%24),int((b>>16)%5)-2,(a>>24)%5};}

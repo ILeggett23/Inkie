@@ -14,7 +14,7 @@ struct QolTestAccess {static void mode(Shell& s,unsigned n){s.prefs_.sandMode=n;
 namespace {
 struct Lease final:spike::RecoveryLease {bool live{true};bool valid()const noexcept override{return live;}spike::Ns deadline()const noexcept override{return spike::monotonic()+300000000000ULL;}bool stopRequested()const noexcept override{return false;}spike::SustainedPolicy sustained()const noexcept override{return {1000000000ull,8,4096};}};
 struct Calls final:spike::VendorCalls {
- std::vector<std::uint32_t> pixels=std::vector<std::uint32_t>(underlay::Pixels,0xffffffffu);unsigned full{},regions{};bool bad{};int lastQualityClass{-1},sampleClass{-1};
+ std::vector<std::uint32_t> pixels=std::vector<std::uint32_t>(underlay::Pixels,0xffffffffu);unsigned full{},regions{};bool bad{};int lastQualityClass{-1},sampleClass{-1};spike::Rect sample{};bool trace{};
  bool acquire(spike::Pixels& out)noexcept override{out={reinterpret_cast<unsigned char*>(pixels.data()),1620,2160,4,6528};return true;}
  void region(spike::Rect r,int,int mode,int flags)noexcept override{bad|=r.empty()||r.x0<0||r.y0<0||r.x1>1620||r.y1>2160;if(flags&1)++full;else ++regions;bad|=flags!=0&&!(flags==1&&mode==3)&&!(flags==2&&mode==0);}
  void events()noexcept override{}
@@ -41,8 +41,10 @@ int main(int argc,char**argv){QCoreApplication app(argc,argv);if(argc!=5)return 
  // Real toolbox opening + dismissal, preservation of semantic tool identity.
  // Synthetic prior-panel pigment in the borrowed source tests the real vendor
  // classification contract; it is deliberately distinct from stored page ink.
- for(int y=900;y<925;++y)for(int x=500;x<540;++x)h.calls.pixels[std::size_t(y)*1632+x]=0xffffd900u;
- auto starts=h.shell.sandMetrics().starts;CHECK(uitest::openTools(h.shell));h.boundary();CHECK(h.shell.sandMetrics().starts>starts);h.effect("tools");CHECK(h.calls.sampleClass==3);h.canonical(ux::ToolsView::panel());CHECK(uitest::tap(h.shell,uitest::toolsClose(h.shell)));h.effect("tools-dismiss");h.settle();CHECK(h.calls.full==full&&inkHash(h.shell)==ink);
+ const auto panel=ux::ToolsView::panel();const int sx=(panel.x0+panel.x1)/2,sy=(panel.y0+panel.y1)/2;h.calls.sample={sx-20,sy-12,sx+20,sy+13};h.calls.trace=true;
+ for(int y=h.calls.sample.y0;y<h.calls.sample.y1;++y)for(int x=h.calls.sample.x0;x<h.calls.sample.x1;++x)h.calls.pixels[std::size_t(y)*1632+x]=0xffffd900u;
+ CHECK(h.vendor.removalContent(panel)==3);std::fprintf(stderr,"SAND_TEST_OLD panel=%d,%d,%d,%d class=%d\n",panel.x0,panel.y0,panel.x1,panel.y1,h.vendor.removalContent(panel));
+ auto starts=h.shell.sandMetrics().starts;CHECK(uitest::openTools(h.shell));CHECK(h.vendor.removalContent(panel)==3);h.boundary();CHECK(h.shell.sandMetrics().starts>starts);std::fprintf(stderr,"SAND_TEST_FIRST retained=%d pending=%d accepted=%llu quality=%u reason=%u\n",ux::DisplayTestAccess::sandClass(h.display),h.shell.sandPending(),(unsigned long long)h.shell.sandMetrics().accepted,unsigned(h.shell.sandMetrics().quality),unsigned(h.shell.sandMetrics().reason));h.effect("tools");std::fprintf(stderr,"SAND_TEST_FINAL sampled=%d retained=%d accepted=%llu requests=%llu reason=%u\n",h.calls.sampleClass,ux::DisplayTestAccess::sandClass(h.display),(unsigned long long)h.shell.sandMetrics().accepted,(unsigned long long)h.shell.sandMetrics().requests,unsigned(h.shell.sandMetrics().reason));CHECK(h.calls.sampleClass==3);h.calls.trace=false;h.canonical(ux::ToolsView::panel());CHECK(uitest::tap(h.shell,uitest::toolsClose(h.shell)));h.effect("tools-dismiss");h.settle();CHECK(h.calls.full==full&&inkHash(h.shell)==ink);
  // Reduce motion is a hard override, and a disabled effect does not snapshot.
  h.shell.setReducedMotion(true);starts=h.shell.sandMetrics().starts;CHECK(uitest::openTools(h.shell));h.boundary();CHECK(!h.shell.sandPending()&&h.shell.sandMetrics().starts==starts);CHECK(uitest::tap(h.shell,uitest::toolsClose(h.shell)));h.effect("");h.shell.setReducedMotion(false);
  // Definitions stay tied to the original selected word; dismissal restores page.
