@@ -345,12 +345,12 @@ CHECK(std::any_of(h.calls.requests.begin(),h.calls.requests.begin()+std::ptrdiff
   const auto accel=data/"library-turn-accel";std::filesystem::create_directories(accel);auto hold=[&](int x,int y){std::ofstream(accel/"in_accel_x_raw")<<x<<"\n";std::ofstream(accel/"in_accel_y_raw")<<y<<"\n";std::ofstream(accel/"in_accel_z_raw")<<0<<"\n";};
   hold(-1000,0);ux::TurnTestAccess::sensor(h.shell,accel);until([&]{h.boundary();CHECK(!h.shell.failed());return ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Clockwise;});h.boundary();
   CHECK(h.shell.libraryView().landscape());const ib::layout::Frame f{ib::layout::Turn::Clockwise};
-  const auto search=h.shell.libraryView().targets().rect(ib::library::Search);CHECK(!search.empty()&&search.x1>1620); /* laid out in the landscape frame */
+  const auto search=h.shell.libraryView().targets().rect(ib::library::Search);auto same=[](spike::Rect a,spike::Rect b){return a.x0==b.x0&&a.y0==b.y0&&a.x1==b.x1&&a.y1==b.y1;};CHECK(!search.empty()&&same(search,ib::library::geometry(2160,1620).pill)&&search.y1<=1620); /* laid out in the landscape frame: the pill at its foot */
   CHECK(uitest::tap(h.shell,f.physical(search)));h.boundary();CHECK(h.shell.libraryView().notice().contains("upright"));
   const auto cover=h.shell.libraryView().targets().rect(ib::library::DocumentBase);CHECK(!cover.empty());CHECK(uitest::tap(h.shell,f.physical(cover)));
   until([&]{h.boundary();CHECK(!h.shell.failed());return h.shell.document()&&h.shell.writable()&&ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Clockwise;});settle(h); /* the book opens and turns */
   CHECK(h.shell.returnToLibrary());until([&]{h.boundary();return !h.shell.document()&&h.shell.state()==ux::State::Picker;});h.boundary();CHECK(ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Clockwise&&h.shell.libraryView().landscape());
-  hold(0,1000);until([&]{h.boundary();CHECK(!h.shell.failed());return ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Portrait;});h.boundary();CHECK(!h.shell.libraryView().landscape()&&h.shell.libraryView().targets().rect(ib::library::Search).x1<=1620);CHECK(h.shell.finish(5000));});
+  hold(0,1000);until([&]{h.boundary();CHECK(!h.shell.failed());return ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Portrait;});h.boundary();CHECK(!h.shell.libraryView().landscape()&&same(h.shell.libraryView().targets().rect(ib::library::Search),ib::library::PillRect));CHECK(h.shell.finish(5000));});
  test("library_drawer_presents_as_one_update",[&]{auto root=data/"library-drawer";importBook(app,source,root);Harness h(app,root);settle(h);CHECK(h.shell.returnToLibrary());until([&]{h.boundary();return !h.shell.document()&&h.shell.state()==ux::State::Picker;});h.boundary();
   const auto full=h.calls.full;auto drawerUpdates=[&]{std::vector<Calls::Request> out;for(const auto& q:h.calls.requests)if(q.mode==3&&q.flags==0&&overlap(q.rect,ib::library::DrawerRect))out.push_back(q);return out;};
   h.calls.requests.clear();
