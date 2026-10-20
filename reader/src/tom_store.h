@@ -27,6 +27,9 @@ class TomStore {
 public:
  static constexpr qint64 MaxTotalBytes=64*1024*1024;
  explicit TomStore(std::filesystem::path libraryRoot);~TomStore();TomStore(const TomStore&)=delete;
+ // How opening went, for the helper's TOM_HELPER_TIMING journal: the store's bytes and turns, how many settled turns
+ // were checked (this process had not validated them yet) and how long opening took.
+ struct OpenStats {qint64 bytes{};unsigned turns{},checked{};long long ms{};};OpenStats opened()const;
  QString createConversation(QString title);
  QString saveDraft(const QString& conversation,const TomDraft&,QString turn={});
  void linkInterpretation(const QString& conversation,const QString& interpretationTurn,const QString& sourceDraftTurn);

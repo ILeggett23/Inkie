@@ -427,6 +427,23 @@ rendering the turned page in a new page-server process (about 2 s), then showing
 What remains at a turn: closing and reopening the book's reader and ink (about 0.3–0.5 s on the tablet) and the full-page
 refresh.
 
+### Inkie's request start (user request, 2026-10-20)
+
+On PR #18 the helper took about 11 s from its start to the Companion accepting a new request
+(`TOM_HELPER_TIMING stage=created ms=10981`, and 11042 for another question); the stream opened 0.4 s later, the
+handwriting was read 3.7 s after that, and the first words came about 8 s after creation. Read from the code (no device
+access): before the POST the helper opens the conversation store, then asks for the provider configuration (the consent
+check, kept), then posts. Each Tom helper is a new process, and opening the store checks every turn this process has not
+validated: each turn's state, its draft (the handwriting strokes) and its frozen request (the history sent), with their
+digests. The record of validated turns lives only in the process, so every request checked the reader's whole Inkie
+history again, one turn at a time, before it could be sent, and each check parsed the frozen request twice and decoded
+and hashed the draft twice. The connection to the Companion (DNS, TCP, TLS) began only after that. The request itself
+is small (no page image; history at most 20 messages and 32 000 characters).
+
+| # | Issue | Cause | Change | Verified |
+|---|---|---|---|---|
+| D26 | A new Inkie request takes about 11 s on the tablet before the service has it | Above: the store's full check of the history in every helper process, in one thread with repeated work; then the connection, opened only when the first request needed it. While a reply streamed, each event rewrote the turn's state, so each later open checked that turn's draft and frozen request (image and history) again. | **Store:** the checks are unchanged and run once per turn (the draft's digest comes from its checksum, one decode, one parse of the frozen request). The first open checks the settled turns on up to four threads before the in-order pass, which then finds them validated; a turn that fails is checked again in order and fails as before. Validation stamps cover the draft and frozen request only, since those checks never read the state. **Helper:** for a new request the verified TLS connection is opened in Qt's network thread while the store is checked (`VerifiedHttpTransport::preconnect`, same certificate checks; the config check and the POST then use it). `TOM_HELPER_TIMING` adds `launch` (ms before `helperMain`), `tls`, `receiver`, `preconnect`, `store` (`open_ms`, `turns`, `checked`, `bytes`), each Companion request's `start`/`connecting`/`encrypted`/`sent`/`response`/`done`, and `confirmed`. The protocol, the requests and their order are unchanged. | [auto] `tom-store-tests` `TOM_OPEN_CHECKS_PASS` (each settled turn checked once per process, not again after a state change; a changed draft or frozen request still refused) and `TOM_OPEN_TIMING` (cold and warm open of a 48-turn history). Device check 46 |
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -493,6 +510,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 43 | Auto-rotate on: open an EPUB and turn the tablet, then turn back, twice | The first turn is a few seconds quicker; turning back and the second round trip are quicker still | `EPUB_STAGE_TIMING` (annotations reused=1 on the second round), `ui:turn` → `ui:turned` |
 | 44 | Auto-rotate on: turn the tablet with a PDF open; switch pens, colours and the eraser from the toolbar and the palette while writing | The turn starts within about half a second of the tilt; the toolbar shows each new tool at once | `ui:orientation-read-ms` (well under 100), `ui:turn` |
 | 45 | Auto-rotate on: read a page for a few seconds, then turn the tablet anticlockwise; read a few seconds, turn back; repeat with an EPUB | The page shows turned within about a second of the tilt, and back as quickly | `ui:turn-ready-ahead`, `TURN_AHEAD_READY` |
+| 46 | Ask Inkie two handwritten questions in a row | `stage=created` well under 11 s; the stages show where the rest goes | `TOM_HELPER_TIMING`: `store` (`open_ms`, `checked` ≈ `turns`), no `config-connecting` (the early connection was used), `config-*` and `create-*` `sent` → `response` |
 
 | 40 | In landscape: open Document notes and Ask Inkie from the document menu, and Layers and Inkie from the toolbar | Each opens upright at the foot of the screen (the tall ones fill its height) with the page beside it; its controls act where drawn; a tap on the page beside it closes it | — |
 | 41 | In landscape: write a note, expand it, write more, type a title with the keyboard; tap Done; turn upright and reopen the note | The ink is where it was written on the note's paper, in both orientations; nothing moves | — |

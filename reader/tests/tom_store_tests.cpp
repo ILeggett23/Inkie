@@ -1,6 +1,7 @@
 #include "tom_store.h"
 #include "underlay.h"
 #include <QCoreApplication>
+#include <QFile>
 #include <QJsonDocument>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -8,6 +9,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <thread>
+#include <tuple>
+#include <vector>
 using namespace companion;
 void check(bool b){if(!b)throw std::runtime_error("Tom store test failure");}
 template<class F>void rejects(F f){bool yes=false;try{f();}catch(const std::exception&){yes=true;}check(yes);}
@@ -95,4 +98,20 @@ int main(int argc,char** argv){QCoreApplication app(argc,argv);try{QTemporaryDir
    for(quint64 e=1;e<=12;++e)check(store.applyEvent(c,t,request,{e,"delta",{{"text",QString(125,QChar(char16_t(u'a'+e%26)))}}}));check(store.applyEvent(c,t,request,{13,"status",{{"status","completed"}}}));}}}
   auto open=[&]{const auto began=std::chrono::steady_clock::now();TomStore store(root);return (long long)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-began).count();};
   const auto cold=open(),warm=open();std::printf("TOM_OPEN_TIMING turns=48 cold_ms=%lld warm_ms=%lld cores=%u\n",cold,warm,std::thread::hardware_concurrency());}
+ /* Opening checks every settled turn once per process (on several threads when there are cores for them; each Tom
+    helper is a new process), never again while its draft and frozen request are unchanged, also when only its state
+    changes (each streamed event rewrites it). A draft or frozen request changed afterwards is still refused. */
+ {auto root=base/"open-checks";std::vector<std::tuple<QString,QString,QString>> turns; /* conversation, turn, request */
+  {TomStore store(root);for(int k=0;k<2;++k){auto c=store.createConversation(QString("Checked once %1").arg(k));for(int i=0;i<6;++i){auto d=general();d.correctedText=QString("Question %1").arg(turns.size());auto t=store.saveDraft(c,d);auto request=id();store.freezeForCreate(c,t,frozen(c,request,d),config(),device);complete(store,c,t,request,QString("Answer %1").arg(turns.size()));turns.emplace_back(c,t,request);}}}
+  {TomStore store(root);auto opened=store.opened();check(opened.turns==12&&opened.checked==12&&opened.bytes>0&&opened.ms>=0);}
+  {TomStore store(root);check(store.opened().turns==12&&store.opened().checked==0);const auto& [c,t,request]=turns[3];check(store.applyEvent(c,t,request,{2,"status",{{"status","completed"}}}));}
+  {TomStore store(root);check(store.opened().checked==0&&TomStore::readTurn(root,std::get<0>(turns[3]),std::get<1>(turns[3]))["answer"]=="Answer 3");}
+  auto file=[&](std::size_t i,const char* name){return root/"tom/conversations"/std::get<0>(turns[i]).toStdString()/"turns"/std::get<1>(turns[i]).toStdString()/name;};
+  auto bytes=[](const std::filesystem::path& p){QFile f(QString::fromStdString(p.string()));check(f.open(QIODevice::ReadOnly));return f.readAll();};
+  auto rewrite=[&](const std::filesystem::path& p,auto change){auto payload=QJsonDocument::fromJson(bytes(p)).object()["payload"].toObject();change(payload);underlay::atomicFile(p,json({{"payload",payload},{"sha256",QString::fromLatin1(underlay::digest(json(payload)).toHex())}}));};
+  const auto draft=bytes(file(5,"draft.json"));rewrite(file(5,"draft.json"),[](QJsonObject& p){auto d=p["draft"].toObject();d["corrected_text"]="A different question";p["draft"]=d;});
+  rejects([&]{TomStore store(root);});underlay::atomicFile(file(5,"draft.json"),draft);{TomStore store(root);check(store.opened().turns==12);}
+  const auto request=bytes(file(9,"frozen.json"));rewrite(file(9,"frozen.json"),[](QJsonObject& p){p["wire_body"]=p["wire_body"].toString().replace("Question 9","Question 10");});
+  rejects([&]{TomStore store(root);});underlay::atomicFile(file(9,"frozen.json"),request);{TomStore store(root);check(store.opened().turns==12);}
+  std::puts("TOM_OPEN_CHECKS_PASS");}
  std::cout<<"Tom durable store tests passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
