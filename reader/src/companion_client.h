@@ -16,13 +16,15 @@ QVector<Delivery> parseManifest(const QByteArray&,double now);
 void validateRangeReply(const Delivery&,qint64 start,qint64 end,int status,const QByteArray& contentRange,const QByteArray& etag,qint64 bodyBytes);
 // readAnswer: the service reads handwriting and answers it in one request (purpose read-answer). It comes from the
 // X-Inkbound-Tom-Purposes response header, not the strictly checked body, and is not part of the fingerprint.
-struct TomConfig {QString provider,label;QStringList models;int maxOutputTokens{},dailyLimit{};bool configured{};QByteArray fingerprint;bool readAnswer{},inkPlan{},autoAnswer{},readAutoAnswer{};QString illustrationModel;bool sceneAnswer{},readSceneAnswer{},mixedReply{};int sceneMaxTokens{},sceneVersion{3};};
+struct TomConfig {QString provider,label;QStringList models;int maxOutputTokens{},dailyLimit{};bool configured{};QByteArray fingerprint;bool readAnswer{},inkPlan{},autoAnswer{},readAutoAnswer{};QString illustrationModel;bool sceneAnswer{},readSceneAnswer{},mixedReply{};int sceneMaxTokens{},sceneVersion{3};
+ /* memory: the service takes the reader's remembered notes (X-Inkbound-Tom-Memory: 1) and may send notes to keep */
+ bool memory{};};
 TomConfig parseTomConfig(const QByteArray&);
 class TomStore;
 class FrozenTomRequest {
  friend class TomStore;
  FrozenTomRequest(const TomConfig&,const QJsonObject&,bool,bool,bool provenanceVerified);
- QByteArray body_,configFingerprint_;QString automaticModel_,automaticPurpose_;int automaticLimit_{},automaticSceneVersion_{};bool automaticMixed_{};
+ QByteArray body_,configFingerprint_;QString automaticModel_,automaticPurpose_;int automaticLimit_{},automaticSceneVersion_{};bool automaticMixed_{},memory_{};
 public:
  FrozenTomRequest(const TomConfig& reviewed,const QJsonObject& draft,bool explicitConsent,bool imagesDisclosed);
  const QByteArray& body()const{return body_;}

@@ -27,10 +27,11 @@ struct Resume {int page{};std::uint64_t generation{};bool clean{};};
 std::filesystem::path pagePath(const std::filesystem::path&,int);
 Resume readResume(const std::filesystem::path&,int);
 void writeResume(const std::filesystem::path&,int,int,std::uint64_t,bool);
-std::filesystem::path pageStoragePath(const std::filesystem::path&,int,const QString&);
+std::filesystem::path pageStoragePath(const std::filesystem::path&,int,const QString&,unsigned orientation=0);
 Resume readViewResume(const std::filesystem::path&,int,const QString&);
 void writeViewResume(const std::filesystem::path&,int,int,std::uint64_t,bool,const QString&);
-underlay::Prepared prepareViewPage(const std::filesystem::path&,const std::filesystem::path&,int,const std::atomic<bool>&,const QString&);
+// orientation: 0, or 90/270 for a PDF page shown turned (docs/LANDSCAPE.md).
+underlay::Prepared prepareViewPage(const std::filesystem::path&,const std::filesystem::path&,int,const std::atomic<bool>&,const QString&,unsigned orientation=0);
 underlay::Prepared initialPrepare(const std::filesystem::path&,const std::filesystem::path&);
 underlay::Prepared preparePage(const std::filesystem::path&,const std::filesystem::path&,int,const std::atomic<bool>&);
 class Reader final:public spike::OperationSink {
@@ -41,7 +42,7 @@ class Reader final:public spike::OperationSink {
  std::array<recovery::v2::progress::WorkToken,10> cancelledPreparations_{},deferredResumes_{};
  unsigned cancelledPreparationCount_{},deferredResumeCount_{};recovery::v2::progress::WorkToken finalResumeTracking_;
  bool enqueue(Request);void reconcile(Result&)noexcept;
- std::filesystem::path application_,data_;QString viewSet_;int total_{},wanted_{-1},activatedPage_{};std::uint64_t generation_{},view_{1};
+ std::filesystem::path application_,data_;QString viewSet_;unsigned orientation_{};int total_{},wanted_{-1},activatedPage_{};std::uint64_t generation_{},view_{1};
  std::array<std::shared_ptr<Page>,3> cache_{};std::array<std::shared_ptr<Page>,4> closingPages_{};std::shared_ptr<Page> active_,previous_;
  std::array<bool,1000> pending_{},errors_{};
  Mailbox<Request,9> requests_;Mailbox<Result,9> results_;Mailbox<std::shared_ptr<Page>,9> retired_;
@@ -52,7 +53,9 @@ class Reader final:public spike::OperationSink {
  void work()noexcept;void requestPage(int);bool cacheAdmissible(int)const;bool room(int);void prefetch();
  std::shared_ptr<Page> makePage(underlay::Prepared);
 public:
- Reader(const std::filesystem::path&,const std::filesystem::path&,underlay::Prepared,QString viewSet={},lifecycle::Tracking preparationTracking={},lifecycle::Tracking resumeTracking={});
+ // orientation: the PDF pages are shown turned (90/270, docs/LANDSCAPE.md); every page it prepares is turned the same way.
+ Reader(const std::filesystem::path&,const std::filesystem::path&,underlay::Prepared,QString viewSet={},lifecycle::Tracking preparationTracking={},lifecycle::Tracking resumeTracking={},unsigned orientation=0);
+ unsigned orientation()const noexcept{return orientation_;}
  ~Reader();bool request(Action,bool markerContact=false);bool navigateTo(int page,bool markerContact=false);bool tick();
  bool reserve()noexcept override;bool append(const spike::Point&)noexcept override;void cancel()noexcept override;
  // External canonical ink owns persistence; Reader retains contact/navigation gating.

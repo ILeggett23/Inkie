@@ -1,3 +1,4 @@
+#include "notes_runtime.h"
 #include "ui_targets.h"
 #include "ux_support.h"
 #include "library.h"
@@ -10,7 +11,7 @@
 #include <unistd.h>
 using Path=std::filesystem::path;
 namespace {std::atomic<bool> failNextNotesPriority{false};}
-extern "C" int setpriority(__priority_which_t which,id_t who,int value)noexcept{if(value==19&&failNextNotesPriority.exchange(false)){errno=EPERM;return -1;}return int(::syscall(SYS_setpriority,which,who,value));}
+extern "C" int setpriority(__priority_which_t which,id_t who,int value)noexcept{if(value==notes::WorkerNice&&failNextNotesPriority.exchange(false)){errno=EPERM;return -1;}return int(::syscall(SYS_setpriority,which,who,value));}
 static std::pair<int,int> wordPoint(ux::Shell& shell,const QString& word){auto g=shell.semantics().geometry();CHECK(g&&g->available());auto words=g->data["words"].toArray();for(int n=0;n<words.size();++n){auto selection=semantic::select(g,unsigned(n),unsigned(n),1);if(selection->data["normalized"].toString()!=word)continue;auto q=selection->data["quads"].toArray()[0].toArray();double x=0,y=0;for(int i=0;i<8;i+=2){x+=q[i].toDouble()/4;y+=q[i+1].toDouble()/4;}auto m=g->data["transform"].toArray();return {int(m[0].toDouble()*x+m[2].toDouble()*y+m[4].toDouble()),int(m[1].toDouble()*x+m[3].toDouble()*y+m[5].toDouble())};}throw std::runtime_error("authored-word-missing");}
 static input_event event(unsigned short type,unsigned short code,int value){input_event e{};e.type=type;e.code=code;e.value=value;return e;}
 static void marker(ux::Shell& shell,Canvas& canvas,int y,bool erase=false){spike::Engine engine({{0,1619},{0,2159},1620,2160,0,false},shell.ink(),canvas);spike::FrameAssembler assembler;spike::Scheduler scheduler;spike::SessionStats stats;auto down=std::array{event(EV_KEY,BTN_TOOL_PEN,!erase),event(EV_KEY,BTN_TOOL_RUBBER,erase),event(EV_ABS,ABS_X,200),event(EV_ABS,ABS_Y,y),event(EV_KEY,BTN_TOUCH,1),event(EV_SYN,SYN_REPORT,0)};CHECK(spike::consumeEvents(down,assembler,engine,scheduler,stats,1,nullptr,&shell));CHECK(!shell.finger(1450,60,false));auto move=std::array{event(EV_ABS,ABS_X,400),event(EV_SYN,SYN_REPORT,0)};CHECK(spike::consumeEvents(move,assembler,engine,scheduler,stats,8000001,nullptr,&shell));auto up=std::array{event(EV_KEY,BTN_TOUCH,0),event(EV_SYN,SYN_REPORT,0)};CHECK(spike::consumeEvents(up,assembler,engine,scheduler,stats,16000001,nullptr,&shell));CHECK(stats.contacts==1&&stats.released==1);CHECK(engine.flush()==spike::Submit::Accepted);}

@@ -17,7 +17,10 @@ class Panel final:public spike::OperationSink {
  Canvas canvas_;Runtime runtime_;ReplyInk reply_;View view_;bool inline_{},visualReply_{};bool nativeReply()const noexcept{return outputMode_!=OutputMode::Typed||visualReply_;}bool syncReply();std::vector<std::uint32_t> paper_,backdrop_;ux::TextInput input_;ib::Targets targets_;QString title_;QJsonObject saveRequest_;bool composing_{true};
  QJsonObject page_,sourceRequest_,selectedPassages_,nativeOutputRequest_;QJsonArray words_;unsigned first_{},last_{},scope_{4},scroll_{},historyOffset_{},conversationOffset_{};QString notice_,deleteThread_,retryRequest_;
  bool open_{},close_{},history_{},confirmDelete_{},confirmRetry_{},bound_{},commandPending_{},expanded_{},lowerHalf_{},correcting_{},freshCanvas_{},newWanted_{},selectionOpen_{};QString freshFrom_;bool userSized_{};int markedTop_{0};QString visibleRequest_; /* tall vs compact chosen by the user; the last sheet top refreshed */
- int sheetTop()const noexcept{return (inline_||(expanded_&&composing_))&&!history_?ib::tom::ExpandedSheetTop:ib::tom::SheetTop;}
+ // Turned (docs/LANDSCAPE.md, PR 3): laid out for ib::layout::SheetMap (tall sheets start at TurnedSheetTop, the zoom badge
+ // sits in the header). Set by the shell before each open; the reader cannot turn while a sheet is open.
+ bool turned_{};
+ int sheetTop()const noexcept{return ib::layout::sheetTop((inline_||(expanded_&&composing_))&&!history_?ib::tom::ExpandedSheetTop:ib::tom::SheetTop,turned_);}
  QString retryAfterConsent_;bool writingBack_{true},sendAfterConsent_{}; /* writingBack_: a fresh question is being written (else the reply shows); sendAfterConsent_: Send consents, then sends */
  int historyTurn_{-1};std::uint64_t canvasRevision_{~0ull},damageRevision_{},revealSceneEpoch_{},gestureEpoch_{};
  std::array<spike::Rect,4> damage_{};unsigned damageCount_{};spike::Rect replyOwed_{};std::uint64_t replyAckRevision_{};bool reset_{},paperChanged_{true};
@@ -42,6 +45,7 @@ public:
  // controls still change them for the session.
  void setPresentation(bool typed,unsigned handSize,bool reveal)noexcept{typed_=typed;outputMode_=typed?OutputMode::Typed:OutputMode::Handwritten;handSize_=handSize%3;reveal_=reveal;}
  void setTitle(QString title){title_=std::move(title);}
+ void setTurned(bool turned)noexcept{turned_=turned;}bool turned()const noexcept{return turned_;}
  void showNotice(QString value){notice_=std::move(value);paint();mark();}
  void setBackdrop(std::span<const std::uint32_t> pixels){backdrop_.assign(pixels.begin(),pixels.end());}
  // "Save as note": {question, answer, context}; the shell creates the linked note.

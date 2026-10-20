@@ -87,6 +87,13 @@ int main(int argc,char** argv){try{if(argc==2&&std::string(argv[1])=="--poll-rel
  {reader::Touch t;axes(t);down(t,1200,1000);move(t,400,1040,100000001,true);up(t);check(!t.takeTap().valid);} /* pen active: no gesture */
  {reader::Touch t;axes(t);down(t,1200,1000);t.block();move(t,400,1040,100000001);up(t);check(!t.takeTap().valid);t.quiesce();down(t,1200,1000,300000001);move(t,400,1040,400000001);up(t,450000001);check(t.takeTap().gesture==G::SwipeNext);} /* writing blocks only that touch */
  {reader::Touch t;axes(t);t.selectionMode(true,17);down(t,1200,1000);move(t,400,1040,150000001);up(t);check(t.takeTap().gesture==G::SwipeNext);} /* quick flick while highlighting */
+ // Turned (docs/LANDSCAPE.md): gestures in the reader's frame. Clockwise, the reader's left-to-right runs up the panel.
+ {reader::Touch t;axes(t);t.turn(90);down(t,800,700);move(t,820,1500);up(t);check(t.takeTap().gesture==G::SwipeNext);}
+ {reader::Touch t;axes(t);t.turn(90);down(t,800,1500);move(t,820,700);up(t);check(t.takeTap().gesture==G::SwipePrevious);}
+ {reader::Touch t;axes(t);t.turn(270);down(t,800,1500);move(t,820,700);up(t);check(t.takeTap().gesture==G::SwipeNext);}
+ {reader::Touch t;axes(t);t.turn(90);down(t,1200,1000);move(t,400,1040);up(t);auto g=t.takeTap().gesture;check(g!=G::SwipeNext&&g!=G::SwipePrevious);} /* across the reader's page height: no turn */
+ {reader::Touch t;axes(t);t.turn(90);down(t,20,1000);move(t,400,1010);up(t);check(t.takeTap().gesture==G::EdgeDown);} /* the panel's left edge is the reader's top */
+ {reader::Touch t;axes(t);t.turn(270);down(t,1600,1000);move(t,1220,1010);up(t);check(t.takeTap().gesture==G::EdgeDown);}
  {reader::Touch t;axes(t);t.selectionMode(true,17);down(t,1200,1000);move(t,400,1040,500000001);up(t,600000001);auto d=t.takeTap();check(d.valid&&d.drag&&d.gesture==G::None);} /* a slow drag stays a selection */
  check(pollReliabilityProbe()==0);pollingBoundaries();slotAndPriorityCases();statusCornerCases();
  std::cout<<"TOUCH_DRAG_PASS cases=24 opt_in=true epoch_bound=true marker_multitouch_loss_hold_cancel=true gestures=swipe,edge,undo,redo raw_input=NONE\n";return 0;
