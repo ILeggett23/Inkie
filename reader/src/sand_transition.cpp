@@ -71,7 +71,7 @@ Update Transition::issue(unsigned stage,bool intermediate)noexcept{
  stage_=stage;update_={region_,++serial_,stage,intermediate};uncovered_[0]=region_;uncoveredCount_=1;painted_=false;return update_;
 }
 void Transition::finish(Reason why)noexcept{
- if(!pending())return;
+ if(!pending()||finishing_)return;
  metrics_.reason=why;if(why!=Reason::None)++metrics_.cancelled;
  if(!captured_){update_={};finishing_=false;state_=request_.dismiss?State::Hidden:State::Visible;return;}
  // Recompose canonical content even if the previous stage was painted but not

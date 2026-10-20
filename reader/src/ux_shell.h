@@ -161,7 +161,8 @@ public:
  void setReducedMotion(bool value)noexcept{reducedMotion_=value;}void setPowerConstrained(bool value)noexcept{powerConstrained_=value;}
  bool quietEffectsEnabled()const noexcept{return !turned()&&(styled_?styled_->revealEnabled():libraryEffects_);} /* page effects are portrait only for now */bool revealPending()const noexcept{return !reveal_.quiescent()||sand_.pending();}
  bool sandEnabled()const noexcept{return prefs_.sandMode!=0;}bool sandPending()const noexcept{return sand_.pending();}bool sandNeedsCapture()const noexcept{return sand_.needsCapture();}spike::Rect sandRegion()const noexcept{auto r=sand_.region();return {r.x0,r.y0,r.x1,r.y1};}const sand::Metrics& sandMetrics()const noexcept{return sand_.metrics();}
- bool sandFrameFor(spike::Rect r)const noexcept{auto u=sand_.update();auto a=sand_.region();return u&&u.intermediate&&std::max(r.x0,a.x0)<std::min(r.x1,a.x1)&&std::max(r.y0,a.y0)<std::min(r.y1,a.y1);}
+ bool sandWorkFor(spike::Rect r)const noexcept{auto u=sand_.update();auto a=sand_.region();return u&&std::max(r.x0,a.x0)<std::min(r.x1,a.x1)&&std::max(r.y0,a.y0)<std::min(r.y1,a.y1);}
+ bool sandFrameFor(spike::Rect r)const noexcept{return sand_.update().intermediate&&sandWorkFor(r);}
  void sandSubmitted(spike::Rect r,bool accepted)noexcept{auto u=sand_.update();auto a=sand_.region();if(u&&std::max(r.x0,a.x0)<std::min(r.x1,a.x1)&&std::max(r.y0,a.y0)<std::min(r.y1,a.y1))sand_.submitted(accepted);}
  void sandDisplayFailed()noexcept{sand_.cancel(sand::Reason::Congestion);}
  void prepareSand(spike::Surface);void setSandCongested(bool busy)noexcept{sandCongested_=busy;}
