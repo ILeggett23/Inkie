@@ -4,8 +4,10 @@
 #include <QJsonDocument>
 #include <QTemporaryDir>
 #include <QUuid>
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
+#include <thread>
 using namespace companion;
 void check(bool b){if(!b)throw std::runtime_error("Tom store test failure");}
 template<class F>void rejects(F f){bool yes=false;try{f();}catch(const std::exception&){yes=true;}check(yes);}
@@ -84,4 +86,13 @@ int main(int argc,char** argv){QCoreApplication app(argc,argv);try{QTemporaryDir
   std::puts("TOM_HISTORY_WINDOW_PASS");}
  {auto root=base/"compact-metadata";QString c;{TomStore store(root);c=store.createConversation("A question for Tom");auto d=general();d.correctedText="Explain the colored periodic table";auto t=store.saveDraft(c,d);auto request=id();store.freezeForCreate(c,t,frozen(c,request,d),config(),device);complete(store,c,t,request,QString(1000,QChar('a')));auto rows=TomStore::listConversations(root)["conversations"].toArray();check(rows.size()==1);auto row=rows.first().toObject();check(row["preview"]==d.correctedText&&row["turn_count"]==1&&row["status"]=="completed"&&row["updated"].toDouble()>0);check(!row.contains("answer")&&!row.contains("handwriting")&&!row.contains("turns"));auto second=store.saveDraft(c,d);auto secondRequest=id();store.freezeForCreate(c,second,frozen(c,secondRequest,d),config(),device);complete(store,c,second,secondRequest,"Repeated question, new reply");const auto repeated=TomStore::listConversations(root)["conversations"].toArray().first().toObject();check(repeated["turn_count"]==2&&repeated["latest_turn"]==second&&repeated["preview"]==d.correctedText);}check(TomStore::listConversations(root)["conversations"].toArray().first().toObject()["preview"]=="Explain the colored periodic table");std::puts("TOM_COMPACT_HISTORY_PASS");}
  {auto root=base/"summary-crash-recovery";QString c,t;{TomStore store(root);c=store.createConversation("A question for Tom");auto d=general();auto first=store.saveDraft(c,d);auto request=id();store.freezeForCreate(c,first,frozen(c,request,d),config(),device);complete(store,c,first,request,"First response");d.correctedText="Newest question after a storage interruption";t=store.saveDraft(c,d);request=id();store.freezeForCreate(c,t,frozen(c,request,d),config(),device);store.markCreateAttempt(c,t);store.confirmCreate(c,t,{{"request_id",request},{"status","queued"},{"replayed",false}});store.applyEvent(c,t,request,{1,"delta",{{"text","Newest answer"}}});store.injectFault(TomStore::Fault::AfterReplace);rejects([&]{store.applyEvent(c,t,request,{2,"status",{{"status","completed"}}});});}{TomStore reopened(root);const auto row=TomStore::listConversations(root)["conversations"].toArray().first().toObject();check(row["latest_turn"]==t&&row["preview"]=="Newest question after a storage interruption"&&row["turn_count"]==2&&row["updated"].toDouble()>0);check(TomStore::readTurn(root,c,t)["answer"]=="Newest answer");std::puts("TOM_COMPACT_HISTORY_RECOVERY_PASS");}}
+ /* Not a check: how long opening the store takes with a history like a reader's (TOM_OPEN_TIMING in the CI log; the
+    tablet's cores are several times slower). Each of the 48 turns has a handwritten question of 3200 points, a
+    1500-character answer streamed in 12 events and the conversation so far as its history. cold: the first open in
+    a process, as in every Tom helper; warm: the next one. */
+ {auto root=base/"open-timing";{TomStore store(root);for(int k=0;k<2;++k){auto c=store.createConversation(QString("Timing %1").arg(k));for(int i=0;i<24;++i){auto d=general();QJsonArray strokes;for(int s=0;s<40;++s){QJsonArray points;for(int p=0;p<80;++p)points.append(QJsonArray{100+s*7+p%13,200+p*3+s%5});strokes.append(QJsonObject{{"points",points},{"eraser",false},{"coordinateSpace","tom-logical-v2"}});}d.originalHandwriting=strokes;d.correctedText=QString("Question %1 of %2").arg(i).arg(k);
+   auto t=store.saveDraft(c,d);auto history=store.history(c,device,d);auto request=id();auto reviewed=store.reviewedRequest(c,t,config(),device,wire(c,request,d,history.messages()),true,false,history);store.freezeForCreate(c,t,reviewed,config(),device,&history);store.markCreateAttempt(c,t);store.confirmCreate(c,t,{{"request_id",request},{"status","queued"},{"replayed",false}});
+   for(quint64 e=1;e<=12;++e)check(store.applyEvent(c,t,request,{e,"delta",{{"text",QString(125,QChar(char16_t(u'a'+e%26)))}}}));check(store.applyEvent(c,t,request,{13,"status",{{"status","completed"}}}));}}}
+  auto open=[&]{const auto began=std::chrono::steady_clock::now();TomStore store(root);return (long long)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-began).count();};
+  const auto cold=open(),warm=open();std::printf("TOM_OPEN_TIMING turns=48 cold_ms=%lld warm_ms=%lld cores=%u\n",cold,warm,std::thread::hardware_concurrency());}
  std::cout<<"Tom durable store tests passed\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
