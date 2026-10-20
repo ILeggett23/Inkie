@@ -9,11 +9,14 @@
 namespace ib::sheets {
 // ---- Layers -----------------------------------------------------------------
 struct Layer {std::string name;bool visible{true},locked{},active{},selected{};int items{};};
-struct Layers {std::vector<Layer> layers; /* top-most first */ unsigned offset{};int menuFor{-1};bool confirmDelete{},busy{};std::string background{"Document"},status;bool canUndo{},canRedo{};};
+struct Layers {std::vector<Layer> layers; /* top-most first */ unsigned offset{};int menuFor{-1};bool confirmDelete{},busy{};std::string background{"Document"},status;bool canUndo{},canRedo{};Rect rect{720,120,1596,1640}; /* LayersRect, or TurnedLayersRect */};
 enum LayerId:int {LayersClose=1,LayerAdd,LayersPrev,LayersNext,LayersUndo,LayersRedo,MenuRename=10,MenuLock,MenuUp,MenuDown,MenuDelete,MenuActivate,
  RowBase=100,EyeBase=200,RowMenuBase=300};
 inline constexpr unsigned LayerPageSize=7;
 inline constexpr Rect LayersRect{720,120,1596,1640};
+// Turned (docs/LANDSCAPE.md, PR 3): the same side sheet, starting at layout::TurnedSheetTop.
+inline constexpr Rect TurnedLayersRect{LayersRect.x0,layout::TurnedSheetTop,LayersRect.x1,layout::TurnedSheetTop+LayersRect.y1-LayersRect.y0};
+inline Rect layersRect(bool turned)noexcept{return turned?TurnedLayersRect:LayersRect;}
 void layers(Canvas&,Targets&,const Layers&);
 // ---- Document settings ------------------------------------------------------
 enum class Tab:unsigned {View,Reading,Pages,About};

@@ -50,6 +50,9 @@ bool consumeEvents(std::span<const input_event> events,FrameAssembler& a,Engine&
  }
  return true;
 }
+Transform engineTransform(const Transform& marker,SessionDisplay& display)noexcept{
+ Transform framed=marker;display.inputFrame(framed);Transform t=marker;t.turn=framed.turn;t.offsetX=framed.offsetX;t.offsetY=framed.offsetY;return t;
+}
 int runDirectSession(RecoveryLease& lease,SessionDisplay& display)noexcept{
  auto rejected=[](const char* stage){std::fprintf(stderr,"DIRECT_STARTUP_REJECT stage=%s errno=%d\n",stage,errno);std::fflush(stderr);return 78;};
  Ns start=monotonic();
@@ -63,7 +66,7 @@ int runDirectSession(RecoveryLease& lease,SessionDisplay& display)noexcept{
  if(!lease.valid()||!display.initialize(lease)){display.shutdown();return rejected("vendor_initialize");}
  Surface surface=display.surface();if(!surface.valid()||!display.initialPage()){display.shutdown();return rejected("surface_initial_page");}
  Transform transform{marker.metadata.x,marker.metadata.y,surface.width,surface.height,0,false};
- auto engine=std::unique_ptr<Engine>(new(std::nothrow)Engine(transform,surface,display));if(!engine){display.shutdown();return rejected("engine_allocation");}
+ auto engine=std::unique_ptr<Engine>(new(std::nothrow)Engine(engineTransform(transform,display),surface,display));if(!engine){display.shutdown();return rejected("engine_allocation");}
  // One small synthetic segment is part of the future visible initialization gate.
  // It is distinct from contact counts and uses the same regional submit policy.
  if(display.diagnosticSegment()){
@@ -98,7 +101,7 @@ int runDirectSession(RecoveryLease& lease,SessionDisplay& display)noexcept{
   if(sustained&&engine->retirable()){collect();engine->retireSubmitted();}
   display.pump();
   pollfd pending{marker.fd,POLLIN,0};
-  if(!assembly.contactActive()&&poll(&pending,1,0)==0){if(!display.readerBoundary())break;if(display.pageVersion()!=pageVersion){collect();surface=display.surface();auto next=std::unique_ptr<Engine>(new(std::nothrow)Engine(transform,surface,display));if(!next){stats.failed=true;stats.failure="engine-allocation";break;}engine=std::move(next);pageVersion=display.pageVersion();gate.notBefore=monotonic();display.pageInstalled();}}
+  if(!assembly.contactActive()&&poll(&pending,1,0)==0){if(!display.readerBoundary())break;if(display.pageVersion()!=pageVersion){collect();surface=display.surface();auto next=std::unique_ptr<Engine>(new(std::nothrow)Engine(engineTransform(transform,display),surface,display));if(!next){stats.failed=true;stats.failure="engine-allocation";break;}engine=std::move(next);pageVersion=display.pageVersion();gate.notBefore=monotonic();display.pageInstalled();}}
  }
  // Stop admission first. No last submit after lease loss/deadline; pending damage
  // is explicitly incomplete rather than invented as displayed.

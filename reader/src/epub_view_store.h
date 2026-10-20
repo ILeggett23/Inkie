@@ -13,4 +13,7 @@ ViewSet activeSet(const std::filesystem::path& root);
 QString stage(const std::filesystem::path& root,const QJsonObject& layoutDescriptor,const QString& layoutId,int pages);
 void activate(const std::filesystem::path& root,const QString& id,const QString& expectedOld);
 std::filesystem::path storagePath(const std::filesystem::path& root,const ViewSet&,int page);
+// A landscape layout's page shown turned (docs/LANDSCAPE.md): <document>/turn-<90|270>/epub-views/<id>/page-N, inspected
+// and reclaimed like the document's own derived sets. Orientation 0 is storagePath.
+std::filesystem::path turnedStoragePath(const std::filesystem::path& root,const ViewSet&,int page,unsigned orientation);
 }

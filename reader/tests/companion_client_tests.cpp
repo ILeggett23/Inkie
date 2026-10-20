@@ -37,6 +37,13 @@ int main(){try{
  FrozenTomRequest frozen(c,draft,true,false);auto original=frozen.body();check(frozen.acceptsConfig(c));draft["question"]="Changed draft";check(frozen.body()==original);FrozenTomRequest changed(c,draft,true,false);check(frozen.fingerprint()!=changed.fingerprint());
  config["max_output_tokens"]=256;check(!frozen.acceptsConfig(parseTomConfig(json(config))));
  rejects([&]{FrozenTomRequest(c,draft,false,false);});
+ /* Inkie's notes: only when the service takes them, never with a transcription, bounded on their own (outside the 32000) */
+ {auto withMemory=c;withMemory.memory=true;auto m=draft;m["memory_capable"]=true;m["memory"]=QJsonArray{"The reader's name is Sam."};rejects([&]{FrozenTomRequest(c,m,true,false);});FrozenTomRequest kept(withMemory,m,true,false);check(kept.acceptsConfig(withMemory)&&!kept.acceptsConfig(c));
+  auto onlyCapable=m;onlyCapable.remove("memory");FrozenTomRequest(withMemory,onlyCapable,true,false);auto notCapable=m;notCapable.remove("memory_capable");rejects([&]{FrozenTomRequest(withMemory,notCapable,true,false);});
+  auto many=m;QJsonArray sixtyOne;for(int i=0;i<61;++i)sixtyOne.append(QString("Note %1").arg(i));many["memory"]=sixtyOne;rejects([&]{FrozenTomRequest(withMemory,many,true,false);});
+  auto longNote=m;longNote["memory"]=QJsonArray{QString(241,'x')};rejects([&]{FrozenTomRequest(withMemory,longNote,true,false);});auto blank=m;blank["memory"]=QJsonArray{" "};rejects([&]{FrozenTomRequest(withMemory,blank,true,false);});
+  auto tooMuch=m;QJsonArray eighteen;for(int i=0;i<18;++i)eighteen.append(QString(240,QChar('a'+i)));tooMuch["memory"]=eighteen; /* 4320 > 4096 */rejects([&]{FrozenTomRequest(withMemory,tooMuch,true,false);});
+  auto full=m;full["question"]=QString(8000,'q');FrozenTomRequest(withMemory,full,true,false);}
  rejects([&]{FrozenTomRequest(tampered,draft,true,false);});
  auto invalid=draft;invalid["provider"]="openai";rejects([&]{FrozenTomRequest(c,invalid,true,false);});
  invalid=draft;invalid["max_output_tokens"]=2048;rejects([&]{FrozenTomRequest(c,invalid,true,false);});

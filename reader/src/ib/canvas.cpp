@@ -2,6 +2,7 @@
 #include "ib/canvas.h"
 #include <algorithm>
 #include <cmath>
+#include <vector>
 namespace ib {
 namespace {
 constexpr float Pi=3.14159265358979f;
@@ -72,20 +73,36 @@ void Canvas::line(float x0,float y0,float x1,float y1,float w,std::uint32_t c)no
  for(int y=b.y0;y<b.y1;++y)for(int x=b.x0;x<b.x1;++x)blend(x,y,c,coverage(segmentDistance(x+.5f,y+.5f,{x0,y0},{x1,y1})-w/2));
 }
 void Canvas::stroke(const Path& p,float w,std::uint32_t c)noexcept{
- // Union of capsules: per pixel use the nearest segment so joins never double-blend.
+ // Union of capsules: per pixel use the nearest segment so joins never double-blend. Each segment only visits the
+ // pixels its capsule can cover (its box grown by w/2+1, beyond which coverage() is zero), keeping the nearest
+ // distance per pixel, then every pixel blends once: the same result as testing all segments everywhere.
  float h=w/2+1;Rect b{};bool any=false;
  for(const auto& k:p.contours())for(auto q:k){Rect r{int(std::floor(q.x-h)),int(std::floor(q.y-h)),int(std::ceil(q.x+h)),int(std::ceil(q.y+h))};if(!any){b=r;any=true;}else b.include(r);}
- if(!any)return;b=intersect(b,clip_);
- for(int y=b.y0;y<b.y1;++y)for(int x=b.x0;x<b.x1;++x){float best=1e9f;
-  for(const auto& k:p.contours()){if(k.size()==1)best=std::min(best,segmentDistance(x+.5f,y+.5f,k[0],k[0]));for(std::size_t i=1;i<k.size();++i)best=std::min(best,segmentDistance(x+.5f,y+.5f,k[i-1],k[i]));}
-  blend(x,y,c,coverage(best-w/2));}
+ if(!any)return;b=intersect(b,clip_);if(b.empty())return;
+ const int bw=width(b);std::vector<float> best(std::size_t(bw)*height(b),1e9f);
+ auto visit=[&](Pt s0,Pt s1){Rect r=intersect({int(std::floor(std::min(s0.x,s1.x)-h)),int(std::floor(std::min(s0.y,s1.y)-h)),int(std::ceil(std::max(s0.x,s1.x)+h)),int(std::ceil(std::max(s0.y,s1.y)+h))},b);
+  for(int y=r.y0;y<r.y1;++y){float* row=best.data()+std::size_t(y-b.y0)*bw;for(int x=r.x0;x<r.x1;++x){float& d=row[x-b.x0];d=std::min(d,segmentDistance(x+.5f,y+.5f,s0,s1));}}};
+ for(const auto& k:p.contours()){if(k.size()==1)visit(k[0],k[0]);for(std::size_t i=1;i<k.size();++i)visit(k[i-1],k[i]);}
+ for(int y=b.y0;y<b.y1;++y){const float* row=best.data()+std::size_t(y-b.y0)*bw;for(int x=b.x0;x<b.x1;++x){const float d=row[x-b.x0];if(d<1e8f)blend(x,y,c,coverage(d-w/2));}}
 }
 void Canvas::fillPath(const Path& p,std::uint32_t c)noexcept{
+ // Nonzero fill with 4x4 supersampling, by scanline: each of a pixel row's four sample rows finds where the edges
+ // cross it once (sorted), then sweeps its sample columns left to right, so the cost is edges per row rather than
+ // edges per sample. A sample at px is inside when the edges crossing to its right sum to a nonzero winding (edges
+ // going down count +1, up -1), exactly the per-sample test this replaces.
  Rect b{};bool any=false;
  for(const auto& k:p.contours())for(auto q:k){Rect r{int(std::floor(q.x)),int(std::floor(q.y)),int(std::ceil(q.x))+1,int(std::ceil(q.y))+1};if(!any){b=r;any=true;}else b.include(r);}
- if(!any)return;b=intersect(b,clip_);
- auto winding=[&](float px,float py){int wn=0;for(const auto& k:p.contours()){std::size_t n=k.size();for(std::size_t i=0;i<n;++i){Pt a=k[i],e=k[(i+1)%n];if(a.y<=py){if(e.y>py&&(e.x-a.x)*(py-a.y)-(px-a.x)*(e.y-a.y)>0)++wn;}else if(e.y<=py&&(e.x-a.x)*(py-a.y)-(px-a.x)*(e.y-a.y)<0)--wn;}}return wn!=0;};
- for(int y=b.y0;y<b.y1;++y)for(int x=b.x0;x<b.x1;++x){int hits=0;for(int sy=0;sy<4;++sy)for(int sx=0;sx<4;++sx)hits+=winding(x+(sx+.5f)/4,y+(sy+.5f)/4);if(hits)blend(x,y,c,hits*255/16);}
+ if(!any)return;b=intersect(b,clip_);if(b.empty())return;
+ const int bw=width(b);std::vector<int> hits(static_cast<std::size_t>(bw));struct Cross{float x;int dir;};std::vector<Cross> cross;
+ for(int y=b.y0;y<b.y1;++y){std::fill(hits.begin(),hits.end(),0);
+  for(int sy=0;sy<4;++sy){const float py=y+(sy+.5f)/4;cross.clear();int total=0;
+   for(const auto& k:p.contours()){const std::size_t n=k.size();for(std::size_t i=0;i<n;++i){const Pt a=k[i],e=k[(i+1)%n];int dir=0;if(a.y<=py&&e.y>py)dir=1;else if(a.y>py&&e.y<=py)dir=-1;if(!dir)continue;
+    cross.push_back({a.x+(py-a.y)*(e.x-a.x)/(e.y-a.y),dir});total+=dir;}}
+   if(cross.empty())continue;std::sort(cross.begin(),cross.end(),[](const Cross& l,const Cross& r){return l.x<r.x;});
+   // Sweep: winding at px is the sum of dirs of crossings with x > px, i.e. total minus those already passed.
+   std::size_t at=0;int wn=total;
+   for(int x=b.x0;x<b.x1;++x)for(int sx=0;sx<4;++sx){const float px=x+(sx+.5f)/4;while(at<cross.size()&&cross[at].x<=px)wn-=cross[at++].dir;if(wn)++hits[std::size_t(x-b.x0)];}}
+  for(int x=b.x0;x<b.x1;++x){const int h=hits[std::size_t(x-b.x0)];if(h)blend(x,y,c,h*255/16);}}
 }
 void Canvas::image(Rect dst,std::span<const std::uint32_t> src,int sw,int sh,int stride,bool cover)noexcept{
  if(dst.empty()||sw<1||sh<1||stride<sw||src.size()<std::size_t(stride)*sh)return;

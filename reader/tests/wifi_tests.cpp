@@ -7,6 +7,7 @@
 #include <QTemporaryDir>
 #include "device_status.h"
 #include "wifi_view.h"
+#include "ib/theme.h"
 #include <QCoreApplication>
 #include <atomic>
 #include <cstdio>
@@ -91,8 +92,17 @@ int main(int argc,char** argv){QCoreApplication app(argc,argv);
   check(view.hit(300,680).action==ux::WifiView::Action::None,"enterprise row has no action");
   auto pick=view.hit(300,850);check(pick.action==ux::WifiView::Action::Select&&pick.index==2,"open network row selects");
   check(view.hit(300,1950).action==ux::WifiView::Action::Rescan,"rescan");
-  auto text=view.displayedText().join('|');check(text.contains("CONNECTED TO Home")&&text.contains("NOT SUPPORTED HERE")&&text.contains("SHARED WITH THE STOCK APP"),"screen text");
+  auto text=view.displayedText().join('|');check(text.contains("CONNECTED TO Home")&&text.contains("NOT SUPPORTED HERE")&&text.contains("SHARED WITH THE REMARKABLE'S OWN WI-FI SETTINGS"),"screen text");
   ux::WifiView off;off.open();off.update({},{},{},false);check(off.displayedText().join('|').contains("WI-FI IS OFF"),"service off explained");
+  // Painted signal: bars are solid up to the level and hollow above it (inactive bars once read as full), and a
+  // network this tablet can't join shows none. Rows and bars are the view's own geometry (row n at 420+175n).
+  {std::vector<wifi::Network> nets(4);const int dbm[]{-50,-60,-70,-90};for(int i=0;i<4;++i){nets[std::size_t(i)].ssid=QStringLiteral("Net %1").arg(i);nets[std::size_t(i)].signal=dbm[i];}
+   nets[3].security=wifi::Security::Enterprise;nets.push_back(nets[0]);nets[4].ssid="Wep";nets[4].security=wifi::Security::Wep;
+   ux::WifiView v;v.open();v.update(nets,{},{},false);std::vector<std::uint32_t> px(std::size_t(1632)*2160,0);v.paint({px,1620,2160,1632});
+   auto solid=[&](int n,int b){const int y0=420+n*175,cx=1410+b*30,cy=y0+100-(b+1)*15/2;return px[std::size_t(cy)*1632+std::size_t(cx)]==ib::theme::InkPrimary;};
+   auto inked=[&](int n){const int y0=420+n*175;for(int y=y0+30;y<y0+100;++y)for(int x=1400;x<1510;++x)if(px[std::size_t(y)*1632+std::size_t(x)]==ib::theme::InkPrimary)return true;return false;};
+   const int levels[]{4,3,2};for(int n=0;n<3;++n)for(int b=0;b<4;++b)check(solid(n,b)==(b<levels[n]),"signal bar solid exactly up to the level");
+   check(!inked(3)&&!inked(4),"networks this tablet can't join show no signal bars");}
   // Device status bridge (read-only): the tablet's fuel-gauge files in a fake sysfs tree; malformed or missing
   // values are unknown, never invented.
   {QTemporaryDir temp;check(temp.isValid(),"battery tree");const std::filesystem::path root=temp.path().toStdString();
