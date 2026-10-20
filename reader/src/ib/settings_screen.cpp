@@ -36,10 +36,12 @@ struct Pane {
 }
 const char* pageName(Page p)noexcept{static constexpr std::array<const char*,unsigned(Page::Count)> N{"General","Wi-Fi","Battery","Storage","Security","Accessibility","Reading","Inkie","About"};return unsigned(p)<N.size()?N[unsigned(p)]:"";}
 std::string size(std::int64_t bytes){char out[32];if(bytes<0)return {};if(bytes<1000000000)std::snprintf(out,sizeof out,"%lld MB",static_cast<long long>((bytes+500000)/1000000));else std::snprintf(out,sizeof out,"%.1f GB",double(bytes)/1e9);return out;}
+Geometry geometry(int w,int h)noexcept{Geometry g;if(w<=h)return g;g.nav={NavRect.x0,NavRect.y0,NavRect.x1,h-100};g.pane={PaneRect.x0,PaneRect.y0,w-(t::ScreenWidth-PaneRect.x1),h-60};return g;}
 void paint(Canvas& c,Targets& tg,const Model& m){
+ const auto g=geometry(c.surface().width,c.surface().height);const Rect NavRect=g.nav,PaneRect=g.pane;
  // Left: the title and the page list (the chosen page black, as in the mockup); a hairline divides it from the pane.
  {const Font h=type::ScriptHeading;swash(c,h,float(NavRect.x0),PaneRect.y0+(90+text::capHeight(h))/2.f,"Settings",t::SectionColor[7]);}
- for(int y=PaneRect.y0;y+2<=PaneRect.y1;y+=6)c.fill({419,y,421,y+2},t::InkPrimary);
+ for(int y=PaneRect.y0;y+2<=PaneRect.y1;y+=6)c.fill({g.divider,y,g.divider+2,y+2},t::InkPrimary);
  for(unsigned i=0;i<unsigned(Page::Count);++i){Rect r{NavRect.x0,NavRect.y0+int(i)*100,NavRect.x1,NavRect.y0+int(i)*100+100};const bool on=Page(i)==m.page;
   // Every page has an index tab in its colour at the list's edge; the open page is an ink row.
   if(PageColor[i]!=t::InkPrimary){const Rect tab{r.x0,r.y0+18,r.x0+14,r.y1-18};c.fill(tab,PageColor[i]);c.hairline(tab,t::InkPrimary,t::Outline);}

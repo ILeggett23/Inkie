@@ -7,10 +7,9 @@
 namespace ib::library {
 namespace t=theme;
 namespace {
-constexpr int ContentX=ContentLeft,ContentR=ContentRight;
 constexpr int HeadingTop=202,HeadingBottom=290,FolderTop=334,FolderH=76,FolderCols=3,FolderRows=2,FolderGap=32;
-constexpr int GridCols=3,GridGapX=48,GridGapY=54,ThumbH=380,NameH=56,MetaH=40,GridRowH=ThumbH+NameH+MetaH;
-constexpr int ListRowH=173,BottomLimit=1985;
+constexpr int GridGapX=48,GridGapY=54,ThumbH=380,NameH=56,MetaH=40,GridRowH=ThumbH+NameH+MetaH;
+constexpr int ListRowH=173;
 const Font Label{Face::Text,theme::Label.size},Meta{Face::Text,theme::Meta.size};
 int folderRows(int folders){return folders<=0?0:std::min(FolderRows,(std::min(folders,FolderCols*FolderRows)+FolderCols-1)/FolderCols);}
 int documentsTop(int folders){int rows=folderRows(folders);return rows?FolderTop+rows*FolderH+t::S4:FolderTop+t::S2;}
@@ -31,7 +30,12 @@ void thumbnail(Canvas& c,Rect r,const Document& d){
 }
 const char* sectionName(Section s)noexcept{static constexpr std::array<const char*,unsigned(Section::Count)> N{"My files","Notes","Favorites","Recents","Shared","Inkie","Trash","Settings"};return unsigned(s)<N.size()?N[unsigned(s)]:"";}
 int folderCapacity()noexcept{return FolderCols*FolderRows;}
-int capacity(bool grid,int folders)noexcept{int top=documentsTop(folders);return grid?std::max(1,(BottomLimit-top+GridGapY)/(GridRowH+GridGapY))*GridCols:std::max(1,(BottomLimit-top)/ListRowH);}
+Geometry geometry(int w,int h)noexcept{Geometry g;if(w<=h)return g; /* portrait: the constants */
+ g.width=w;g.height=h;g.contentRight=w-(t::ScreenWidth-ContentRight);g.gridCols=4;
+ /* the pill 50 px above the foot (68 in portrait), so two rows of covers fit above it */const int pillW=width(PillRect),pillTop=h-50-height(PillRect);g.pill={(w-pillW)/2,pillTop,(w+pillW)/2,pillTop+height(PillRect)};g.bottomLimit=pillTop-(PillRect.y0-1985);g.pagerLeft=g.pill.x0+(1160-PillRect.x0);
+ g.notice={ContentLeft,NoticeRect.y0,g.contentRight,NoticeRect.y1};g.status={StatusRect.x0+(w-t::ScreenWidth),StatusRect.y0,StatusRect.x1+(w-t::ScreenWidth),StatusRect.y1};g.drawer={DrawerRect.x0,0,DrawerRect.x1,h};return g;}
+int capacity(bool grid,int folders,const Geometry& g)noexcept{int top=documentsTop(folders);return grid?std::max(1,(g.bottomLimit-top+GridGapY)/(GridRowH+GridGapY))*g.gridCols:std::max(1,(g.bottomLimit-top)/ListRowH);}
+int capacity(bool grid,int folders)noexcept{return capacity(grid,folders,Geometry{});}
 Rect createMenuRect(std::size_t rows)noexcept{int h=36+56+int(rows)*120+20;return {CreateRect.x0,CreateRect.y1-h,CreateRect.x1,CreateRect.y1};}
 void placeholderCover(Canvas& c,Rect r,std::string_view title,std::string_view format){
  // A clothbound cover: flat cloth in one of the panel's clean colours (picked from the title, so a book keeps its
@@ -48,11 +52,12 @@ void placeholderCover(Canvas& c,Rect r,std::string_view title,std::string_view f
  if(int(text::measure(m,fmt))<w-2*side)text::drawAligned(c,m,{plate.x0,plate.y1,plate.x1,r.y1},float(r.y1-(r.y1-plate.y1)/2+text::capHeight(m)/2),fmt,ink,Align::Center);
 }
 void base(Canvas& c,Targets& tg,const Model& m){
+ const auto g=geometry(c.surface().width,c.surface().height);const int ContentX=g.contentLeft,ContentR=g.contentRight,GridCols=g.gridCols;const Rect NoticeArea=g.notice,PillArea=g.pill;
  tg.clear();c.fill(c.clip(),t::Paper);
  // Mast: the collapsed menu, the centered wordmark. Device status shows only when it is real (see docs).
  iconButton(c,tg,Menu,{62,40,174,152},Icon::Menu);
- {const Font brand{Face::TextSemibold,float(t::Heading.size)};float w=text::span(brand,"Inkie");Rect b{int((t::ScreenWidth-w)/2)-t::S2,40,int((t::ScreenWidth+w)/2)+t::S2,152};wordmark(c,b,float(t::Heading.size));tg.add(Wordmark,b);}
- {status::Model status;status.battery=m.battery;status.charging=m.charging;status.wifi=m.wifi?1:-1;status.clock=m.clock;status.zone=m.clockZone;ib::status::bar(c,tg,status,ib::status::LibraryBar);}
+ {const Font brand{Face::TextSemibold,float(t::Heading.size)};float w=text::span(brand,"Inkie");Rect b{int((g.width-w)/2)-t::S2,40,int((g.width+w)/2)+t::S2,152};wordmark(c,b,float(t::Heading.size));tg.add(Wordmark,b);}
+ {status::Model status;status.battery=m.battery;status.charging=m.charging;status.wifi=m.wifi?1:-1;status.clock=m.clock;status.zone=m.clockZone;ib::status::bar(c,tg,status,g.status);}
  // Heading row: title (or the search field), then sort and the grid/list toggle.
  if(m.searching){Rect field{ContentX,HeadingTop,ContentR,HeadingTop+88};c.fill(field,t::Paper);c.hairline(field,t::InkPrimary,2);icon(c,Icon::Search,{field.x0+t::S3,field.y0+24,field.x0+t::S3+40,field.y0+64},t::InkSecondary);
   if(m.query.empty())text::centeredLine(c,HintFont,{field.x0+t::S3+40+t::S3,field.y0,field.x1-t::MinTarget,field.y1},"Search titles",t::InkPrimary,Align::Left);else text::centeredLine(c,{Face::Text,theme::Body.size},{field.x0+t::S3+40+t::S3,field.y0,field.x1-t::MinTarget,field.y1},m.query+"|",t::InkPrimary,Align::Left);
@@ -65,8 +70,8 @@ void base(Canvas& c,Targets& tg,const Model& m){
   if(!m.sortLabel.empty()){const Font f{Face::Text,theme::Label.size};float w=text::span(f,m.sortLabel);Rect sort{right-int(w)-t::IconSmall-t::S2-t::S2-12,HeadingTop,right-t::S2,HeadingBottom};
    text::centeredLine(c,f,{sort.x0,sort.y0,sort.x1-t::IconSmall-t::S2,sort.y1},m.sortLabel,t::InkPrimary,Align::Right);int mid=(sort.y0+sort.y1)/2;icon(c,Icon::ChevronDown,{sort.x1-t::IconSmall,mid-14,sort.x1-4,mid+14},t::InkPrimary);tg.add(Sort,hitArea(sort));}
  }
- if(!m.notice.empty())text::centeredLine(c,Meta,NoticeRect,text::fit(Meta,text::quiet(m.notice),float(width(NoticeRect))),t::InkSecondary,Align::Left);
- else if(!m.crumb.empty())text::centeredLine(c,Meta,NoticeRect,m.crumb,t::InkSecondary,Align::Left);
+ if(!m.notice.empty())text::centeredLine(c,Meta,NoticeArea,text::fit(Meta,text::quiet(m.notice),float(width(NoticeArea))),t::InkSecondary,Align::Left);
+ else if(!m.crumb.empty())text::centeredLine(c,Meta,NoticeArea,m.crumb,t::InkSecondary,Align::Left);
  // Folders: an inline icon and name, three per row.
  int shown=std::min(int(m.folders.size()),folderCapacity());int fw=(ContentR-ContentX-(FolderCols-1)*FolderGap)/FolderCols;
  for(int i=0;i<shown;++i){int col=i%FolderCols,row=i/FolderCols;Rect r{ContentX+col*(fw+FolderGap),FolderTop+row*FolderH,0,0};r.x1=r.x0+fw;r.y1=r.y0+FolderH;
@@ -74,7 +79,7 @@ void base(Canvas& c,Targets& tg,const Model& m){
   text::centeredLine(c,Label,{r.x0+60,r.y0,r.x1,r.y1},text::fit(Label,m.folders[std::size_t(i)].name,float(fw-70)),t::InkPrimary,Align::Left);tg.add(FolderBase+i,hitArea(r));} /* 76 px rows, 96 px targets */
  int top=documentsTop(shown);
  // Documents
- int cap=capacity(m.grid,shown);int n=std::min(int(m.documents.size()),cap);
+ int cap=capacity(m.grid,shown,g);int n=std::min(int(m.documents.size()),cap);
  if(m.documents.empty()&&m.section!=Section::Notes&&m.section!=Section::Settings)text::draw(c,type::ScriptEmpty,float(ContentX),float(top+60),m.searching?"No matching titles":m.section==Section::Trash?"Trash is empty":"Nothing here yet",t::InkSecondary);
  if(m.grid){int cw=(ContentR-ContentX-(GridCols-1)*GridGapX)/GridCols;
   for(int i=0;i<n;++i){const auto& d=m.documents[std::size_t(i)];int col=i%GridCols,row=i/GridCols;Rect thumb{ContentX+col*(cw+GridGapX),top+row*(GridRowH+GridGapY),0,0};thumb.x1=thumb.x0+cw;thumb.y1=thumb.y0+ThumbH;
@@ -90,19 +95,20 @@ void base(Canvas& c,Targets& tg,const Model& m){
    divider(c,r.x0,r.x1,r.y1-t::Hairline);tg.add(DocumentBase+i,r);}
  }
  // Pager (e-ink pages instead of scrolling; swipes page too), right of the pill.
- if(m.pages>1&&m.section!=Section::Notes&&m.section!=Section::Settings){Rect p{1160,PillRect.y0,ContentR,PillRect.y1};std::string label=std::to_string(m.page+1)+" of "+std::to_string(m.pages);
+ if(m.pages>1&&m.section!=Section::Notes&&m.section!=Section::Settings){Rect p{g.pagerLeft,PillArea.y0,ContentR,PillArea.y1};std::string label=std::to_string(m.page+1)+" of "+std::to_string(m.pages);
   text::centeredLine(c,Meta,{p.x0+t::MinTarget,p.y0,p.x1-t::MinTarget,p.y1},label,t::InkSecondary,Align::Center);
   iconButton(c,tg,Prev,{p.x0,p.y0,p.x0+t::MinTarget,p.y1},Icon::ChevronLeft,{false,m.page<=0});iconButton(c,tg,Next,{p.x1-t::MinTarget,p.y0,p.x1,p.y1},Icon::ChevronRight,{false,m.page+1>=m.pages});}
 }
 void overlays(Canvas& c,Targets& tg,const Model& m){
+ const auto g=geometry(c.surface().width,c.surface().height);
  // Reading/search remains available; standalone notebook creation has no control or target.
- if(m.section!=Section::Settings){const Rect p=PillRect,v=inset(p,8);
+ if(m.section!=Section::Settings){const Rect p=g.pill,v=inset(p,8);
   c.fillRound(v,t::RadiusMedium,m.searching?t::ToolSelected:t::Surface);
   c.strokeRound(v,t::RadiusMedium,float(t::Outline),t::InkPrimary);
   icon(c,Icon::Search,centered(p,40,40),m.searching?t::OnSelected:t::InkPrimary);tg.add(Search,p);}
 
 
- if(m.drawer){Rect r=DrawerRect;c.fill(r,t::Paper);c.vline(r.x1-t::Outline,r.y0,r.y1,t::InkPrimary,t::Outline);
+ if(m.drawer){Rect r=g.drawer;c.fill(r,t::Paper);c.vline(r.x1-t::Outline,r.y0,r.y1,t::InkPrimary,t::Outline);
   iconButton(c,tg,Menu,{r.x0+40,38,r.x0+152,180},Icon::Menu);text::centeredLine(c,{Face::Text,theme::Label.size},{r.x0+40+112+t::S1,38,r.x1-40,180},"Menu",t::InkPrimary,Align::Left);
   // Each place has an index tab in its colour at the drawer's edge, as a divided notebook; the current place is an ink
   // row. Places without a colour (Settings, extras) have no tab.

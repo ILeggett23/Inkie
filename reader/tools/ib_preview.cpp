@@ -112,6 +112,11 @@ std::vector<Surface> surfaces(){
  s.push_back({"library-grid",[](Canvas& c,Targets& tg){library::paint(c,tg,libraryModel());}});
  s.push_back({"library-list",[](Canvas& c,Targets& tg){auto m=libraryModel();m.grid=false;library::paint(c,tg,m);}});
  s.push_back({"library-drawer",[](Canvas& c,Targets& tg){auto m=libraryModel();m.drawer=true;library::paint(c,tg,m);}});
+ // The library and Settings turned (docs/LANDSCAPE.md): laid out for an upright 2160x1620 frame.
+ s.push_back({"library-grid-landscape",[](Canvas& c,Targets& tg){library::paint(c,tg,libraryModel());},false,true});
+ s.push_back({"library-list-landscape",[](Canvas& c,Targets& tg){auto m=libraryModel();m.grid=false;library::paint(c,tg,m);},false,true});
+ s.push_back({"library-drawer-landscape",[](Canvas& c,Targets& tg){auto m=libraryModel();m.drawer=true;library::paint(c,tg,m);},false,true});
+ for(auto p:{settings::Page::Reading,settings::Page::Tom})s.push_back({std::string("settings-")+settings::pageName(p)+"-landscape",[p](Canvas& c,Targets& tg){auto m=libraryModel();m.section=library::Section::Settings;m.documents.clear();m.folders.clear();library::base(c,tg,m);settings::Model sm;sm.page=p;sm.tomMemory={"The reader's name is Sam.","Sam prefers short answers with one example."};settings::paint(c,tg,sm);library::overlays(c,tg,m);},false,true});
  s.push_back({"library-empty",[](Canvas& c,Targets& tg){auto m=libraryModel();m.documents.clear();m.folders.clear();m.pages=1;library::paint(c,tg,m);}});
  s.push_back({"library-notes-hub",[](Canvas& c,Targets& tg){auto m=libraryModel();m.section=library::Section::Notes;m.heading="Notes";m.sortLabel.clear();m.documents.clear();m.folders.clear();library::base(c,tg,m);
   notes::Hub h;h.embedded=true;h.canCreate=false;

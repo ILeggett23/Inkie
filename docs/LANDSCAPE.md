@@ -130,6 +130,16 @@ and uses its result when it is for the same book, layout, page and direction (`u
 stages and renders as before. Page requests share the page server's lock with reading; a job is never stopped mid-request.
 `TURN_AHEAD_READY` / `TURN_AHEAD_FAILED` journal each job.
 
+**The library and Settings turn (2026-10-20).** With Auto-rotate on, the library (My files, Favorites, Recents,
+Trash), its drawer and Settings turn with the tablet: they are laid out for an upright 2160x1620 frame
+(`ib::library::geometry`, `ib::settings::geometry`: four cover columns and two rows, the pill and pager at the foot, the
+settings pane to the right edge), painted there and put on the panel turned in one complete refresh; nothing has to be
+prepared, so the turn is immediate. Taps are brought upright before the library's targets are hit. Portrait previews and
+targets are unchanged (`ib-targets.txt` only gains the landscape surfaces). Still upright only, with "Turn the tablet
+upright for this": search (its keyboard), the Notes section, Inkie, pairing (Shared), Wi-Fi, the time zone list, passcode
+setting and the file menu; while one is open the library does not turn. A book opened from the turned library opens
+upright and then turns as before; leaving a turned PDF returns to the turned library directly.
+
 **Still portrait (a notice), with why:**
 - **Notes and Inkie sheets** were portrait here; PR 3 turns them (below).
 - **Document settings, Quick Browse and recents:** full-height portrait sheets with no landscape layout yet.

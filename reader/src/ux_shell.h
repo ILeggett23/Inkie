@@ -6,6 +6,7 @@
 #include <utility>
 #include "library.h"
 #include "library_view.h"
+#include "ib/library_screen.h"
 #include "library_manage.h"
 #include "companion_view.h"
 #include "wifi_view.h"
@@ -215,6 +216,9 @@ public:
  unsigned inputTurn_{};std::span<const std::uint32_t> sheetBackdrop();void sheetDamage(spike::Rect sheet);void composeSheet(spike::Surface,spike::Rect)const;
  void paintMenuOn(ib::Canvas&,ib::Targets&);
  template<class F>void paintTurned(std::vector<std::uint32_t>& pixels,ib::Targets& targets,std::initializer_list<spike::Rect> logical,F paint);
+ // A library rect on the panel: as is upright; turned, the same part of the landscape library (ib::library::geometry).
+ spike::Rect libraryArea(spike::Rect portrait)const noexcept{if(!turned())return portrait;const auto g=ib::library::geometry(2160,1620);return physical(portrait.y0==ib::library::NoticeRect.y0&&portrait.y1==ib::library::NoticeRect.y1?g.notice:portrait.y0==ib::library::StatusRect.y0&&portrait.x0==ib::library::StatusRect.x0?g.status:spike::Rect{0,0,2160,1620});}
+ void libraryTurn();bool libraryPortraitOnly();
  void pollOrientation();std::optional<std::filesystem::path> accel_;bool accelSearched_{};device::OrientationWatch orientationWatch_;device::AccelReader accelReader_;bool accelOn_{},accelTimed_{};
  bool orientationSensor()noexcept{if(!accelSearched_){accel_=device::accelerometer();accelSearched_=true;}return accel_.has_value();}
  void pollDevice();device::Battery battery_{};device::Temperature temperature_{};device::HeatWatch heat_{};std::optional<bool> wifiLink_;device::Storage storage_{};std::string firmware_;std::chrono::steady_clock::time_point batteryAt_{};bool lowBatteryShown_{};

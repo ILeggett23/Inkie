@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <linux/input.h>
 #include <fstream>
+#include "ib/library_screen.h"
 using Path=std::filesystem::path;
 #define CHECK(v) do{if(!(v)){std::fprintf(stderr,"UX_ASSERT_FAIL line=%u expression=%s\n",unsigned(__LINE__),#v);throw std::runtime_error(#v);}}while(0)
 template<class F>static void until(F f){auto end=std::chrono::steady_clock::now()+std::chrono::seconds(30); /* above the 10 s store-lock budget, with room for sanitizer builds */while(!f()){CHECK(std::chrono::steady_clock::now()<end);std::this_thread::sleep_for(std::chrono::milliseconds(1));}}
@@ -338,6 +339,18 @@ CHECK(std::any_of(h.calls.requests.begin(),h.calls.requests.begin()+std::ptrdiff
  // One library view change is one quality update: the drawer used to go out as quarter-page bands (rows 0-1845 and
  // 1845-2160 for its 474 px width), so its lower part stayed on screen for about a second after the upper part. Closing
  // keeps the colour class of the coloured tabs it removes; a class taken from the new pixels left their residue.
+ // The library turns with the tablet (docs/LANDSCAPE.md): laid out for an upright 2160x1620 frame, taps reach its targets
+ // where they are drawn, search (no landscape layout yet) says so, a book opens from it, and it turns back upright.
+ test("library_turns_with_the_tablet",[&]{auto root=data/"library-turn";importBook(app,source,root);Harness h(app,root);settle(h);CHECK(h.shell.returnToLibrary());until([&]{h.boundary();return !h.shell.document()&&h.shell.state()==ux::State::Picker;});h.boundary();
+  const auto accel=data/"library-turn-accel";std::filesystem::create_directories(accel);auto hold=[&](int x,int y){std::ofstream(accel/"in_accel_x_raw")<<x<<"\n";std::ofstream(accel/"in_accel_y_raw")<<y<<"\n";std::ofstream(accel/"in_accel_z_raw")<<0<<"\n";};
+  hold(-1000,0);ux::TurnTestAccess::sensor(h.shell,accel);until([&]{h.boundary();CHECK(!h.shell.failed());return ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Clockwise;});h.boundary();
+  CHECK(h.shell.libraryView().landscape());const ib::layout::Frame f{ib::layout::Turn::Clockwise};
+  const auto search=h.shell.libraryView().targets().rect(ib::library::Search);CHECK(!search.empty()&&search.x1>1620); /* laid out in the landscape frame */
+  CHECK(uitest::tap(h.shell,f.physical(search)));h.boundary();CHECK(h.shell.libraryView().notice().contains("upright"));
+  const auto cover=h.shell.libraryView().targets().rect(ib::library::DocumentBase);CHECK(!cover.empty());CHECK(uitest::tap(h.shell,f.physical(cover)));
+  until([&]{h.boundary();CHECK(!h.shell.failed());return h.shell.document()&&h.shell.writable()&&ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Clockwise;});settle(h); /* the book opens and turns */
+  CHECK(h.shell.returnToLibrary());until([&]{h.boundary();return !h.shell.document()&&h.shell.state()==ux::State::Picker;});h.boundary();CHECK(ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Clockwise&&h.shell.libraryView().landscape());
+  hold(0,1000);until([&]{h.boundary();CHECK(!h.shell.failed());return ux::TurnTestAccess::turn(h.shell)==ib::layout::Turn::Portrait;});h.boundary();CHECK(!h.shell.libraryView().landscape()&&h.shell.libraryView().targets().rect(ib::library::Search).x1<=1620);CHECK(h.shell.finish(5000));});
  test("library_drawer_presents_as_one_update",[&]{auto root=data/"library-drawer";importBook(app,source,root);Harness h(app,root);settle(h);CHECK(h.shell.returnToLibrary());until([&]{h.boundary();return !h.shell.document()&&h.shell.state()==ux::State::Picker;});h.boundary();
   const auto full=h.calls.full;auto drawerUpdates=[&]{std::vector<Calls::Request> out;for(const auto& q:h.calls.requests)if(q.mode==3&&q.flags==0&&overlap(q.rect,ib::library::DrawerRect))out.push_back(q);return out;};
   h.calls.requests.clear();
