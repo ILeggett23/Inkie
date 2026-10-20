@@ -40,6 +40,11 @@ class Display final:public spike::SessionDisplay,public spike::OperationSink {
  // final saved/rendered erase result. Paying a grid cell at lift is not a panel
  // completion fence and must not downgrade the later cleanup to white/Mono.
  spike::Rect erasedBounds_{};int erasedClass_{-1};spike::Ns eraseLiftAt_{};
+ // TEST BUILD (user request 2026-10-20): once an erase has settled (pen up, saved, its removal cleanups sent) and
+ // GhostDelay has passed since the last of them, the panel driver's own ghost clearing runs once (VendorDisplay::
+ // clearGhosting, Xochitl's GhostBuster call). The user checks whether it removes the yellow left by the fast erase
+ // and whether it flashes; `ui:ghost-clear` journals each run (1 ran, 0 unavailable).
+ static constexpr spike::Ns GhostDelay=1000000000ull;spike::Ns lastRemovalAt_{},ghostAt_{};
  // What the Gallery 3 panel still holds. A fast (pen-mode) update, or one whose class came only from its new pixels,
  // leaves the pigment of what it replaced: colour ink erased to white, a coloured sheet closed over a page. A later
  // quality update of that area must drive the richest class the area showed, or the residue stays until a complete
@@ -238,12 +243,14 @@ public:
   // Removals (erase results, undo/redo, snap, highlight/layer changes) are cleaned in Content mode, as stock cleans
   // erased ink (cleanContent); UI debt stays in UI mode below.
   if(removalNow.count){const auto now=removalNow;for(unsigned i=0;i<now.count;++i){const auto rect=now.regions[i];const bool ready=vendor_.surface().valid();const int before=ready?prior(rect):-1;if(ready)compose(rect);const auto submitAt=spike::monotonic();
-   if(ready&&vendor_.cleanContent(rect,std::max(0,before))==spike::Submit::Accepted){
+   if(ready&&vendor_.cleanContent(rect,std::max(0,before))==spike::Submit::Accepted){lastRemovalAt_=spike::monotonic();
     if(eraseLiftAt_&&std::max(rect.x0,erasedBounds_.x0)<std::min(rect.x1,erasedBounds_.x1)&&std::max(rect.y0,erasedBounds_.y0)<std::min(rect.y1,erasedBounds_.y1)){recovery::v2::e2::mark("ui:erase-lift-to-submit-us",(submitAt-eraseLiftAt_)/1000);eraseLiftAt_=0;}paid(rect);shell_.presentationCovered(rect);refresh_.accepted(rect,RefreshIntent::Cleanup);recovery::v2::e2::mark("ui:removal-content-cleanup",unsigned(std::min<std::uint64_t>(RefreshPlan::area(rect),UINT32_MAX)));}
    else{for(unsigned n=i;n<now.count;++n)join(removal_,now.regions[n]);refresh_.failed(spike::monotonic());break;}}}
 bool presentationDone=uiCleanup_.count==0;if(quality.count){uiCleanup_={};bool accepted=true;for(unsigned i=0;i<quality.count;++i){const auto rect=quality.regions[i];const bool sourceReady=vendor_.surface().valid();const int before=sourceReady?prior(rect):-1;if(sourceReady)compose(rect);if(sourceReady&&vendor_.cleanRemoval(rect,std::max(0,before))==spike::Submit::Accepted){paid(rect);shell_.presentationCovered(rect);refresh_.accepted(rect,RefreshIntent::Cleanup);recovery::v2::e2::mark("ui:retirement-quality-submit",RefreshPlan::area(rect));}else{accepted=presentationDone=false;for(unsigned n=i;n<quality.count;++n)(void)uiCleanup_.add(quality.regions[n]);refresh_.failed(spike::monotonic());break;}}if(accepted){uiCleanup_={};presentationDone=true;}}if(presentationDone&&refresh_.scene(conditions)==SceneRefresh::None){shell_.uiPresentationAccepted();pageTurnPending_=false;}
   if(settled&&presentationDone&&removal_.count==0&&liftCleanup_.empty()&&cleanup_.empty()){
+   if(!erasedBounds_.empty())ghostAt_=(lastRemovalAt_?lastRemovalAt_:spike::monotonic())+GhostDelay;
    erasedBounds_={};erasedClass_=-1;eraseLiftAt_=0;
+   if(ghostAt_&&!penContact_&&!erasing_&&spike::monotonic()>=ghostAt_){ghostAt_=0;recovery::v2::e2::mark("ui:ghost-clear",vendor_.clearGhosting()?1u:0u);}
   }
   return true;
  }catch(...){recovery::v2::e2::mark("reader:end-exception");shell_.fail(24);return false;}}

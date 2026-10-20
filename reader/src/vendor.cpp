@@ -89,6 +89,11 @@ Submit VendorDisplay::cleanContent(Rect r,int previousContent)noexcept{
  return submitChecked(r,std::max(previousContent,qualityContent(r)),ModeContent,0)?Submit::Accepted:Submit::Failed;
 }
 Submit VendorDisplay::ui(Rect r)noexcept{return clean(r);}
+// TEST BUILD (user request, 2026-10-20): the panel driver's own ghost clearing, the call Xochitl's GhostBuster makes.
+// libqsgepaper 3800e9f3: EPFramebufferAcep2::ghostControl(2) (0x36be0) runs the Swtcon's dedicated clearing routine
+// (0x3c310) under the Swtcon lock, as an ordinary swap does. Modes 0 (complete flashing swap of the whole image) and 3
+// (factory-reset blink) are never requested; mode 1 only marks removal pending.
+bool VendorDisplay::clearGhosting()noexcept{if(!ready({0,0,1,1}))return false;inside_=true;const bool ok=calls_.ghostClear();inside_=false;if(ok){if(ghostClears_<UINT32_MAX)++ghostClears_;std::fprintf(stderr,"REFRESH_GHOST_CLEAR mode=2 count=%u\n",unsigned(ghostClears_));}return ok;}
 bool VendorDisplay::initialPreparedPage(std::span<const std::uint32_t> prepared)noexcept{
  Surface s=surface();if(!s.valid()||submissions_!=0||prepared.size()!=s.pixels.size())return false;
  if(prepared.data()!=s.pixels.data())std::copy(prepared.begin(),prepared.end(),s.pixels.begin());

@@ -359,6 +359,24 @@ Not changed, noted: a PDF page that fails to prepare turned closes the book to t
 ("This book could not open — its data is kept"), rather than staying upright. A retained interrupted-eraser draft is
 never applied (the protected `styled_ink.cpp` keeps the original ink unchanged by design).
 
+### Test build: the panel's own ghost clearing after an erase (user request, 2026-10-20)
+
+A photo from the user (PR #14 build): after erasing a snapped highlight, yellow stripes stay exactly along the eraser's
+passes while the rest of the highlight is clean. The highlight itself was removed; the stripes are pigment left on the
+panel where the masked fast erase drove it to white first, and the Content-mode cleanup after it did not drive those
+pixels again (the D15 finding). The user asked for a build that runs the vendor's ghost clearing, as Xochitl's
+GhostBuster does, to see whether it removes the yellow and whether it flashes.
+
+- **Call:** `EPFramebufferAcep2::ghostControl` mode 2 (libqsgepaper `3800e9f3`, 0x36be0), which runs the Swtcon's
+  dedicated clearing routine (0x3c310) under the Swtcon lock. Mode 0 (a complete flashing swap of the whole image) and
+  mode 3 (factory-reset blink) are never used. The call is bound only when the exported symbol is the pinned function and
+  both functions have their recorded first bytes (`DIRECT_GHOST_CLEAR available=1`); otherwise nothing runs.
+- **When:** once per settled erase: pen up, the erase saved and its removal cleanups sent, 1 s after the last of them
+  (`ui:ghost-clear` 1 ran, 0 unavailable; `REFRESH_GHOST_CLEAR` counts). This is a protected vendor change and a timed
+  step, both for this test only; it is kept or removed after the device check.
+- **Verified:** [auto] `ghost_clearing_runs_once_after_an_erase_settles` (once, after every cleanup of the erased area,
+  never for writing alone). Optics and flashing: device check 41.
+
 ## 9. Remaining risks and proposals (protected or policy code: not changed)
 
 | # | Area | Risk | Proposal |
@@ -420,6 +438,7 @@ Run on a Paper Pro with the `verified-tablet-candidate` from §8. Capture the de
 | 38 | Write black and red ink; erase part of each with the Marker's eraser end, then with the toolbar eraser; erase a long scribble | Ink disappears under the eraser as it moves and nothing is left unerased (D15 reverted; residue colour compared with stock) | `ui:erase-live-removals`, `ui:erase-lift-cleanup`, `ui:removal-content-cleanup` |
 | 39 | Turn Auto-rotate on in quick settings; tap the toolbar, menus and page turns; then turn the tablet | Taps respond at once, as with Auto-rotate off; the page turns about 2 s after the tilt settles | `ui:orientation-read-ms`, no `reader:slow-tick-us` near 750 000 |
 | 40 | Auto-rotate on: open the EPUB that looped (Psycho-Cybernetics) and turn the tablet; then a PDF with highlights | The EPUB turns to landscape; a book that cannot turn stays upright with one notice and no repeated refreshes; the PDF says why it stays upright | `ui:turn`, `ui:turned`, `ui:turn-refused` at most once, `ui:turn-blocked` |
+| 41 | (Test build) Highlight a passage with snap-to-text and erase it with the eraser end; erase black and red handwriting; wait 2 s each time | The yellow or grey left along the eraser's path clears about a second after the erase; note whether the area or the whole screen flashes | `ui:ghost-clear` 1, `REFRESH_GHOST_CLEAR`, `DIRECT_GHOST_CLEAR available=1` |
 
 | 40 | In landscape: open Document notes and Ask Inkie from the document menu, and Layers and Inkie from the toolbar | Each opens upright at the foot of the screen (the tall ones fill its height) with the page beside it; its controls act where drawn; a tap on the page beside it closes it | — |
 | 41 | In landscape: write a note, expand it, write more, type a title with the keyboard; tap Done; turn upright and reopen the note | The ink is where it was written on the note's paper, in both orientations; nothing moves | — |
