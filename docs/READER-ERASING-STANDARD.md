@@ -29,7 +29,7 @@ The same contract applies to Marker Plus and toolbar erasers, with black, colour
 
 The existing regional Content-mode removal path and complete-update policy remain unchanged. There
 are no new waveform numbers, new full-update flags, invented stock padding, erase delays or dark-fill
-passes. `ui:erase-lift-to-submit-us` records software processing-lift to the first overlapping successful
+passes. `ui:erase-lift-to-submit-us` records software processing-lift to a timestamp immediately before the first overlapping successful
 cleanup call; it is not an optical-completion measurement.
 
 Six production Shell/Display/vendor-boundary regressions exercise the three materials with both erasers.

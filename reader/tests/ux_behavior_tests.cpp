@@ -213,12 +213,15 @@ int main(int argc,char** argv){QCoreApplication core(argc,argv);if(argc!=5)retur
   // Model the source after a successful immediate cleanup, before the final
   // saved erase result: white pixels and fully paid grid cells. The later
   // request must still carry the material removed by the actual erase above.
-  auto footprint=spike::conversionFootprint(target);for(int y=footprint.y0;y<footprint.y1;++y)for(int x=footprint.x0;x<footprint.x1;++x)h.calls.pixels[std::size_t(y)*1632+x]=0xffffffffu;
+  auto footprint=spike::conversionFootprint(target);const auto displayed=crop(h.calls,footprint);for(int y=footprint.y0;y<footprint.y1;++y)for(int x=footprint.x0;x<footprint.x1;++x)h.calls.pixels[std::size_t(y)*1632+x]=0xffffffffu;
   CHECK(h.vendor.removalContent(target)==0);ux::DisplayTestAccess::qualityPaid(h.display,target);
   CHECK(ux::DisplayTestAccess::previousClass(h.display,target)>=removedClass);
   CHECK(h.vendor.cleanContent(target,ux::DisplayTestAccess::previousClass(h.display,target))==spike::Submit::Accepted);
   CHECK(h.calls.requests.back().mode==4&&h.calls.requests.back().flags==0&&h.calls.requests.back().content>=removedClass);
-  h.boundary();settle(h);CHECK(crop(h.calls,target)==clean&&crop(h.calls,neighbor)==kept&&h.calls.full==full);
+  // End the temporary classification projection. Restore every affected source
+  // pixel before testing real canonical rendering, including aligned margins.
+  {std::size_t n=0;for(int y=footprint.y0;y<footprint.y1;++y)for(int x=footprint.x0;x<footprint.x1;++x)h.calls.pixels[std::size_t(y)*1632+x]=displayed[n++];}
+  h.boundary();settle(h);CHECK(crop(h.calls,target)==clean);CHECK(crop(h.calls,neighbor)==kept);CHECK(h.calls.full==full);
   CHECK(ux::DisplayTestAccess::eraseHistoryClass(h.display)==-1);onlyRegional(h.calls);CHECK(h.shell.finish(5000));
  });
  test("toolbar_eraser_receives_regional_cleanup",[&]{auto root=data/"selected-eraser";importBook(app,source,root);Harness h(app,root);settle(h);h.stroke(300,900,450,900,5);settle(h);CHECK(h.shell.styledInk()->setEraser(true));h.calls.requests.clear();h.stroke(290,900,460,900,12,false);settle(h);CHECK(regionalQuality(h.calls,{280,880,470,920}));onlyRegional(h.calls);CHECK(h.shell.finish(5000));});
