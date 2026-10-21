@@ -12,8 +12,11 @@
 #include <stdexcept>
 #include <string>
 namespace {bool watching=false,rejectAllocation=false;std::size_t allocations=0;}
-void* operator new(std::size_t n){if(rejectAllocation){rejectAllocation=false;throw std::bad_alloc();}if(watching)++allocations;if(auto p=std::malloc(n?n:1))return p;throw std::bad_alloc();}
-void operator delete(void* p)noexcept{std::free(p);}void operator delete(void* p,std::size_t)noexcept{std::free(p);}
+// These replacements deliberately pair malloc/free. Keep the instrumentation
+// boundary out of GCC's caller inlining so its new/delete pairing diagnostic
+// does not mistake a free inside our replacement delete for a caller mismatch.
+[[gnu::noinline]] void* operator new(std::size_t n){if(rejectAllocation){rejectAllocation=false;throw std::bad_alloc();}if(watching)++allocations;if(auto p=std::malloc(n?n:1))return p;throw std::bad_alloc();}
+[[gnu::noinline]] void operator delete(void* p)noexcept{std::free(p);}[[gnu::noinline]] void operator delete(void* p,std::size_t)noexcept{std::free(p);}
 namespace {
 unsigned checks=0;void check(bool c,const char* what){++checks;if(!c)throw std::runtime_error(what);}
 constexpr int W=640,H=480;using Pixels=std::vector<std::uint32_t>;
