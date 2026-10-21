@@ -72,6 +72,7 @@ void Shell::prepareSand(spike::Surface old){
     // is serial; this CPU compose does not submit an update or change ownership.
     const auto r=sand_.region();try{composeCanonical(old,{r.x0,r.y0,r.x1,r.y1});
      if(!sand_.buildSilhouette(old.pixels,old.width,old.height,old.stridePixels))sand_.cancel(sand::Reason::Geometry);
+     else sand_.beginPlayback(sandNow());
      sandContent_=sandContentStamp();
     }catch(...){sand_.cancel(sand::Reason::Memory);}
    }}

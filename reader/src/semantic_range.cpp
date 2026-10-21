@@ -7,6 +7,33 @@
 namespace semantic {
 namespace {
 bool coordinate(double x,double y){return std::isfinite(x)&&std::isfinite(y)&&x>=0&&y>=0&&x<1620&&y<2060;}
+// Clip the input segment against a convex source-space quad. Bounds alone
+// would incorrectly hit rotated glyphs and neighboring tightly spaced lines.
+bool crosses(const QJsonArray& q,double sx,double sy,double ex,double ey){
+ constexpr int order[]{0,2,6,4};double winding=0;
+ for(int i=0;i<4;++i){const int a=order[i],b=order[(i+1)%4];winding+=q[a].toDouble()*q[b+1].toDouble()-q[b].toDouble()*q[a+1].toDouble();}
+ if(std::abs(winding)<1e-10)return false;
+ const double sign=winding>0?1:-1;double lo=0,hi=1;
+ for(int i=0;i<4;++i){const int a=order[i],b=order[(i+1)%4];const double x=q[a].toDouble(),y=q[a+1].toDouble(),dx=q[b].toDouble()-x,dy=q[b+1].toDouble()-y;
+  const double at=sign*(dx*(sy-y)-dy*(sx-x)),delta=sign*(dx*(ey-sy)-dy*(ex-sx));
+  if(std::abs(delta)<1e-12){if(at< -1e-7)return false;continue;}
+  const double t=(-1e-7-at)/delta;if(delta>0)lo=std::max(lo,t);else hi=std::min(hi,t);if(lo>hi)return false;
+ }
+ return true;
+}
+bool clipStroke(const Geometry& g,double& sx,double& sy,double& ex,double& ey){
+ const auto m=g->data["transform"].toArray();const double a=m[0].toDouble(),b=m[1].toDouble(),c=m[2].toDouble(),d=m[3].toDouble(),det=a*d-b*c;
+ auto inverse=[&](double x,double y){x-=m[4].toDouble();y-=m[5].toDouble();return std::pair{(d*x-c*y)/det,(-b*x+a*y)/det};};
+ const auto start=inverse(sx,sy),end=inverse(ex,ey);sx=start.first;sy=start.second;ex=end.first;ey=end.second;
+ if(!std::isfinite(sx)||!std::isfinite(sy)||!std::isfinite(ex)||!std::isfinite(ey))return false;
+ if(const auto crop=sourceClip(g->data)){
+  double lo=0,hi=1;const double dx=ex-sx,dy=ey-sy;
+  auto edge=[&](double p,double q){if(std::abs(p)<1e-12)return q>=0;const double t=q/p;if(p<0)lo=std::max(lo,t);else hi=std::min(hi,t);return lo<=hi;};
+  if(!edge(-dx,sx-crop->x0)||!edge(dx,crop->x1-sx)||!edge(-dy,sy-crop->y0)||!edge(dy,crop->y1-sy))return false;
+  ex=sx+hi*dx;ey=sy+hi*dy;sx+=lo*dx;sy+=lo*dy;
+ }
+ return true;
+}
 int tokenAt(const Geometry& g,double sx,double sy){
  auto m=g->data["transform"].toArray();double a=m[0].toDouble(),b=m[1].toDouble(),c=m[2].toDouble(),d=m[3].toDouble(),x=sx-m[4].toDouble(),y=sy-m[5].toDouble(),det=a*d-b*c;
  double px=(d*x-c*y)/det,py=(-b*x+a*y)/det;if(!std::isfinite(px)||!std::isfinite(py))return -1;auto crop=sourceClip(g->data);if(crop&&!crop->contains(px,py))return -1;
@@ -34,7 +61,7 @@ bool binding(const Geometry& g,const Selection& s){if(!g||!s)return false;for(au
 Selection selectionFromRanges(const Geometry& g,const QJsonArray& ranges,std::uint64_t generation){return fromRanges(g,ranges,generation);}
 Selection mergeSelection(const Geometry& g,Selection old,Selection next,std::uint64_t generation,bool append){if(!binding(g,next))return {};auto incoming=selectionRanges(next->data);if(incoming.isEmpty())return {};auto verified=fromRanges(g,incoming,generation);if(!verified||verified->data["text"]!=next->data["text"]||verified->data["quads"]!=next->data["quads"])return {};if(!append||!old){auto data=next->data;data["generation"]=QString::number(generation);return std::make_shared<const SelectionSnapshot>(data);}if(!binding(g,old))return {};auto ranges=selectionRanges(old->data);if(ranges.isEmpty())return {};for(auto r:incoming)ranges.append(r);auto result=fromRanges(g,ranges,generation);if(result&&result->data["text"]==next->data["text"]&&result->data["quads"]==next->data["quads"]){auto data=next->data;data["generation"]=QString::number(generation);return std::make_shared<const SelectionSnapshot>(data);}return result;}
 Selection replaceSelectionEdge(const Geometry& g,Selection old,Selection next,bool first,std::uint64_t generation){if(!binding(g,old)||!binding(g,next))return {};auto ranges=selectionRanges(old->data),incoming=selectionRanges(next->data);if(ranges.isEmpty()||incoming.size()!=1)return {};ranges.removeAt(first?0:ranges.size()-1);ranges.append(incoming[0]);return fromRanges(g,ranges,generation);}
-ScreenRangeResult selectScreenRangeChecked(const Geometry& input,double sx,double sy,double ex,double ey,std::uint64_t generation,bool walkIn,bool blocks){
+static ScreenRangeResult selectRangeImpl(const Geometry& input,double sx,double sy,double ex,double ey,std::uint64_t generation,bool walkIn,bool blocks,bool stroke){
  probe(Work::Layout);ScreenRangeResult result;
  if(!coordinate(sx,sy)||!coordinate(ex,ey)){result.status=RangeStatus::InvalidCoordinates;return result;}
  if(!input)return result;
@@ -47,6 +74,22 @@ ScreenRangeResult selectScreenRangeChecked(const Geometry& input,double sx,doubl
   g=decodeGeometry(input->data,QByteArray::fromHex(input->data["pageId"].toString().toLatin1()));
  }catch(const std::exception&){result.status=RangeStatus::InvalidGeometry;return result;}
  if(g->data["words"].toArray().isEmpty()){result.status=RangeStatus::NoTextLayer;return result;}
+ if(stroke){
+  if(!clipStroke(g,sx,sy,ex,ey)){result.status=RangeStatus::StartMiss;return result;}
+  const auto words=g->data["words"].toArray(),chars=g->data["chars"].toArray();const auto crop=sourceClip(g->data);QJsonArray ranges;int first=-1,last=-1,previous=-2;
+  auto flush=[&]{if(first>=0){const auto a=chars[first].toObject(),b=chars[last-1].toObject();ranges.append(QJsonArray{a["offset"].toInt(),b["offset"].toInt()+b["text"].toString().size()});}};
+  for(int n=0;n<words.size();++n){const auto word=words[n].toArray();const int begin=word[0].toInt(),end=word[1].toInt();bool hit=false;
+   for(int k=begin;k<end&&!hit;++k){const auto q=chars[k].toObject()["quad"].toArray();hit=(!crop||quadVisible(q,*crop))&&crosses(q,sx,sy,ex,ey);}
+   if(!hit)continue;
+   if(n!=previous+1){flush();first=begin;}last=end;previous=n;
+  }
+  flush();if(ranges.isEmpty()){result.status=RangeStatus::StartMiss;return result;}
+  if(ranges.size()>int(MaxSelectionRanges)){result.status=RangeStatus::CapacityExceeded;return result;}
+  result.selection=fromRanges(g,ranges,generation);
+  if(!result.selection){result.status=RangeStatus::CapacityExceeded;return result;}
+  result.glyphCount=unsigned(result.selection->data["quads"].toArray().size());for(auto value:selectionRanges(result.selection->data)){const auto r=value.toArray();result.utf16Count+=unsigned(r[1].toInt()-r[0].toInt());}
+  result.status=RangeStatus::Ready;return result;
+ }
  int first=tokenAt(g,sx,sy),last=tokenAt(g,ex,ey);
  if(walkIn&&(first<0||last<0)){constexpr int Samples=48;auto at=[&](int i){return tokenAt(g,sx+(ex-sx)*double(i)/Samples,sy+(ey-sy)*double(i)/Samples);};
   int i=0;while(first<0&&++i<=Samples)first=at(i);int j=Samples;while(last<0&&--j>=0)last=at(j);}
@@ -56,6 +99,8 @@ ScreenRangeResult selectScreenRangeChecked(const Geometry& input,double sx,doubl
  if(result.glyphCount>MaxScreenRangeGlyphs||result.utf16Count>MaxScreenRangeUtf16){result.status=RangeStatus::CapacityExceeded;return result;}
  result.selection=snapshot(g,unsigned(first),unsigned(last),generation,blockBegin,blockEnd,textBegin,textEnd);result.status=RangeStatus::Ready;return result;
 }
+ScreenRangeResult selectScreenRangeChecked(const Geometry& g,double sx,double sy,double ex,double ey,std::uint64_t generation,bool walkIn,bool blocks){return selectRangeImpl(g,sx,sy,ex,ey,generation,walkIn,blocks,false);}
+ScreenRangeResult selectStrokeRangeChecked(const Geometry& g,double sx,double sy,double ex,double ey,std::uint64_t generation){return selectRangeImpl(g,sx,sy,ex,ey,generation,false,false,true);}
 Selection selectScreenRange(const Geometry& g,double sx,double sy,double ex,double ey,std::uint64_t generation){return selectScreenRangeChecked(g,sx,sy,ex,ey,generation).selection;}
 const char* rangeStatusText(RangeStatus value)noexcept{switch(value){case RangeStatus::Ready:return "TEXT RANGE SELECTED";case RangeStatus::NoTextLayer:return "This page has no selectable text";case RangeStatus::InvalidCoordinates:return "Start the selection on the page";case RangeStatus::InvalidGeometry:return "Text on this page isn't ready yet \xE2\x80\x94 try again";case RangeStatus::StartMiss:return "Start the selection on a word";case RangeStatus::EndMiss:return "End the selection on a word";case RangeStatus::CapacityExceeded:return "Select a smaller passage";default:return "Text selection isn't available here";}}
 }
