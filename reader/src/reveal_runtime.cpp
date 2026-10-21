@@ -16,6 +16,7 @@ bool blankStrip(std::span<const std::uint32_t> pixels,spike::Rect content,bool t
 }
 product::AnimationPolicy Shell::revealPolicy(bool contact)const noexcept{product::AnimationPolicy p;p.enabled=!stop_&&quietEffectsEnabled();p.reducedMotion=reducedMotion_;p.constrainedPower=powerConstrained_;p.contact=contact||(document_&&document_->contact())||(tom_&&tom_->contact())||(notes_&&notes_->contact());if(p.contact)return p;p.heavyRendering=(state_!=State::Clean&&state_!=State::Chrome&&state_!=State::Picker)||changingView_||syncing_||returning_||companionBusy_||(styled_&&styled_->status().busy)||semantics_->pending()||(notes_&&notes_->active()&&!notes_->revealReady())||(tom_&&tom_->active()&&!tom_->revealReady())||(toolsView_.active()&&toolsView_.pending())||(viewControls_.active()&&viewControls_.pending());return p;}
 void Shell::revealSceneChanged(){
+ sandSceneChanged();if(prefs_.sandMode||sand_.pending())return;
  if(stop_)return;
  int scene=int(semantics_->view());QString key;spike::Rect content;std::span<const std::uint32_t> panelPixels;bool panelReady=true;
  if(tom_&&tom_->active()){scene=TomScene;content=tom_->revealContent();panelPixels=tom_->background();key=QString::number(tom_->revealSceneEpoch());panelReady=tom_->revealReady();}
@@ -24,7 +25,7 @@ void Shell::revealSceneChanged(){
  else if(viewControls_.active()){scene=ViewScene;content=insetContent(DocumentControls::Panel);panelPixels=viewPixels_;}
  else if(state_==State::Picker&&companionView_.active()){scene=CompanionScene;content={0,15,1620,2160};panelPixels=background();}
  else if(state_==State::Picker&&libraryManage_.active()){scene=LibraryManageScene;key=QString::number(libraryManage_.effectScene());content={0,15,1620,2160};panelPixels=background();}
- else if(state_==State::Picker&&libraryView_.effectScene()){scene=LibraryMenuScene;key=QString::number(libraryView_.effectScene());content=libraryView_.effectContent();panelPixels=background();}
+ else if(state_==State::Picker&&libraryView_.effectScene()){scene=LibraryMenuScene;key=QString::number(libraryView_.effectScene());content=libraryView_.effectContent();if(turned())content=physical(content); /* the library's upright frame, on the panel */panelPixels=background();}
  else if(semantics_->view()==semantic::View::Definition)content=semanticVisual_.panel;
  else if(semantics_->view()==semantic::View::Menu){content=semanticVisual_.menu;panelPixels=background();}
  if(!quietEffectsEnabled()&&reveal_.quiescent()){revealView_=scene;revealSelection_=key;return;}
@@ -45,8 +46,8 @@ void Shell::revealSceneChanged(){
  auto policy=revealPolicy();const unsigned area=unsigned(std::min(content.x1-content.x0-16,108)*8);if(!policy.permits(area))return;
  (void)reveal_.start({{content.x0,content.y0,content.x1,content.y1},{0,0,1620,2160},{presentedVersion_,revealUiEpoch_},true},policy,milliseconds());revealTick();
 }
-void Shell::revealTick(){if(reveal_.quiescent())return;auto update=reveal_.advance({presentedVersion_,revealUiEpoch_},revealPolicy(),milliseconds());revealUpdate_=update;if(!update)return;if(change_.full)return;if(change_.extraCount<change_.extra.size())damage({update.damage.x0,update.damage.y0,update.damage.x1,update.damage.y1});}
-void Shell::cancelRevealForContact()noexcept{++revealUiEpoch_;revealUpdate_=reveal_.advance({presentedVersion_,revealUiEpoch_},revealPolicy(true),milliseconds());revealPaintStamp_=0;}
+void Shell::revealTick(){sandTick();if(reveal_.quiescent())return;auto update=reveal_.advance({presentedVersion_,revealUiEpoch_},revealPolicy(),milliseconds());revealUpdate_=update;if(!update)return;if(change_.full)return;if(change_.extraCount<change_.extra.size())damage({update.damage.x0,update.damage.y0,update.damage.x1,update.damage.y1});}
+void Shell::cancelRevealForContact()noexcept{cancelSandForInput();++revealUiEpoch_;revealUpdate_=reveal_.advance({presentedVersion_,revealUiEpoch_},revealPolicy(true),milliseconds());revealPaintStamp_=0;}
 void Shell::compositeReveal(spike::Surface out,spike::Rect region)const noexcept{revealPaintStamp_=0;if(!revealUpdate_||!covers(region,revealUpdate_.damage))return;if(revealUpdate_.paint){if(reveal_.identity()!=localized::Identity{presentedVersion_,revealUiEpoch_}||!reveal_.paint(revealUpdate_.stamp,out.pixels,out.width,out.height,out.stridePixels))return;}revealPaintStamp_=revealUpdate_.stamp;}
-void Shell::revealCovered(spike::Rect region)noexcept{if(revealPaintStamp_&&reveal_.acknowledgePresented(revealPaintStamp_,{region.x0,region.y0,region.x1,region.y1})&&reveal_.quiescent()){revealUpdate_={};revealPaintStamp_=0;}}
+void Shell::revealCovered(spike::Rect region)noexcept{if(sandPaintStamp_)sand_.acknowledge(sandPaintStamp_,{region.x0,region.y0,region.x1,region.y1},milliseconds());if(revealPaintStamp_&&reveal_.acknowledgePresented(revealPaintStamp_,{region.x0,region.y0,region.x1,region.y1})&&reveal_.quiescent()){revealUpdate_={};revealPaintStamp_=0;}}
 }

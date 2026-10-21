@@ -12,7 +12,7 @@ sys="$INKBOUND_FERRARI_SYSROOT"
 loader="$sys/usr/lib/ld-linux-aarch64.so.1"
 test -x "$loader"
 common=(-G Ninja -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_TOOLCHAIN_FILE="$INKBOUND_FERRARI_TOOLCHAIN_FILE" -DBUILD_VENDOR_RUNTIME=ON -DMUPDF_INCLUDE="$deps/mupdf-1.28.3-source/include" "-DMUPDF_ARCHIVES=$deps/mupdf/lib/libmupdf.a;$deps/mupdf/lib/libmupdf-third.a")
-targets=(receiver-interactive-tests refresh-extent-tests semantic-range-tests tom-auto-reply-tests companion-client-tests picture-panel-tests tom-runtime-tests sustained-session-tests ui-damage-tests eink-refresh-tests styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests semantic-tests reader-experience1-prepare)
+targets=(sand-transition-tests sand-route-tests reveal-route-tests receiver-interactive-tests refresh-extent-tests semantic-range-tests tom-auto-reply-tests companion-client-tests picture-panel-tests tom-runtime-tests sustained-session-tests ui-damage-tests eink-refresh-tests styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests semantic-tests reader-experience1-prepare)
 export QT_QPA_PLATFORM=offscreen
 export QT_PLUGIN_PATH="$sys/usr/lib/plugins"
 export ASAN_OPTIONS=detect_leaks=0:abort_on_error=1
@@ -24,11 +24,12 @@ for cfg in release asan-ubsan; do
  cmake -S reader -B "$build" "${common[@]}" "${args[@]}"
  cmake --build "$build" --parallel 2 --target "${targets[@]}"
  run() { "$loader" --library-path "$sys/usr/lib:$sys/lib" "$build/$1" "${@:2}"; }
+ run sand-transition-tests "$out/sand-stages-$cfg"
  for test_name in receiver-interactive-tests refresh-extent-tests semantic-range-tests tom-auto-reply-tests companion-client-tests sustained-session-tests ui-damage-tests eink-refresh-tests styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests; do run "$test_name"; done
  run picture-panel-tests "$root/reader"
  run tom-runtime-tests "$sys"
  run notes-foundation-tests "$root/reader" "$sys"
- for test_name in semantic-tests selection-route-tests ux-behavior-tests; do
+ for test_name in semantic-tests selection-route-tests ux-behavior-tests sand-route-tests reveal-route-tests; do
   run "$test_name" "$root/reader" "$root/.tablet-data-$cfg/$test_name" "$build" "$sys"
  done
  printf '%s_TARGET_TESTS_PASS\n' "$cfg"

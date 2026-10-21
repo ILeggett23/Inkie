@@ -33,7 +33,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Linux build dependencies
-        run: sudo apt-get update && sudo apt-get install -y ccache ninja-build libsystemd-dev libssl-dev libgl1-mesa-dev libxkbcommon-dev
+        run: sudo apt-get update && sudo apt-get install -y ccache ninja-build libsystemd-dev libssl-dev libgl1-mesa-dev libxkbcommon-dev zlib1g-dev
       - name: Exact Qt version for host tests
         uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125 # v4
         with:
@@ -77,11 +77,20 @@ jobs:
           ci_cmake_args=()
           if [ -n "$SANITIZER" ]; then ci_cmake_args+=('-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=-O1 -g1 -DNDEBUG'); fi
           cmake -S reader -B .ci-build -G Ninja -DCMAKE_CXX_COMPILER_LAUNCHER=ccache "${ci_cmake_args[@]}" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_VENDOR_RUNTIME=ON -DSPIKE_SANITIZER="$SANITIZER" -DMUPDF_INCLUDE="$PWD/.ci-deps/mupdf-host/source/include" -DMUPDF_ARCHIVES="$PWD/.ci-deps/mupdf-host/lib/libmupdf.a;$PWD/.ci-deps/mupdf-host/lib/libmupdf-third.a"
-          cmake --build .ci-build --parallel 2 --target sustained-session-tests ui-damage-tests eink-refresh-tests
+          cmake --build .ci-build --parallel 2 --target sand-transition-tests sand-route-tests reveal-route-tests sustained-session-tests ui-damage-tests eink-refresh-tests ib-layout-tests ib-surface-tests ib-preview status-screen-tests
+          .ci-build/sand-transition-tests "$PWD/.ci-sand-stages"
           .ci-build/sustained-session-tests
           .ci-build/ui-damage-tests
           .ci-build/eink-refresh-tests
+          .ci-build/ib-layout-tests "$PWD/reader"
+          .ci-build/status-screen-tests "$PWD/reader"
+          .ci-build/ib-surface-tests "$PWD/reader"
+          # A moved, resized or lost control shows up here: regenerate the baseline deliberately with
+          # ib-preview reader <dir> --targets when a layout change is intended.
+          .ci-build/ib-preview "$PWD/reader" "$PWD/.ci-targets" --targets
+          diff -u reader/tests/fixtures/ib-targets.txt .ci-targets/targets.txt
           cmake --build .ci-build --parallel 2 --target styled-integration-tests styled-publication-tests tom-reply-ink-tests tom-panel-tests notes-foundation-tests ux-behavior-tests selection-route-tests semantic-tests reader-experience1-prepare refresh-extent-tests semantic-range-tests tom-auto-reply-tests companion-client-tests picture-panel-tests tom-runtime-tests receiver-interactive-tests
+          cmake --build .ci-build --parallel 2 --target library-view-tests library-manage-tests companion-view-tests wifi-tests timezone-view-tests tools-view-tests document-controls-tests tom-inline-panel-tests semantic-crop-tests user-messages-tests library-route-tests notes-route-tests status-route-tests timezone-route-tests gesture-route-tests
       - name: Native Linux fixture loader
         run: |
           mkdir -p .ci-sysroot/usr/lib
@@ -115,7 +124,57 @@ jobs:
           .ci-build/semantic-tests "$PWD/reader" "$PWD/.ci-test-data/semantic" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           .ci-build/selection-route-tests "$PWD/reader" "$PWD/.ci-test-data/selection" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           .ci-build/ux-behavior-tests "$PWD/reader" "$PWD/.ci-test-data/ux" "$PWD/.ci-build" "$PWD/.ci-sysroot"
+          .ci-build/sand-route-tests "$PWD/reader" "$PWD/.ci-test-data/sand-route" "$PWD/.ci-build" "$PWD/.ci-sysroot"
+          .ci-build/reveal-route-tests "$PWD/reader" "$PWD/.ci-test-data/legacy-reveal-route" "$PWD/.ci-build" "$PWD/.ci-sysroot"
           echo 'Linux host regressions only; tablet ABI, optical behavior and live providers are not qualified.'
+      - name: Run view and shell-route tests (previously local-only)
+        run: |
+          set -euo pipefail
+          .ci-build/library-view-tests
+          .ci-build/library-manage-tests
+          .ci-build/companion-view-tests
+          .ci-build/wifi-tests
+          .ci-build/timezone-view-tests "$PWD/reader"
+          .ci-build/tools-view-tests
+          .ci-build/document-controls-tests
+          .ci-build/tom-inline-panel-tests "$PWD/reader"
+          .ci-build/semantic-crop-tests
+          .ci-build/user-messages-tests
+          for t in library notes status timezone gesture; do
+            .ci-build/$t-route-tests "$PWD/reader" "$PWD/.ci-test-data/$t-route" "$PWD/.ci-build" "$PWD/.ci-sysroot"
+          done
+      - name: Run store, stream, page-view and touch tests (previously local-only)
+        run: |
+          set -euo pipefail
+          # Inkie's conversation store and memory, its event stream, PDF view planning and turned (landscape)
+          # pages, prepared-page storage, touch gestures, and EPUB layouts with their turned pages (docs/LANDSCAPE.md).
+          cmake --build .ci-build --parallel 2 --target tom-store-tests tom-session-tests touch-drag-tests pdf-viewport-tests prepare-document-view-tests epub-view-store-tests prepare-epub-view-tests epub-view-route-tests epub-annotation-cache-tests
+          .ci-build/tom-store-tests
+          .ci-build/tom-session-tests
+          .ci-build/touch-drag-tests
+          .ci-build/pdf-viewport-tests "$PWD/reader/fixtures/library/authored-three-pages.pdf"
+          .ci-build/prepare-document-view-tests "$PWD/reader"
+          .ci-build/epub-view-store-tests
+          .ci-build/prepare-epub-view-tests "$PWD/reader"
+          .ci-build/epub-annotation-cache-tests "$PWD/reader"
+          .ci-build/epub-view-route-tests "$PWD/reader" "$PWD/.ci-test-data/epub-view-route" "$PWD/.ci-build" "$PWD/.ci-sysroot"
+      - name: Render host previews of every kit surface
+        run: |
+          set -euo pipefail
+          .ci-build/ib-preview "$PWD/reader" "$PWD/.ci-previews"
+          echo 'Painter-level previews: no shell compositing, refresh scheduling or panel optics.'
+      - name: Preserve host previews
+        if: matrix.label == 'release'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: inkbound-host-previews
+          path: |
+            .ci-previews/
+            .ci-sand-stages/
+            .ci-test-data/sand-route/sand-captures/
+          retention-days: 30
+          include-hidden-files: true
+          if-no-files-found: error
       - name: Preserve compiler cache after success or failure
         if: always() && !cancelled()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4

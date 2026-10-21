@@ -10,6 +10,9 @@ struct ScreenRangeResult {RangeStatus status{RangeStatus::Unavailable};Selection
 // Caller rejects a changed page/view epoch before passing the immutable geometry.
 // Source punctuation and line breaks are retained; no dehyphenation.
 ScreenRangeResult selectScreenRangeChecked(const Geometry&,double startX,double startY,double endX,double endY,std::uint64_t generation,bool walkIn=false,bool blocks=false);
+// Selection-tool gestures intersect the actual transformed glyph quads. They
+// do not fill a paragraph, column gap or unmarked word between two endpoints.
+ScreenRangeResult selectStrokeRangeChecked(const Geometry&,double startX,double startY,double endX,double endY,std::uint64_t generation);
 Selection selectScreenRange(const Geometry&,double startX,double startY,double endX,double endY,std::uint64_t generation);
 const char* rangeStatusText(RangeStatus)noexcept;
 }
